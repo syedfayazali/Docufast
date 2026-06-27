@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuFast India — upload &amp; print</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="brand-band">
+  <div class="wrap" style="padding:0;">
+    <div class="brand">
+      <div class="mark">Docu<span>Fast</span></div>
+    </div>
+    <div class="tagline">Upload, pay, and we print it — ready in minutes.</div>
+    <div class="trust-bar">
+      <span>🔒 Secure payments via Paytm</span>
+      <span>⚡ Prints in minutes</span>
+      <span>🇮🇳 Made for India</span>
+    </div>
+  </div>
+</div>
+<div class="wrap">
+
+  <div class="card" id="uploadCard">
+    <div class="dropzone" id="dropzone">
+      <div class="icon">&#8595;</div>
+      <div>Drop a file here, or tap to choose</div>
+      <div class="filename" id="filenameLabel"></div>
+      <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+    </div>
+
+    <div class="field">
+      <label for="pages">Number of pages</label>
+      <input type="number" id="pages" min="1" value="1">
+    </div>
+
+    <div class="field">
+      <label for="copies">Copies</label>
+      <input type="number" id="copies" min="1" value="1">
+    </div>
+
+    <div class="field">
+      <label>Color</label>
+      <div class="toggle-row">
+        <div class="opt active" data-group="color" data-value="bw">Black &amp; white</div>
+        <div class="opt" data-group="color" data-value="color">Color</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Sides</label>
+      <div class="toggle-row">
+        <div class="opt active" data-group="duplex" data-value="single">Single-sided</div>
+        <div class="opt" data-group="duplex" data-value="double">Double-sided</div>
+      </div>
+    </div>
+
+    <div class="price-row">
+      <div class="label">Total</div>
+      <div class="amount" id="amountLabel">&#8377;0.00</div>
+    </div>
+
+    <button class="primary" id="payBtn" disabled>Choose a file to continue</button>
+    <div class="note">Pay securely with UPI, cards, or net banking via Paytm.</div>
+  </div>
+
+  <div class="card" id="ticketCard" style="display:none;">
+    <span class="status-pill paid" id="statusPill">Paid</span>
+    <div class="stub">
+      <div class="main">
+        <div class="label" id="ticketLabel">Pickup code</div>
+        <div class="file" id="ticketFilename"></div>
+        <div class="meta" id="ticketMeta"></div>
+      </div>
+      <div class="code" id="ticketCode"></div>
+    </div>
+    <div class="note" id="ticketNote">Printing now — collect it from the tray.</div>
+    <button class="ghost" onclick="location.reload()">Upload another file</button>
+  </div>
+
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

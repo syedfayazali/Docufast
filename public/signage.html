@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuFast India — scan to print</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+  .signage-wrap { max-width: 420px; margin: 0 auto; padding: 40px 20px; text-align: center; }
+  .signage-wrap h1 { font-size: 32px; margin-bottom: 8px; }
+  .signage-wrap .sub { color: var(--slate); font-size: 15px; margin-bottom: 24px; }
+  .signage-wrap .mark { color: var(--navy); }
+  .qr-box { background: #fff; border: 2px solid var(--navy); border-radius: 10px; padding: 20px; display: inline-block; }
+  .qr-box img { width: 280px; height: 280px; display: block; }
+  .url-text { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--slate); margin-top: 18px; word-break: break-all; }
+  .steps { text-align: left; margin-top: 28px; font-size: 14px; }
+  .steps li { margin-bottom: 6px; }
+  @media print {
+    button.ghost { display: none; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+<div class="signage-wrap">
+  <div class="brand" style="justify-content:center;">
+    <div class="mark">Docu<span>Fast</span></div>
+  </div>
+  <h1>Scan to print</h1>
+  <div class="sub">Upload from your phone, pay, and we'll print it for you right here.</div>
+
+  <div class="qr-box">
+    <img id="qrImg" alt="QR code to DocuFast India upload page" src="">
+  </div>
+
+  <div class="url-text" id="urlText">Loading…</div>
+
+  <ol class="steps">
+    <li>Scan the code with your phone camera</li>
+    <li>Upload your file and choose print options</li>
+    <li>Pay with UPI or card</li>
+    <li>Collect your printout from the counter</li>
+  </ol>
+
+  <button class="ghost" onclick="window.print()" style="margin-top:20px;">Print this poster</button>
+</div>
+<script src="/signage.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuFast India — owner dashboard</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="brand-band">
+  <div class="wrap" style="padding:0;">
+    <div class="brand">
+      <div class="mark">Docu<span>Fast</span></div>
+      <span style="font-size:12px;color:var(--white);opacity:0.7;">dashboard</span>
+    </div>
+    <div class="tagline">Live view of jobs, anywhere</div>
+  </div>
+</div>
+<div class="wrap">
+
+  <div class="field">
+    <label for="ownerKey">Owner key (needed to retry a failed print)</label>
+    <input type="password" id="ownerKey" placeholder="Paste your AGENT_KEY here">
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="num" id="kpiJobs">0</div><div class="lbl">Total jobs</div></div>
+    <div class="kpi"><div class="num" id="kpiPrinted">0</div><div class="lbl">Printed</div></div>
+    <div class="kpi"><div class="num" id="kpiRevenue">₹0</div><div class="lbl">Revenue</div></div>
+  </div>
+
+  <div class="card">
+    <table class="admin-table">
+      <thead>
+        <tr><th>Code</th><th>File</th><th>Pages × copies</th><th>Amount</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody id="jobRows"></tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:16px;"><a class="nav-link" href="/">&larr; Back to upload</a></p>
+
+</div>
+<script src="/admin.js"></script>
+</body>
+</html>
