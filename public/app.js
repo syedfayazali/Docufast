@@ -1,6 +1,47 @@
 // Customer-facing upload + mock checkout flow.
 const RATES = { bw: 2, color: 8 }; // rupees per page — mirrors RATES in server.js
 
+// QR codes get scanned by all sorts of camera apps, and a lot of them
+// (especially on Xiaomi/Oppo/Vivo and older Samsung phones) open the link in
+// a stripped-down in-app browser bundled with the camera app, instead of the
+// phone's real browser (Chrome/Samsung Internet/Safari). Those mini-browsers
+// often can't complete the cross-site form-POST redirect to Paytm's hosted
+// payment page — the page that works fine in a real browser. This check
+// flags the common in-app signatures and offers a one-tap way out, before
+// the customer gets to the part where it would otherwise hang.
+function detectInAppBrowser() {
+  const ua = navigator.userAgent || '';
+  // Generic in-app WebView indicators across Android camera apps + common
+  // social apps people might tap the link from instead of scanning directly.
+  const patterns = [
+    'MiuiBrowser', 'XiaoMi', 'HuaweiBrowser', 'VivoBrowser', 'OppoBrowser',
+    'HeyTapBrowser', 'SamsungBrowser/4', // old Samsung WebView-based version
+    'FBAN', 'FBAV', // Facebook in-app
+    'Instagram', 'WhatsApp', 'Line/', 'MicroMessenger', // WeChat
+    'wv)', // generic Android "WebView" marker
+  ];
+  return patterns.some((p) => ua.includes(p));
+}
+
+function showInAppWarning() {
+  const el = document.getElementById('inAppWarning');
+  if (!el) return;
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    // Android intent:// URL forces the link open in the system's chosen
+    // default browser, escaping whatever in-app WebView is currently
+    // showing this page — this is the standard reliable workaround.
+    const target = location.href.replace(/^https?:\/\//, '');
+    const intentUrl = `intent://${target}#Intent;scheme=https;package=com.android.chrome;end`;
+    el.innerHTML = `⚠ For payment to work, please open this page in your regular browser. <a href="${intentUrl}" style="color:inherit;text-decoration:underline;font-weight:700;">Tap here to open in Chrome</a>, or copy this link and paste it into your browser.`;
+  } else {
+    el.textContent = '⚠ For payment to work, please open this page in Safari (tap "•••" or the share icon and choose "Open in Safari"), not inside another app.';
+  }
+  el.style.display = 'block';
+}
+
+if (detectInAppBrowser()) showInAppWarning();
+
 const state = {
   file: null,
   fileData: null,
@@ -94,6 +135,22 @@ payBtn.addEventListener('click', async () => {
       // /paytm-callback route when done, which redirects here again with
       // ?code=...&paid=1/0 — handled by checkPaymentReturn() below.
       payBtn.textContent = 'Redirecting to Paytm…';
+
+      // If the page hasn't actually navigated away within a few seconds,
+      // something is blocking it (most commonly: an in-app browser that
+      // can't complete the cross-site redirect). Rather than leaving the
+      // customer staring at "Redirecting…" forever with no way to tell
+      // what's wrong, surface the same in-app-browser guidance — this
+      // catches cases detectInAppBrowser() missed (new/unrecognized
+      // WebViews) since it's based on what actually happened, not just the
+      // user agent string.
+      const stuckTimer = setTimeout(() => {
+        showInAppWarning();
+        payBtn.disabled = false;
+        payBtn.textContent = 'Pay & get pickup code';
+      }, 6000);
+      window.addEventListener('pagehide', () => clearTimeout(stuckTimer));
+
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = createData.txnUrl;
