@@ -12,6 +12,8 @@ async function refresh() {
   document.getElementById('kpiPrinted').textContent = data.jobs.filter((j) => j.status === 'printed').length;
   document.getElementById('kpiRevenue').textContent = '₹' + (data.revenueToday / 100).toFixed(2);
 
+  renderAgentBanner(data.agent);
+
   const rows = document.getElementById('jobRows');
   rows.innerHTML = '';
   data.jobs.forEach((job) => {
@@ -57,6 +59,33 @@ function statusClass(job) {
   if (job.status === 'printed') return 'printed';
   if (job.status === 'pending_payment') return 'pending';
   return 'error';
+}
+
+function renderAgentBanner(agent) {
+  const el = document.getElementById('agentBanner');
+  if (!el) return;
+
+  if (!agent) {
+    el.textContent = '⚠ Print agent has never checked in. Set it up on the shop PC — see print-agent/README.md.';
+    el.className = 'agent-banner error';
+    return;
+  }
+
+  if (!agent.online) {
+    const mins = Math.round((Date.now() - new Date(agent.lastSeen).getTime()) / 60000);
+    el.textContent = `⚠ Print agent offline — last seen ${mins} minute(s) ago. Jobs will queue up until it reconnects.`;
+    el.className = 'agent-banner error';
+    return;
+  }
+
+  if (agent.printerOk === false) {
+    el.textContent = `⚠ Agent online, but printer problem reported: ${agent.printerMessage || 'unknown issue'}.`;
+    el.className = 'agent-banner error';
+    return;
+  }
+
+  el.textContent = '✓ Print agent online, printer ready.';
+  el.className = 'agent-banner ok';
 }
 
 refresh();

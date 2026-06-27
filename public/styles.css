@@ -312,6 +312,18 @@ table.admin-table th { color: var(--slate); font-weight: 600; text-transform: up
 .kpi .num { font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 700; color: var(--navy); }
 .kpi .lbl { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; font-weight: 600; }
 
+.agent-banner {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  display: none;
+}
+.agent-banner:not(:empty) { display: block; }
+.agent-banner.ok { background: #E6F6EC; color: #1E7B3C; border: 1px solid #BCE6CB; }
+.agent-banner.error { background: #FDECEC; color: #B3261E; border: 1px solid #F6C6C3; }
+
 a.nav-link { color: var(--navy); font-size: 13px; text-decoration: none; font-weight: 600; }
 a.nav-link:hover { color: var(--gold-deep); text-decoration: underline; }
 
