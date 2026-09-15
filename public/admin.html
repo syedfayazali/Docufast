@@ -3,35 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DocuFast India — dashboard</title>
+<title>DocuFast India — shop dashboard</title>
 <link rel="icon" type="image/png" href="/logo-icon.png">
 <link rel="stylesheet" href="/styles.css">
+<style>
+  body { background: #f5f6fa; }
+  .page { max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
+  .key-bar { background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; margin-top: 20px; display: flex; gap: 10px; align-items: flex-end; }
+  .key-bar .field { flex: 1; margin: 0; }
+  .key-bar label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--slate); display: block; margin-bottom: 6px; }
+  .key-bar input { width: 100%; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 6px; font-size: 14px; font-family: 'IBM Plex Mono', monospace; color: var(--navy-deep); }
+  .key-bar input:focus { outline: 2px solid var(--gold); }
+  .load-btn { padding: 11px 24px; background: var(--gold); color: var(--navy-deep); border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: 'Space Grotesk', sans-serif; }
+  .load-btn:hover { background: var(--gold-deep); }
+  .kpi-row { display: flex; gap: 12px; margin-top: 16px; }
+  .kpi { flex: 1; background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 16px; }
+  .kpi .num { font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 700; color: var(--navy); }
+  .kpi .lbl { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; font-weight: 600; }
+  .card { background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 0; margin-top: 16px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--slate); font-weight: 600; border-bottom: 1px solid var(--rule); background: #f8f9fb; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--rule); color: var(--navy-deep); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .code-cell { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--navy); }
+  .pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .pill.paid { background: var(--gold-tint); color: var(--gold-deep); }
+  .pill.printed { background: var(--navy-tint); color: var(--navy); }
+  .pill.pending { background: var(--gold-tint); color: var(--gold-deep); }
+  .pill.error { background: var(--error-tint); color: var(--error); }
+  .retry-btn { padding: 5px 12px; background: transparent; color: var(--navy); border: 1px solid var(--rule); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .retry-btn:hover { border-color: var(--navy); }
+  #statusMsg { font-size: 13px; margin-top: 8px; color: var(--error); display: none; }
+  #loader { text-align: center; padding: 40px; color: var(--slate); font-size: 14px; }
+  #content { display: none; }
+  .shop-name-banner { background: var(--navy); color: #fff; border-radius: 10px; padding: 14px 18px; margin-top: 16px; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
+  .shop-name-banner .badge { font-size: 11px; background: rgba(244,176,0,.2); color: var(--gold); padding: 3px 10px; border-radius: 20px; }
+</style>
 </head>
 <body>
+
 <div class="brand-band">
-  <div class="wrap" style="padding:0 20px;display:flex;align-items:center;justify-content:space-between;">
+  <div style="max-width:900px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;">
     <img src="/logo.png" alt="DocuFast India" style="height:56px;display:block;">
     <span style="font-size:12px;color:var(--slate);font-weight:600;background:var(--navy-tint);padding:4px 12px;border-radius:20px;">Shop Dashboard</span>
   </div>
 </div>
-<div class="wrap">
-  <div class="field" style="margin-top:20px;">
-    <label for="ownerKey">Owner key (needed to retry failed prints)</label>
-    <input type="password" id="ownerKey" placeholder="Paste your AGENT_KEY here">
+
+<div class="page">
+  <div class="key-bar">
+    <div class="field">
+      <label for="shopKey">Your shop API key</label>
+      <input type="password" id="shopKey" placeholder="Paste the API key given to you by DocuFast India">
+    </div>
+    <button class="load-btn" onclick="loadDashboard()">Load my jobs</button>
   </div>
-  <div class="kpi-row">
-    <div class="kpi"><div class="num" id="kpiJobs">0</div><div class="lbl">Total jobs</div></div>
-    <div class="kpi"><div class="num" id="kpiPrinted">0</div><div class="lbl">Printed</div></div>
-    <div class="kpi"><div class="num" id="kpiRevenue">₹0</div><div class="lbl">Revenue</div></div>
+  <div id="statusMsg"></div>
+  <div id="loader" style="display:none;">Loading…</div>
+
+  <div id="content">
+    <div class="shop-name-banner">
+      <span id="shopName">Your shop</span>
+      <span class="badge" id="shopBadge">Active</span>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="num" id="kpiJobs">0</div><div class="lbl">Total jobs</div></div>
+      <div class="kpi"><div class="num" id="kpiPrinted">0</div><div class="lbl">Printed</div></div>
+      <div class="kpi"><div class="num" id="kpiRevenue">₹0</div><div class="lbl">Revenue</div></div>
+      <div class="kpi"><div class="num" id="kpiPending">0</div><div class="lbl">Pending</div></div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>File</th>
+            <th>Pages × copies</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="jobRows"></tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:16px;font-size:13px;color:var(--slate);">
+      Auto-refreshes every 5 seconds. 
+      <a class="nav-link" href="/" style="margin-left:8px;">← Customer upload page</a>
+    </p>
   </div>
-  <div class="card">
-    <table class="admin-table">
-      <thead><tr><th>Code</th><th>File</th><th>Pages×copies</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-      <tbody id="jobRows"></tbody>
-    </table>
-  </div>
-  <p style="margin-top:16px;"><a class="nav-link" href="/">← Back to upload</a></p>
 </div>
+
 <script src="/admin.js"></script>
 </body>
 </html>

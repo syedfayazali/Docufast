@@ -1,44 +1,121 @@
-const ownerKeyInput = document.getElementById('ownerKey');
-ownerKeyInput.value = localStorage.getItem('df_owner_key') || '';
-ownerKeyInput.addEventListener('input', () => localStorage.setItem('df_owner_key', ownerKeyInput.value));
+// Shop dashboard — loads jobs for this specific shop only.
+// Uses the shop's API key to authenticate — each shop only sees their own jobs.
 
-async function refresh() {
-  const res = await fetch('/api/admin/jobs');
-  const data = await res.json();
-  document.getElementById('kpiJobs').textContent = data.jobs.length;
-  document.getElementById('kpiPrinted').textContent = data.jobs.filter(j => j.status === 'printed').length;
-  document.getElementById('kpiRevenue').textContent = '₹' + (data.revenueToday / 100).toFixed(2);
-  const rows = document.getElementById('jobRows');
-  rows.innerHTML = '';
-  data.jobs.forEach(job => {
-    const canRetry = job.status === 'paid' && job.printError;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="code">${job.code}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${job.filename}</td>
-      <td>${job.pages}×${job.copies}</td>
-      <td>₹${(job.amount/100).toFixed(2)}</td>
-      <td><span class="status-pill ${statusClass(job)}">${job.printError?'print failed':job.status.replace('_',' ')}</span></td>
-      <td>${canRetry?`<button class="ghost" style="margin:0;padding:6px 10px;font-size:12px;" data-code="${job.code}">Retry</button>`:''}</td>`;
-    rows.appendChild(tr);
+const shopKeyInput = document.getElementById('shopKey');
+shopKeyInput.value = localStorage.getItem('df_shop_key') || '';
+shopKeyInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadDashboard(); });
+
+let refreshTimer = null;
+
+async function loadDashboard() {
+  const key = shopKeyInput.value.trim();
+  if (!key) { showError('Please paste your shop API key first.'); return; }
+  localStorage.setItem('df_shop_key', key);
+  clearError();
+
+  document.getElementById('loader').style.display = 'block';
+  document.getElementById('content').style.display = 'none';
+
+  // Verify key by calling the agent pending endpoint
+  const res = await fetch('/api/agent/pending', {
+    headers: { 'x-agent-key': key }
   });
-  rows.querySelectorAll('button[data-code]').forEach(btn => btn.addEventListener('click', () => retryPrint(btn.dataset.code)));
+
+  if (res.status === 401) {
+    document.getElementById('loader').style.display = 'none';
+    showError('Invalid API key — please check and try again.');
+    return;
+  }
+
+  // Now load the shop's jobs via admin endpoint with shop key
+  await refresh(key);
+
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+
+  // Auto-refresh every 5 seconds
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => refresh(key), 5000);
 }
 
-async function retryPrint(code) {
-  const key = ownerKeyInput.value.trim();
-  if (!key) { alert('Paste your AGENT_KEY above first.'); return; }
-  const res = await fetch(`/api/admin/jobs/${code}/retry`, { method: 'POST', headers: { 'x-agent-key': key } });
-  if (!res.ok) { const d = await res.json().catch(()=>{}); alert(d?.error || 'Retry failed'); return; }
-  refresh();
+async function refresh(key) {
+  try {
+    const res = await fetch('/api/admin/jobs', {
+      headers: { 'x-shop-key': key }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // KPIs
+    document.getElementById('kpiJobs').textContent = data.jobs.length;
+    document.getElementById('kpiPrinted').textContent = data.jobs.filter(j => j.status === 'printed').length;
+    document.getElementById('kpiPending').textContent = data.jobs.filter(j => j.status === 'paid' || j.status === 'pending_payment').length;
+    document.getElementById('kpiRevenue').textContent = '₹' + (data.revenueToday / 100).toFixed(2);
+
+    // Shop name
+    if (data.shopName) {
+      document.getElementById('shopName').textContent = data.shopName;
+    }
+
+    // Jobs table
+    const rows = document.getElementById('jobRows');
+    rows.innerHTML = '';
+    if (!data.jobs.length) {
+      rows.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--slate);padding:24px;">No jobs yet — share your QR code with customers.</td></tr>';
+      return;
+    }
+
+    data.jobs.forEach(job => {
+      const canRetry = job.status === 'paid' && job.printError;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="code-cell">${job.code}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${job.filename}">${job.filename}</td>
+        <td>${job.pages} × ${job.copies}</td>
+        <td>₹${(job.amount / 100).toFixed(2)}</td>
+        <td style="color:var(--slate);">${job.colorMode === 'color' ? '🟡 Colour' : '⚫ B&W'}${job.duplex ? ' · Duplex' : ''}</td>
+        <td><span class="pill ${statusClass(job)}">${job.printError ? 'Print failed' : job.status.replace('_', ' ')}</span></td>
+        <td>${canRetry ? `<button class="retry-btn" data-code="${job.code}">Retry</button>` : ''}</td>`;
+      rows.appendChild(tr);
+    });
+
+    rows.querySelectorAll('.retry-btn').forEach(btn =>
+      btn.addEventListener('click', () => retryPrint(btn.dataset.code, key))
+    );
+  } catch (err) {
+    console.error('Refresh error:', err);
+  }
+}
+
+async function retryPrint(code, key) {
+  const res = await fetch(`/api/admin/jobs/${code}/retry`, {
+    method: 'POST',
+    headers: { 'x-agent-key': key }
+  });
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    alert(d?.error || 'Retry failed — check your key.');
+    return;
+  }
+  refresh(key);
 }
 
 function statusClass(job) {
   if (job.printError) return 'error';
-  if (job.status === 'paid') return 'paid';
   if (job.status === 'printed') return 'printed';
+  if (job.status === 'paid') return 'paid';
   return 'pending';
 }
 
-refresh();
-setInterval(refresh, 4000);
+function showError(msg) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function clearError() {
+  document.getElementById('statusMsg').style.display = 'none';
+}
+
+// Auto-load if key was saved from last visit
+if (shopKeyInput.value) loadDashboard();
