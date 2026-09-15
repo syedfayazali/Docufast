@@ -16,10 +16,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing filename, fileData, pages, or copies' });
     }
 
-    const copyCount = Math.max(1, parseInt(copies, 10) || 1);
-    const mode = colorMode === 'color' ? 'color' : 'bw';
-    const amount = RATES[mode] * pageCount * copyCount;
-
     const base64 = fileData.includes(',') ? fileData.split(',')[1] : fileData;
     const buffer = Buffer.from(base64, 'base64');
 
@@ -37,13 +33,15 @@ export default async function handler(req, res) {
           console.log(`PDF pages detected: ${pageCount} (client sent: ${pages})`);
         }
       } catch {
-        // pdf-parse failed — fall back to client value
         console.log(`PDF parse failed, using client count: ${pages}`);
       }
     } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)) {
-      pageCount = 1; // images are always 1 page
+      pageCount = 1;
     }
-    // DOCX/DOC: trust the detect-pages endpoint result that was already shown to the customer
+
+    const copyCount = Math.max(1, parseInt(copies, 10) || 1);
+    const mode = colorMode === 'color' ? 'color' : 'bw';
+    const amount = RATES[mode] * pageCount * copyCount;
 
     const code = generateCode();
     const shopId = req.query.shop || req.body.shopId || null;
