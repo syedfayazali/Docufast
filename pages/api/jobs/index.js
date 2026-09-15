@@ -1,4 +1,4 @@
-import { createJob } from '@/lib/db';
+import { createJob, getShopBySlug } from '@/lib/db';
 import { uploadFile } from '@/lib/blob';
 import { generateCode, RATES } from '@/lib/pricing';
 import { createOrder, isConfigured } from '@/lib/razorpay';
@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { filename, fileData, pages, copies, colorMode, duplex } = req.body || {};
+    const { filename, fileData, pages, copies, colorMode, duplex, shopSlug } = req.body || {};
     if (!filename || !fileData || !pages || !copies) {
       return res.status(400).json({ error: 'Missing filename, fileData, pages, or copies' });
     }
@@ -44,7 +44,15 @@ export default async function handler(req, res) {
     const amount = RATES[mode] * pageCount * copyCount;
 
     const code = generateCode();
-    const shopId = req.query.shop || req.body.shopId || null;
+    // Resolve the shop by slug (from the customer's shop-specific link) so a
+    // client can never just claim an arbitrary shopId — and so jobs are
+    // actually visible to the right shop's agent, instead of getting
+    // created with shop_id=NULL and never showing up in that shop's queue.
+    let shopId = null;
+    if (shopSlug) {
+      const shop = await getShopBySlug(shopSlug);
+      if (shop && shop.active) shopId = shop.id;
+    }
 
     console.log('Uploading file to Blob...', filename, buffer.length, 'bytes');
     let blobUrl;

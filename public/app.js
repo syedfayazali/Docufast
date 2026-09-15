@@ -5,6 +5,11 @@
 
 const RATES = { bw: 2, color: 8 }; // ₹ per page (display only — server is the authority)
 
+// Shops link customers here via /?shop=<their-slug> (see /admin for that
+// shop's URL). No slug in the URL just means "no specific shop assigned" —
+// only the legacy single-shop agent setup will pick those jobs up.
+const shopSlug = new URLSearchParams(window.location.search).get('shop');
+
 const state = { file: null, fileData: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single' };
 
 const dropzone = document.getElementById('dropzone');
@@ -113,6 +118,7 @@ payBtn.addEventListener('click', async () => {
         copies: state.copies,
         colorMode: state.colorMode,
         duplex: state.duplex === 'double',
+        shopSlug,
       }),
     });
     createData = await res.json();
