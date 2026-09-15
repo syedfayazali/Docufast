@@ -66,6 +66,33 @@
       <span class="badge" id="shopBadge">Active</span>
     </div>
 
+    <div class="card" id="shopLinkCard" style="display:none; padding:16px 18px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);font-weight:600;margin-bottom:8px;">
+        Your customer link &amp; QR code — this is unique to your shop
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <img id="shopQrImg" alt="Your shop's QR code" width="140" height="140"
+            style="display:block;border:1px solid var(--rule);border-radius:8px;background:#fff;padding:8px;">
+          <a id="downloadQrBtn" class="retry-btn" download="docufast-qr.png"
+            style="display:inline-block;margin-top:8px;text-decoration:none;">Download QR</a>
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input id="shopLinkInput" readonly
+              style="flex:1;padding:10px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--navy-deep);background:#f8f9fb;">
+            <button class="retry-btn" id="copyLinkBtn" onclick="copyShopLink()">Copy</button>
+          </div>
+          <p style="font-size:12px;color:var(--slate);margin-top:10px;">
+            Put this QR code on your counter, window, or a printed poster.
+            Every scan is tagged to your shop, so jobs land only in your queue.
+            Want a full printable poster instead of just the code?
+            <a class="nav-link" id="posterLink" href="#" target="_blank">Open your poster page →</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
     <div class="kpi-row">
       <div class="kpi"><div class="num" id="kpiJobs">0</div><div class="lbl">Total jobs</div></div>
       <div class="kpi"><div class="num" id="kpiPrinted">0</div><div class="lbl">Printed</div></div>

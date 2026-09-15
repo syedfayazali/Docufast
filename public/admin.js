@@ -57,6 +57,46 @@ async function refresh(key) {
       document.getElementById('shopName').textContent = data.shopName;
     }
 
+    // Shop link + QR (only shown for shop-scoped views, not the owner-key view)
+    if (data.shopSlug) {
+      const link = `${window.location.origin}/?shop=${encodeURIComponent(data.shopSlug)}`;
+      document.getElementById('shopLinkInput').value = link;
+
+      // Shop-specific QR — encodes this shop's own link, so scans route
+      // straight to their queue instead of the unrouted shared link.
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(link)}`;
+      const qrImg = document.getElementById('shopQrImg');
+      qrImg.src = qrUrl;
+
+      const downloadBtn = document.getElementById('downloadQrBtn');
+      downloadBtn.href = qrUrl;
+      downloadBtn.download = `docufast-qr-${data.shopSlug}.png`;
+      // The QR image is served cross-origin, so a plain `download` attribute
+      // won't trigger a save in most browsers — fetch it as a blob instead.
+      downloadBtn.onclick = async (e) => {
+        e.preventDefault();
+        try {
+          const resp = await fetch(qrUrl);
+          const blob = await resp.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objectUrl;
+          a.download = `docufast-qr-${data.shopSlug}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(objectUrl);
+        } catch {
+          // Fall back to just opening the image if the fetch/blob path fails.
+          window.open(qrUrl, '_blank');
+        }
+      };
+
+      document.getElementById('posterLink').href = `/signage.html?shop=${encodeURIComponent(data.shopSlug)}`;
+
+      document.getElementById('shopLinkCard').style.display = 'block';
+    }
+
     // Jobs table
     const rows = document.getElementById('jobRows');
     rows.innerHTML = '';
@@ -98,6 +138,21 @@ async function retryPrint(code, key) {
     return;
   }
   refresh(key);
+}
+
+async function copyShopLink() {
+  const input = document.getElementById('shopLinkInput');
+  const btn = document.getElementById('copyLinkBtn');
+  try {
+    await navigator.clipboard.writeText(input.value);
+  } catch {
+    // Clipboard API can fail (older browser, non-HTTPS) — fall back to a manual select
+    input.select();
+    document.execCommand('copy');
+  }
+  const original = btn.textContent;
+  btn.textContent = 'Copied!';
+  setTimeout(() => { btn.textContent = original; }, 1500);
 }
 
 function statusClass(job) {
