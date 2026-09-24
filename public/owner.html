@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuFast India — owner dashboard</title>
+<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<style>
+  body { background: #f5f6fa; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+  .top-bar { background: var(--white); border-bottom: 3px solid #F4B000; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .top-bar .logo { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #0A2E6E; }
+  .top-bar .logo span { color: #F4B000; }
+  .owner-badge { font-size: 11px; background: #E7ECF7; color: #0A2E6E; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .top-right { display: flex; align-items: center; gap: 12px; }
+  .key-field { font-size: 13px; padding: 6px 10px; border: 1px solid #E2E6EE; border-radius: 6px; background: #fff; color: #071F4D; width: 220px; }
+  .key-field::placeholder { color: #8A91A3; }
+  .load-btn { font-size: 13px; padding: 6px 14px; background: #F4B000; color: #071F4D; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 0 0; }
+  .kpi { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 16px 18px; }
+  .kpi .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 600; }
+  .kpi .num { font-size: 26px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: #0A2E6E; margin-top: 6px; }
+  .kpi .sub { font-size: 11px; color: #8A91A3; margin-top: 3px; }
+  .kpi.warn .num { color: #B8762A; }
+  .section-title { font-size: 13px; font-weight: 600; color: #5B6478; text-transform: uppercase; letter-spacing: .05em; margin: 20px 0 10px; display: flex; align-items: center; justify-content: space-between; }
+  .add-shop-btn { font-size: 12px; color: #0A2E6E; border: 1px solid #0A2E6E; padding: 4px 12px; border-radius: 6px; cursor: pointer; background: #fff; font-weight: 600; }
+  .shops-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; overflow: hidden; }
+  .shops-table th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 600; border-bottom: 1px solid #E2E6EE; background: #f8f9fb; }
+  .shops-table th:not(:first-child) { text-align: right; }
+  .shops-table td { padding: 12px 14px; border-bottom: 1px solid #E2E6EE; font-size: 13px; color: #071F4D; vertical-align: middle; }
+  .shops-table td:not(:first-child) { text-align: right; }
+  .shops-table tr:last-child td { border-bottom: none; }
+  .shops-table tr:hover td { background: #f8f9fb; cursor: pointer; }
+  .shop-name { font-weight: 600; color: #0A2E6E; }
+  .shop-city { font-size: 11px; color: #8A91A3; margin-top: 1px; }
+  .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+  .pill.online { background: #E3EEE5; color: #2E6B4F; }
+  .pill.offline { background: #F5E2DE; color: #C0412B; }
+  .pill.warn { background: #F3E6CF; color: #B8762A; }
+  .pill.active { background: #E7ECF7; color: #0A2E6E; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+  .link-btn { font-size: 12px; color: #0A2E6E; border: 1px solid #E2E6EE; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: #fff; font-weight: 600; }
+  .link-btn:hover { border-color: #0A2E6E; }
+  .qr-popover { display: none; position: fixed; z-index: 200; background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 16px; box-shadow: 0 8px 24px rgba(7,31,77,.18); text-align: center; }
+  .qr-popover.open { display: block; }
+  .qr-popover img { width: 160px; height: 160px; display: block; margin: 0 auto 10px; border: 1px solid #E2E6EE; border-radius: 6px; }
+  .qr-popover input { width: 220px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; padding: 6px 8px; border: 1px solid #E2E6EE; border-radius: 6px; color: #071F4D; margin-bottom: 8px; }
+  .qr-popover-close { position: absolute; top: 8px; right: 10px; cursor: pointer; color: #8A91A3; font-size: 14px; background: none; border: none; }
+  .printer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .printer-card { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 12px 14px; }
+  .printer-shop-lbl { font-size: 10px; color: #8A91A3; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .printer-name { font-size: 13px; font-weight: 600; color: #0A2E6E; margin: 3px 0 2px; }
+  .printer-status { font-size: 11px; }
+  .printer-status.online { color: #2E6B4F; }
+  .printer-status.offline { color: #C0412B; }
+  .printer-status.warn { color: #B8762A; }
+  .recent-jobs { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; overflow: hidden; }
+  .job-row { display: grid; grid-template-columns: 80px 1fr 120px 100px 90px 90px; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #E2E6EE; align-items: center; font-size: 12px; }
+  .job-row.hdr { background: #f8f9fb; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 600; }
+  .job-code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #0A2E6E; font-size: 13px; }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(7,31,77,.5); z-index: 100; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 24px; width: 440px; }
+  .modal h3 { font-size: 16px; font-weight: 700; color: #0A2E6E; margin-bottom: 16px; }
+  .form-field { margin-bottom: 14px; }
+  .form-field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; margin-bottom: 5px; }
+  .form-field input { width: 100%; padding: 9px 12px; border: 1px solid #E2E6EE; border-radius: 6px; font-size: 14px; color: #071F4D; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+  .btn-primary { flex: 1; padding: 10px; background: #F4B000; color: #071F4D; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-ghost { flex: 1; padding: 10px; background: transparent; color: #5B6478; border: 1px solid #E2E6EE; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .api-key-box { background: #E7ECF7; border-radius: 8px; padding: 12px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #0A2E6E; word-break: break-all; margin-top: 14px; }
+  .msg { font-size: 13px; color: #C0412B; margin-top: 8px; }
+  #loader { text-align: center; padding: 40px; color: #8A91A3; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <img src="/logo.png" alt="DocuFast India" style="height:48px;display:block;">
+    <span class="owner-badge">Owner admin</span>
+  </div>
+  <div class="top-right">
+    <input class="key-field" type="password" id="ownerKey" placeholder="Owner key…">
+    <button class="load-btn" onclick="loadDashboard()">Load</button>
+  </div>
+</div>
+
+<div class="page">
+  <div id="loader">Enter your owner key above to load the dashboard.</div>
+  <div id="content" style="display:none;">
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="lbl">Revenue today</div><div class="num" id="kpiTodayRev">₹0</div><div class="sub" id="kpiTodayJobs">0 jobs</div></div>
+      <div class="kpi"><div class="lbl">Revenue this month</div><div class="num" id="kpiMonthRev">₹0</div><div class="sub" id="kpiShops">0 shops</div></div>
+      <div class="kpi"><div class="lbl">Jobs today</div><div class="num" id="kpiJobs">0</div><div class="sub">across all shops</div></div>
+      <div class="kpi warn" id="kpiPrinterCard"><div class="lbl">Printers online</div><div class="num" id="kpiPrinters">—</div><div class="sub" id="kpiPrinterSub"></div></div>
+    </div>
+
+    <div class="section-title">
+      All shops
+      <button class="add-shop-btn" onclick="openAddShop()">+ Add shop</button>
+    </div>
+
+    <table class="shops-table">
+      <thead>
+        <tr>
+          <th>Shop</th>
+          <th>Today ₹</th>
+          <th>Month ₹</th>
+          <th>Jobs today</th>
+          <th>Printers</th>
+          <th>Status</th>
+          <th>Link / QR</th>
+        </tr>
+      </thead>
+      <tbody id="shopsBody"></tbody>
+    </table>
+
+    <div class="section-title" style="margin-top:24px;">Printer status — all shops</div>
+    <div class="printer-grid" id="printerGrid"></div>
+
+    <div class="section-title" style="margin-top:24px;">Recent jobs</div>
+    <div class="recent-jobs">
+      <div class="job-row hdr">
+        <span>Code</span><span>File</span><span>Shop</span><span>Amount</span><span>Type</span><span>Status</span>
+      </div>
+      <div id="jobsBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add shop modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Add new shop</h3>
+    <div id="modalForm">
+      <div class="form-field"><label>Shop name</label><input id="fName" placeholder="e.g. Mahabubnagar Main"></div>
+      <div class="form-field"><label>URL slug</label><input id="fSlug" placeholder="e.g. mahabubnagar-main"></div>
+      <div class="form-field"><label>City</label><input id="fCity" placeholder="e.g. Mahabubnagar"></div>
+      <div class="form-field"><label>Address</label><input id="fAddress" placeholder="e.g. Opp. Bus Stand"></div>
+      <div class="msg" id="formMsg"></div>
+      <div class="modal-btns">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" onclick="submitShop()">Create shop</button>
+      </div>
+    </div>
+    <div id="modalResult" style="display:none;">
+      <div style="font-size:13px;color:#2E6B4F;font-weight:600;">Shop created successfully</div>
+      <div style="font-size:13px;color:#5B6478;margin-top:8px;">Share this API key with the shop owner to configure their print agent:</div>
+      <div class="api-key-box" id="newApiKey"></div>
+      <div style="font-size:12px;color:#C0412B;margin-top:8px;">Save this key — it won't be shown again.</div>
+      <div class="modal-btns">
+        <button class="btn-primary" onclick="closeModal();loadDashboard();">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QR / link popover (shared, repositioned per shop) -->
+<div class="qr-popover" id="qrPopover" style="position:relative;">
+  <button class="qr-popover-close" onclick="closeQrPopover()">✕</button>
+  <img id="qrPopoverImg" alt="Shop QR code">
+  <input id="qrPopoverLink" readonly onclick="this.select()">
+  <div style="display:flex;gap:8px;">
+    <button class="link-btn" style="flex:1;" onclick="copyPopoverLink()">Copy link</button>
+    <button class="link-btn" style="flex:1;" id="qrPopoverPoster">Open poster</button>
+  </div>
+</div>
+
+<script>
+const ownerKeyInput = document.getElementById('ownerKey');
+ownerKeyInput.value = localStorage.getItem('df_owner_key') || '';
+
+function getKey() { return ownerKeyInput.value.trim(); }
+function saveKey() { localStorage.setItem('df_owner_key', getKey()); }
+
+async function loadDashboard() {
+  saveKey();
+  const key = getKey();
+  if (!key) { document.getElementById('loader').textContent = 'Enter your owner key above.'; return; }
+  document.getElementById('loader').textContent = 'Loading…';
+  document.getElementById('content').style.display = 'none';
+
+  const [statsRes, jobsRes] = await Promise.all([
+    fetch('/api/owner/stats', { headers: { 'x-owner-key': key } }),
+    fetch('/api/owner/jobs', { headers: { 'x-owner-key': key } }),
+  ]);
+
+  if (!statsRes.ok) {
+    document.getElementById('loader').textContent = statsRes.status === 401 ? 'Invalid owner key.' : 'Failed to load — check console.';
+    return;
+  }
+
+  const stats = await statsRes.json();
+  const { jobs } = await jobsRes.json();
+
+  renderKPIs(stats);
+  renderShops(stats.shops, stats.printers);
+  renderPrinters(stats.printers);
+  renderJobs(jobs, stats.shops);
+
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+function fmt(paise) { return '₹' + (paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
+
+function renderKPIs(s) {
+  document.getElementById('kpiTodayRev').textContent = fmt(s.todayRevenue);
+  document.getElementById('kpiTodayJobs').textContent = s.todayJobs + ' jobs today';
+  document.getElementById('kpiMonthRev').textContent = fmt(s.monthRevenue);
+  document.getElementById('kpiShops').textContent = (s.shops?.length || 0) + ' active shops';
+  document.getElementById('kpiJobs').textContent = s.todayJobs;
+  document.getElementById('kpiPrinters').textContent = `${s.printersOnline} / ${s.printersTotal}`;
+  document.getElementById('kpiPrinterSub').textContent = s.printersOnline < s.printersTotal
+    ? `${s.printersTotal - s.printersOnline} offline right now` : 'all online';
+  document.getElementById('kpiPrinterCard').className = 'kpi' + (s.printersOnline < s.printersTotal ? ' warn' : '');
+}
+
+function renderShops(shops, printers) {
+  const body = document.getElementById('shopsBody');
+  body.innerHTML = '';
+  if (!shops?.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8A91A3;padding:20px;">No shops yet — add one above.</td></tr>'; return; }
+  shops.forEach(s => {
+    const shopPrinters = (printers || []).filter(p => p.shop_id === s.id);
+    const onlineCount = shopPrinters.filter(p => p.status === 'online').length;
+    const total = shopPrinters.length;
+    const printerPill = total === 0 ? '<span class="pill warn">No printers</span>'
+      : onlineCount === total ? `<span class="pill online"><span class="dot"></span>${onlineCount}/${total}</span>`
+      : onlineCount === 0 ? `<span class="pill offline"><span class="dot"></span>0/${total}</span>`
+      : `<span class="pill warn"><span class="dot"></span>${onlineCount}/${total}</span>`;
+    const tr = document.createElement('tr');
+    const stuckBadge = s.stuckJobs > 0
+      ? `<span class="pill offline" style="margin-left:6px;" title="Paid but unprinted for 15+ minutes — the shop's agent is likely offline">⚠ ${s.stuckJobs} stuck</span>`
+      : '';
+    tr.innerHTML = `
+      <td><div class="shop-name">${s.name}${stuckBadge}</div><div class="shop-city">${s.city || s.slug}</div></td>
+      <td>${fmt(parseInt(s.today_revenue) || 0)}</td>
+      <td>${fmt(parseInt(s.month_revenue) || 0)}</td>
+      <td>${s.today_jobs || 0}</td>
+      <td>${printerPill}</td>
+      <td><span class="pill ${s.active ? 'active' : 'offline'}">${s.active ? 'Active' : 'Paused'}</span></td>
+      <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+function showQrPopover(evt, slug) {
+  const link = `${window.location.origin}/?shop=${encodeURIComponent(slug)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(link)}`;
+  document.getElementById('qrPopoverImg').src = qrUrl;
+  document.getElementById('qrPopoverLink').value = link;
+  document.getElementById('qrPopoverPoster').onclick = () => window.open(`/signage.html?shop=${encodeURIComponent(slug)}`, '_blank');
+
+  const pop = document.getElementById('qrPopover');
+  pop.style.position = 'fixed';
+  const rect = evt.target.getBoundingClientRect();
+  pop.style.top = `${rect.bottom + 6}px`;
+  pop.style.left = `${Math.min(rect.left, window.innerWidth - 260)}px`;
+  pop.classList.add('open');
+}
+
+function closeQrPopover() {
+  document.getElementById('qrPopover').classList.remove('open');
+}
+
+async function copyPopoverLink() {
+  const input = document.getElementById('qrPopoverLink');
+  try { await navigator.clipboard.writeText(input.value); }
+  catch { input.select(); document.execCommand('copy'); }
+}
+
+// Close the popover on an outside click, but not when the click is what opened it.
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('qrPopover');
+  if (pop.classList.contains('open') && !pop.contains(e.target)) closeQrPopover();
+});
+
+function renderPrinters(printers) {
+  const grid = document.getElementById('printerGrid');
+  grid.innerHTML = '';
+  if (!printers?.length) { grid.innerHTML = '<div style="color:#8A91A3;font-size:13px;grid-column:span 3;">No printers registered yet.</div>'; return; }
+  printers.forEach(p => {
+    const minsAgo = p.last_seen ? Math.round((Date.now() - new Date(p.last_seen)) / 60000) : null;
+    const statusClass = p.status === 'online' ? 'online' : minsAgo !== null && minsAgo < 15 ? 'warn' : 'offline';
+    const statusText = p.status === 'online' ? `Online · ${p.jobs_today || 0} jobs today`
+      : minsAgo !== null ? `Offline ${minsAgo} min` : 'Never connected';
+    const div = document.createElement('div');
+    div.className = 'printer-card';
+    div.innerHTML = `<div class="printer-shop-lbl">${p.shop_name || ''}</div>
+      <div class="printer-name">${p.name}</div>
+      <div class="printer-status ${statusClass}">${statusText}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+function renderJobs(jobs, shops) {
+  const shopMap = {};
+  (shops || []).forEach(s => { shopMap[s.id] = s.name; });
+  const body = document.getElementById('jobsBody');
+  body.innerHTML = '';
+  jobs.slice(0, 50).forEach(j => {
+    const statusColor = j.status === 'printed' ? '#2E6B4F' : j.printError ? '#C0412B' : '#B8762A';
+    const div = document.createElement('div');
+    div.className = 'job-row';
+    div.innerHTML = `
+      <span class="job-code">${j.code}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${j.filename}</span>
+      <span style="color:#5B6478;">${j.shopId ? (shopMap[j.shopId] || j.shopId) : '—'}</span>
+      <span>₹${((j.amount || 0) / 100).toFixed(2)}</span>
+      <span>${j.colorMode === 'color' ? 'Colour' : 'B&W'} ${j.duplex ? '·D' : ''}</span>
+      <span style="color:${statusColor};font-weight:600;">${j.printError ? 'Failed' : j.status}</span>`;
+    body.appendChild(div);
+  });
+}
+
+function openAddShop() {
+  document.getElementById('modalForm').style.display = 'block';
+  document.getElementById('modalResult').style.display = 'none';
+  document.getElementById('modalTitle').textContent = 'Add new shop';
+  document.getElementById('formMsg').textContent = '';
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
+
+document.getElementById('fName').addEventListener('input', function () {
+  const slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  document.getElementById('fSlug').value = slug;
+});
+
+async function submitShop() {
+  const key = getKey();
+  const name = document.getElementById('fName').value.trim();
+  const slug = document.getElementById('fSlug').value.trim();
+  const city = document.getElementById('fCity').value.trim();
+  const address = document.getElementById('fAddress').value.trim();
+  const msg = document.getElementById('formMsg');
+  if (!name || !slug) { msg.textContent = 'Name and slug are required.'; return; }
+  msg.textContent = '';
+  const res = await fetch('/api/owner/shops', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-owner-key': key },
+    body: JSON.stringify({ name, slug, city, address }),
+  });
+  const data = await res.json();
+  if (!res.ok) { msg.textContent = data.error || 'Failed to create shop.'; return; }
+  document.getElementById('modalForm').style.display = 'none';
+  document.getElementById('modalResult').style.display = 'block';
+  document.getElementById('modalTitle').textContent = data.shop.name;
+  document.getElementById('newApiKey').textContent = data.shop.api_key;
+}
+
+if (ownerKeyInput.value) loadDashboard();
+setInterval(() => { if (getKey() && document.getElementById('content').style.display !== 'none') loadDashboard(); }, 30000);
+</script>
+</body>
+</html>
