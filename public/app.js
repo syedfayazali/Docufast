@@ -21,6 +21,51 @@ const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB
 // only the legacy single-shop agent setup will pick those jobs up.
 const shopSlug = new URLSearchParams(window.location.search).get('shop');
 
+// Compresses photo uploads client-side before they ever leave the browser.
+// A modern phone photo is routinely 8-15MB at 12+ megapixels — way more
+// resolution than printing actually needs — and every byte trimmed here is
+// a byte never charged for Blob storage or the bandwidth of downloading it
+// back down to the shop's PC to print. Runs entirely in the browser via
+// Canvas, no library needed.
+//
+// PDFs are deliberately left untouched: reliably recompressing an existing
+// PDF's embedded images needs a much heavier library and real testing
+// against varied real-world files — a subtly-corrupted customer ID proof
+// or certificate is a far worse outcome than the storage cost saved, so
+// this isn't attempted here.
+const COMPRESSIBLE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp'];
+const MAX_IMAGE_DIMENSION = 2480; // ~A4 at 300dpi — plenty for a printed page
+const JPEG_QUALITY = 0.82;
+
+async function compressImageIfNeeded(file) {
+  if (!COMPRESSIBLE_TYPES.includes(file.type)) return file;
+
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) return file; // decode failed for some reason — upload the original rather than block the customer
+
+  let { width, height } = bitmap;
+  if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+    const scale = MAX_IMAGE_DIMENSION / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+  bitmap.close?.();
+
+  const compressedBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY));
+  if (!compressedBlob || compressedBlob.size >= file.size) return file; // didn't actually help — keep the original
+
+  // Re-encoded as JPEG regardless of the original format, so rename to
+  // match — avoids a .png file that's actually JPEG bytes confusing
+  // anything downstream that sniffs the extension.
+  const newName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+  return new File([compressedBlob], newName, { type: 'image/jpeg' });
+}
+
 const state = { file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single' };
 
 const dropzone = document.getElementById('dropzone');
@@ -39,6 +84,16 @@ dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
 async function handleFile(file) {
+  if (COMPRESSIBLE_TYPES.includes(file.type)) {
+    filenameLabel.textContent = file.name;
+    document.getElementById('pagesNote').textContent = 'Compressing image…';
+    const before = file.size;
+    file = await compressImageIfNeeded(file);
+    if (file.size < before) {
+      console.log(`Compressed ${(before / 1024 / 1024).toFixed(1)}MB -> ${(file.size / 1024 / 1024).toFixed(1)}MB`);
+    }
+  }
+
   if (file.size > MAX_UPLOAD_BYTES) {
     alert(`That file is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is ${MAX_UPLOAD_BYTES / 1024 / 1024}MB.`);
     return;
