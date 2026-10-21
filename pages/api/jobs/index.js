@@ -1,4 +1,4 @@
-import { createJob, getShopBySlug } from '@/lib/db';
+import { createJob, getShopBySlug, getOnlyActiveShop } from '@/lib/db';
 import { generateCode, RATES } from '@/lib/pricing';
 import { createOrder, isConfigured } from '@/lib/razorpay';
 // pdf-parse is imported dynamically inside the handler to avoid
@@ -86,6 +86,13 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
   if (shopSlug) {
     const shop = await getShopBySlug(shopSlug);
     if (shop && shop.active) shopId = shop.id;
+  }
+  // No (or unknown) shop link: if the platform has only one active shop the
+  // job can only mean that shop. Otherwise it would sit with shop_id NULL
+  // and no agent would ever pick it up after payment.
+  if (!shopId) {
+    const only = await getOnlyActiveShop();
+    if (only) shopId = only.id;
   }
 
   const baseJob = {

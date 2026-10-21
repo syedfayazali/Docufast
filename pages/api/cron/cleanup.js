@@ -15,7 +15,7 @@
 // Runs on Vercel Cron (see vercel.json) — set CRON_SECRET in your env vars
 // and Vercel automatically sends it as a Bearer token on every cron
 // invocation, which is what the check below verifies.
-import { findAbandonedJobs, findStaleFailedJobs, markJobExpired, clearJobBlob } from '@/lib/db';
+import { findAbandonedJobs, findStaleFailedJobs, markJobExpired, clearJobBlob, findExpiredPrintedBlobs } from '@/lib/db';
 import { deleteFile } from '@/lib/blob';
 
 export default async function handler(req, res) {
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const results = { abandoned: 0, staleFailed: 0, errors: [] };
+  const results = { abandoned: 0, staleFailed: 0, printedPurged: 0, errors: [] };
 
   try {
     const abandoned = await findAbandonedJobs(2); // 2 hours
@@ -46,6 +46,15 @@ export default async function handler(req, res) {
         await deleteFile(job.blob_url);
         await clearJobBlob(job.code);
         results.staleFailed++;
+      } catch (err) {
+        results.errors.push(`${job.code}: ${err.message}`);
+      }
+    }
+    for (const job of await findExpiredPrintedBlobs()) {
+      try {
+        await deleteFile(job.blob_url);
+        await clearJobBlob(job.code);
+        results.printedPurged++;
       } catch (err) {
         results.errors.push(`${job.code}: ${err.message}`);
       }
