@@ -112,7 +112,7 @@
           <th>Jobs today</th>
           <th>Printers</th>
           <th>Status</th>
-          <th>Link / QR</th>
+          <th>Link / Key</th>
         </tr>
       </thead>
       <tbody id="shopsBody"></tbody>
@@ -148,7 +148,7 @@
       </div>
     </div>
     <div id="modalResult" style="display:none;">
-      <div style="font-size:13px;color:#2E6B4F;font-weight:600;">Shop created successfully</div>
+      <div id="resultHeading" style="font-size:13px;color:#2E6B4F;font-weight:600;">Shop created successfully</div>
       <div style="font-size:13px;color:#5B6478;margin-top:8px;">Share this API key with the shop owner to configure their print agent:</div>
       <div class="api-key-box" id="newApiKey"></div>
       <div style="font-size:12px;color:#C0412B;margin-top:8px;">Save this key — it won't be shown again.</div>
@@ -225,6 +225,7 @@ function renderShops(shops, printers) {
   body.innerHTML = '';
   if (!shops?.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8A91A3;padding:20px;">No shops yet — add one above.</td></tr>'; return; }
   shops.forEach(s => {
+    shopNames[s.id] = s.name;
     const shopPrinters = (printers || []).filter(p => p.shop_id === s.id);
     const onlineCount = shopPrinters.filter(p => p.status === 'online').length;
     const total = shopPrinters.length;
@@ -243,9 +244,30 @@ function renderShops(shops, printers) {
       <td>${s.today_jobs || 0}</td>
       <td>${printerPill}</td>
       <td><span class="pill ${s.active ? 'active' : 'offline'}">${s.active ? 'Active' : 'Paused'}</span></td>
-      <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button></td>`;
+      <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button>
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button></td>`;
+    tr.dataset.shopName = s.name;
     body.appendChild(tr);
   });
+}
+
+const shopNames = {};
+async function rotateKey(id) {
+  const name = (shopNames[id]) || 'this shop';
+  if (!confirm('Issue a NEW key for ' + name + '?\n\nThe old key stops working immediately and the shop\'s print agent will go offline until you enter the new key in it.')) return;
+  const res = await fetch('/api/shops/' + encodeURIComponent(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    body: JSON.stringify({ rotateKey: true }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(data.error || 'Could not rotate the key.'); return; }
+  document.getElementById('modalForm').style.display = 'none';
+  document.getElementById('modalResult').style.display = 'block';
+  document.getElementById('modalTitle').textContent = 'New key for ' + name;
+  document.getElementById('resultHeading').textContent = 'New key issued — the old key no longer works';
+  document.getElementById('newApiKey').textContent = data.apiKey;
+  document.getElementById('modalBg').classList.add('open');
 }
 
 function showQrPopover(evt, slug) {
@@ -350,6 +372,7 @@ async function submitShop() {
   document.getElementById('modalForm').style.display = 'none';
   document.getElementById('modalResult').style.display = 'block';
   document.getElementById('modalTitle').textContent = data.shop.name;
+  document.getElementById('resultHeading').textContent = 'Shop created successfully';
   document.getElementById('newApiKey').textContent = data.shop.api_key;
 }
 
