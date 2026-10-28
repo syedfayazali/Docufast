@@ -7,7 +7,7 @@
 // up the latest orders. Data never leaves the server.
 //
 // Protected by MIGRATE_TOKEN (set it in Vercel, then remove it afterwards):
-//   POST /api/admin/migrate-db   header  x-migrate-token: <MIGRATE_TOKEN>
+//   GET or POST /api/admin/migrate-db?token=<MIGRATE_TOKEN>  (or header x-migrate-token)
 import { Pool } from 'pg';
 import crypto from 'crypto';
 
@@ -23,8 +23,9 @@ const TABLES = [
 ];
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
-  if (!process.env.MIGRATE_TOKEN || !same(req.headers['x-migrate-token'], process.env.MIGRATE_TOKEN)) {
+  // GET or POST. The token may be sent as a header or as ?token= (temporary tool, deleted after use).
+  const given = req.headers['x-migrate-token'] || req.query.token;
+  if (!process.env.MIGRATE_TOKEN || !same(given, process.env.MIGRATE_TOKEN)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   const target = process.env.SUPABASE_DB_URL;
