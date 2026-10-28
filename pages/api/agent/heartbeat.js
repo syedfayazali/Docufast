@@ -1,3 +1,4 @@
+import { isOwner, isLegacyAgentKey } from '@/lib/auth';
 // Each shop's agent calls this on startup and periodically thereafter.
 // It identifies itself with the shop's api_key (x-agent-key header),
 // registers its printer by name, and gets back a printerId to stamp on jobs.
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
 
   // Support both old AGENT_KEY (single-shop) and per-shop api_key
   let shopId = null;
-  if (agentKey === process.env.AGENT_KEY) {
+  if (isLegacyAgentKey(agentKey)) {
     // Legacy single-shop mode — no shopId, so no machine-binding to check.
   } else {
     const shop = await getShopByApiKey(agentKey);

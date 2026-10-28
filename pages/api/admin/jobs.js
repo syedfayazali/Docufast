@@ -1,3 +1,4 @@
+import { isOwner, isLegacyAgentKey } from '@/lib/auth';
 import { listRecentJobs, publicView, getShopByApiKey } from '@/lib/db';
 
 export default async function handler(req, res) {
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
     shopId = shop.id;
     shopName = shop.name;
     shopSlug = shop.slug;
-  } else if (ownerKey !== process.env.OWNER_KEY) {
+  } else if (!isOwner(req)) {
     // Neither shop key nor owner key — unauthorized
     return res.status(401).json({ error: 'Unauthorized' });
   }

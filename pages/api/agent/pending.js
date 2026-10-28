@@ -1,3 +1,4 @@
+import { isOwner, isLegacyAgentKey } from '@/lib/auth';
 import {
   getShopByApiKey, listPendingPrintJobs, assignPrinter, checkAndBindMachine,
   claimUnassignedJobs, listRecentUnpaidRazorpayJobs, markPaid,
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
   const machineId = req.headers['x-machine-id'] || null;
 
   let shopId = null;
-  if (agentKey !== process.env.AGENT_KEY) {
+  if (!isLegacyAgentKey(agentKey)) {
     const shop = await getShopByApiKey(agentKey);
     if (!shop) return res.status(401).json({ error: 'Invalid agent key' });
     shopId = shop.id;

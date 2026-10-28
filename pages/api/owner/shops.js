@@ -1,8 +1,5 @@
+import { isOwner, isLegacyAgentKey } from '@/lib/auth';
 import { listShops, createShop, ensureSchema } from '@/lib/db';
-
-function isOwner(req) {
-  return req.headers['x-owner-key'] === process.env.OWNER_KEY;
-}
 
 export default async function handler(req, res) {
   if (!isOwner(req)) return res.status(401).json({ error: 'Unauthorized' });
