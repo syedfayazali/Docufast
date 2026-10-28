@@ -1,3 +1,4 @@
+import { readBytes } from '@/lib/privateBlob';
 // Detects page count server-side before payment so the customer sees
 // the correct price. Accepts a base64-encoded file and returns the
 // page count. The result is shown to the customer and confirmed before
@@ -25,9 +26,11 @@ async function bufferFromRequest(req) {
     // /api/blob-upload-token). We just fetch it back server-side to detect
     // pages; an outbound fetch has no serverless-request-body-size cap the
     // way an inbound POST does.
-    const resp = await fetch(blobUrl);
-    if (!resp.ok) throw Object.assign(new Error('Could not fetch uploaded file'), { status: 502 });
-    return Buffer.from(await resp.arrayBuffer());
+    try {
+      return await readBytes(blobUrl);
+    } catch (e) {
+      throw Object.assign(new Error('Could not fetch uploaded file'), { status: 502 });
+    }
   }
 
   if (fileData) {

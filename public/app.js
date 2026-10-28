@@ -4,7 +4,18 @@
 //   the comment on MAX_UPLOAD_BYTES below for why) → detect pages →
 //   POST /api/jobs (gets razorpayOrderId) → open Razorpay modal →
 //   on success, POST /api/verify-payment → show ticket + poll until printed.
-import { upload } from 'https://esm.sh/@vercel/blob@0.27.0/client';
+import { upload as uploadPublic } from 'https://esm.sh/@vercel/blob@0.27.0/client';
+
+// New uploads go to the PRIVATE store once the server says it is enabled
+// (/api/config -> privateUploads); until then the original public store is
+// used unchanged.
+let privateModeP = null;
+function privateUploadsEnabled() {
+  if (!privateModeP) {
+    privateModeP = fetch('/api/config').then(r => r.json()).then(c => !!c.privateUploads).catch(() => false);
+  }
+  return privateModeP;
+}
 
 const RATES = { bw: 2, color: 8 }; // ₹ per page (display only — server is the authority)
 
@@ -109,13 +120,22 @@ async function handleFile(file) {
   document.getElementById('pagesNote').textContent = 'Uploading file…';
 
   try {
-    const blob = await upload(file.name, file, {
-      access: 'public',
-      handleUploadUrl: '/api/blob-upload-token',
-      onUploadProgress: ({ percentage }) => {
-        payBtn.textContent = `Uploading… ${percentage}%`;
-      },
-    });
+    const onUploadProgress = ({ percentage }) => { payBtn.textContent = `Uploading… ${percentage}%`; };
+    let blob;
+    if (await privateUploadsEnabled()) {
+      const { upload: uploadPrivate } = await import('https://esm.sh/@vercel/blob@2.8.2/client');
+      blob = await uploadPrivate(file.name, file, {
+        access: 'private',
+        handleUploadUrl: '/api/blob-upload-token?private=1',
+        onUploadProgress,
+      });
+    } else {
+      blob = await uploadPublic(file.name, file, {
+        access: 'public',
+        handleUploadUrl: '/api/blob-upload-token',
+        onUploadProgress,
+      });
+    }
     state.blobUrl = blob.url;
   } catch (err) {
     document.getElementById('pagesNote').textContent = 'Upload failed — please try again.';

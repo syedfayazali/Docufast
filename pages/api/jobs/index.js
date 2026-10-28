@@ -1,6 +1,7 @@
 import { createJob, getShopBySlug, getOnlyActiveShop } from '@/lib/db';
 import { generateCode, RATES } from '@/lib/pricing';
 import { createOrder, isConfigured } from '@/lib/razorpay';
+import { readBytes } from '@/lib/privateBlob';
 // pdf-parse is imported dynamically inside the handler to avoid
 // Vercel edge runtime issues with native modules
 
@@ -25,9 +26,11 @@ export default async function handler(req, res) {
       // New path — file is already uploaded, just verify it's actually
       // reachable and grab the bytes for authoritative server-side page
       // counting (never trust the client-reported page count for billing).
-      const resp = await fetch(blobUrl);
-      if (!resp.ok) return res.status(400).json({ error: 'Uploaded file could not be verified' });
-      buffer = Buffer.from(await resp.arrayBuffer());
+      try {
+        buffer = await readBytes(blobUrl);
+      } catch (err) {
+        return res.status(400).json({ error: 'Uploaded file could not be verified' });
+      }
       finalBlobUrl = blobUrl;
     } else {
       // Legacy path — small file sent inline as base64. Still uploads to

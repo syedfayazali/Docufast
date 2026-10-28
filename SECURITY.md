@@ -1,21 +1,23 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+DocuFast handles customers' personal documents (ID proofs, certificates), so we
+treat security reports seriously.
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+## Reporting a vulnerability
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+Please report it privately through GitHub: open this repository's **Security**
+tab and choose **Report a vulnerability**. Do not open a public issue.
 
-## Reporting a Vulnerability
+Include what you found, how to reproduce it, and what it could expose. We aim to
+reply within 3 working days and to fix confirmed problems as quickly as we can.
 
-Use this section to tell people how to report a vulnerability.
+## How customer files are handled
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+- Uploaded files are stored in private storage and are never reachable by a
+  public link.
+- A shop's print agent downloads a file through a signed link that expires
+  after 10 minutes.
+- Files are deleted automatically: unpaid uploads after 2 hours, printed files
+  30 minutes after printing, failed jobs after 48 hours.
+- A customer can ask for earlier deletion by contacting the shop with the job
+  code.

@@ -5,6 +5,8 @@ import {
 } from '@/lib/db';
 import { findCapturedPayment, isConfigured } from '@/lib/razorpay';
 import { deleteFile } from '@/lib/blob';
+import { privateEnabled, signFileLink } from '@/lib/privateBlob';
+import { getBaseUrl } from '@/lib/baseUrl';
 
 // Per-shop throttle for the Razorpay reconcile below (best effort — resets
 // on cold start, which only means one extra check).
@@ -82,7 +84,9 @@ export default async function handler(req, res) {
     jobs: jobs.map(j => ({
       code: j.code,
       filename: j.filename,
-      blobUrl: j.blob_url,
+      // With private storage on, the agent gets a 10-minute signed link to
+      // our download route instead of a permanent file address.
+      blobUrl: privateEnabled() ? signFileLink(getBaseUrl(req), j.code) : j.blob_url,
       copies: j.copies,
       pages: j.pages,
       amount: j.amount,
