@@ -1,47 +1,49 @@
 // Shop dashboard — loads jobs for this specific shop only.
-// Uses the shop's API key to authenticate — each shop only sees their own jobs.
+// Uses shop code + PIN to authenticate — each shop only sees their own jobs.
 
-const shopKeyInput = document.getElementById('shopKey');
-shopKeyInput.value = localStorage.getItem('df_shop_key') || '';
-shopKeyInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadDashboard(); });
+const codeInput = document.getElementById('shopCode');
+const pinInput = document.getElementById('shopPin');
+try { codeInput.value = localStorage.getItem('df_shop_code') || ''; } catch {}
+[codeInput, pinInput].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') loadDashboard(); }));
 
 let refreshTimer = null;
 
+// Staff sign in with shop code + PIN (the PIN is kept for this tab only, never the agent key).
+function authHeaders() {
+  return { 'x-staff-slug': codeInput.value.trim().toLowerCase(), 'x-staff-pin': pinInput.value.trim() };
+}
+
 async function loadDashboard() {
-  const key = shopKeyInput.value.trim();
-  if (!key) { showError('Please paste your shop API key first.'); return; }
-  localStorage.setItem('df_shop_key', key);
+  const slug = codeInput.value.trim();
+  if (!slug || !pinInput.value.trim()) { showError('Enter your shop code and PIN.'); return; }
+  try { localStorage.setItem('df_shop_code', slug); } catch {}
   clearError();
 
   document.getElementById('loader').style.display = 'block';
   document.getElementById('content').style.display = 'none';
 
-  // Verify key by calling the agent pending endpoint
-  const res = await fetch('/api/agent/pending', {
-    headers: { 'x-agent-key': key }
-  });
-
-  if (res.status === 401) {
+  const res = await fetch('/api/admin/jobs', { headers: authHeaders() });
+  if (!res.ok) {
     document.getElementById('loader').style.display = 'none';
-    showError('Invalid API key — please check and try again.');
+    const d = await res.json().catch(() => ({}));
+    showError(d.error || 'Could not sign in — check your shop code and PIN.');
     return;
   }
 
-  // Now load the shop's jobs via admin endpoint with shop key
-  await refresh(key);
+  await refresh();
 
   document.getElementById('loader').style.display = 'none';
   document.getElementById('content').style.display = 'block';
 
   // Auto-refresh every 5 seconds
   if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(() => refresh(key), 5000);
+  refreshTimer = setInterval(() => refresh(), 5000);
 }
 
-async function refresh(key) {
+async function refresh() {
   try {
     const res = await fetch('/api/admin/jobs', {
-      headers: { 'x-shop-key': key }
+      headers: authHeaders()
     });
     if (!res.ok) return;
     const data = await res.json();
@@ -120,24 +122,24 @@ async function refresh(key) {
     });
 
     rows.querySelectorAll('.retry-btn').forEach(btn =>
-      btn.addEventListener('click', () => retryPrint(btn.dataset.code, key))
+      btn.addEventListener('click', () => retryPrint(btn.dataset.code))
     );
   } catch (err) {
     console.error('Refresh error:', err);
   }
 }
 
-async function retryPrint(code, key) {
+async function retryPrint(code) {
   const res = await fetch(`/api/admin/jobs/${code}/retry`, {
     method: 'POST',
-    headers: { 'x-agent-key': key }
+    headers: authHeaders()
   });
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
-    alert(d?.error || 'Retry failed — check your key.');
+    alert(d?.error || 'Retry failed — check your PIN.');
     return;
   }
-  refresh(key);
+  refresh();
 }
 
 async function copyShopLink() {
@@ -172,5 +174,4 @@ function clearError() {
   document.getElementById('statusMsg').style.display = 'none';
 }
 
-// Auto-load if key was saved from last visit
-if (shopKeyInput.value) loadDashboard();
+

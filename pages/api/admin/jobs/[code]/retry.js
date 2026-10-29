@@ -1,5 +1,6 @@
 import { isOwner, isLegacyAgentKey } from '@/lib/auth';
-import { retryPrint, reprintJob, getJob, getShopByApiKey } from '@/lib/db';
+import { retryPrint, reprintJob, getJob } from '@/lib/db';
+import { authStaff } from '@/lib/staff';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -8,8 +9,9 @@ export default async function handler(req, res) {
   const isLegacy = isLegacyAgentKey(agentKey);
 
   if (!isLegacy) {
-    const shop = await getShopByApiKey(agentKey);
-    if (!shop) return res.status(401).json({ error: 'Unauthorized' });
+    const auth = await authStaff(req);
+    if (!auth.shop) return res.status(auth.status || 401).json({ error: auth.error });
+    const shop = auth.shop;
 
     // A shop key must only be able to retry its own jobs, never another shop's.
     const job = await getJob(req.query.code);

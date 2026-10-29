@@ -245,13 +245,32 @@ function renderShops(shops, printers) {
       <td>${printerPill}</td>
       <td><span class="pill ${s.active ? 'active' : 'offline'}">${s.active ? 'Active' : 'Paused'}</span></td>
       <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button>
-        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button></td>`;
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button>
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Staff PIN</button></td>`;
     tr.dataset.shopName = s.name;
     body.appendChild(tr);
   });
 }
 
 const shopNames = {};
+async function newStaffPin(id) {
+  const name = shopNames[id] || 'this shop';
+  if (!confirm('Create a new staff PIN for ' + name + '? Any old PIN stops working.')) return;
+  const res = await fetch('/api/shops/' + encodeURIComponent(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    body: JSON.stringify({ newStaffPin: true }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(data.error || 'Could not create a PIN.'); return; }
+  document.getElementById('modalForm').style.display = 'none';
+  document.getElementById('modalResult').style.display = 'block';
+  document.getElementById('modalTitle').textContent = 'Staff login for ' + name;
+  document.getElementById('resultHeading').textContent = 'Give staff this shop code and PIN (page: /admin.html)';
+  document.getElementById('newApiKey').textContent = 'Shop code: ' + data.shopCode + '    PIN: ' + data.pin;
+  document.getElementById('modalBg').classList.add('open');
+}
+
 async function rotateKey(id) {
   const name = (shopNames[id]) || 'this shop';
   if (!confirm('Issue a NEW key for ' + name + '?\n\nThe old key stops working immediately and the shop\'s print agent will go offline until you enter the new key in it.')) return;

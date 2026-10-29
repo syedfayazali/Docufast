@@ -1,5 +1,6 @@
 import { isOwner, isLegacyAgentKey } from '@/lib/auth';
-import { listRecentJobs, publicView, getShopByApiKey } from '@/lib/db';
+import { listRecentJobs, publicView } from '@/lib/db';
+import { authStaff } from '@/lib/staff';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -12,15 +13,16 @@ export default async function handler(req, res) {
   let shopName = null;
   let shopSlug = null;
 
-  if (shopKey) {
+  const hasStaffCreds = (req.headers['x-staff-slug'] && req.headers['x-staff-pin']) || shopKey;
+  if (hasStaffCreds) {
     // Shop-scoped view — only show this shop's jobs
-    const shop = await getShopByApiKey(shopKey);
-    if (!shop) return res.status(401).json({ error: 'Invalid shop key' });
-    shopId = shop.id;
-    shopName = shop.name;
-    shopSlug = shop.slug;
+    const auth = await authStaff(req);
+    if (!auth.shop) return res.status(auth.status || 401).json({ error: auth.error });
+    shopId = auth.shop.id;
+    shopName = auth.shop.name;
+    shopSlug = auth.shop.slug;
   } else if (!isOwner(req)) {
-    // Neither shop key nor owner key — unauthorized
+    // Neither staff login nor owner key — unauthorized
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

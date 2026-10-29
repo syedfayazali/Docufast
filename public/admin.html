@@ -52,8 +52,12 @@
 <div class="page">
   <div class="key-bar">
     <div class="field">
-      <label for="shopKey">Your shop API key</label>
-      <input type="password" id="shopKey" placeholder="Paste the API key given to you by DocuFast India">
+      <label for="shopCode">Shop code</label>
+      <input type="text" id="shopCode" autocapitalize="off" autocomplete="username" placeholder="e.g. mehdipatnam">
+    </div>
+    <div class="field">
+      <label for="shopPin">PIN</label>
+      <input type="password" id="shopPin" inputmode="numeric" autocomplete="current-password" placeholder="6-digit PIN from DocuFast India">
     </div>
     <button class="load-btn" onclick="loadDashboard()">Load my jobs</button>
   </div>
