@@ -1,6 +1,6 @@
 import { readBytes } from '@/lib/privateBlob';
 // Detects page count server-side before payment so the customer sees
-// the correct price. Accepts a base64-encoded file and returns the
+// the correct price. Takes the uploaded file's Blob URL and returns the
 // page count. The result is shown to the customer and confirmed before
 // they pay — the jobs endpoint also re-detects independently.
 //
@@ -17,7 +17,7 @@ export const config = { api: { bodyParser: { sizeLimit: '1mb' } } };
 // generous for just a filename + URL.
 
 async function bufferFromRequest(req) {
-  const { filename, fileData, blobUrl } = req.body || {};
+  const { filename, blobUrl } = req.body || {};
   if (!filename) throw Object.assign(new Error('Missing filename'), { status: 400 });
 
   if (blobUrl) {
@@ -33,14 +33,7 @@ async function bufferFromRequest(req) {
     }
   }
 
-  if (fileData) {
-    // Legacy path — still supported for small files sent inline as base64,
-    // kept so nothing breaks if some caller still uses it.
-    const base64 = fileData.includes(',') ? fileData.split(',')[1] : fileData;
-    return Buffer.from(base64, 'base64');
-  }
-
-  throw Object.assign(new Error('Missing fileData or blobUrl'), { status: 400 });
+  throw Object.assign(new Error('Missing blobUrl'), { status: 400 });
 }
 
 async function countPdfPages(buffer) {

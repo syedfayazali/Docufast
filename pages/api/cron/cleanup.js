@@ -20,11 +20,10 @@ import { deleteFile } from '@/lib/blob';
 import { findCapturedPayment, isConfigured } from '@/lib/razorpay';
 
 export default async function handler(req, res) {
-  if (process.env.CRON_SECRET) {
-    const auth = req.headers['authorization'];
-    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  // Fail closed: without CRON_SECRET nobody can trigger a cleanup run.
+  const auth = req.headers['authorization'];
+  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const results = { reconciled: 0, abandoned: 0, staleFailed: 0, printedPurged: 0, errors: [] };

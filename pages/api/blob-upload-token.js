@@ -23,7 +23,9 @@ const ALLOWED_TYPES = [
 
 export default async function handler(req, res) {
   try {
-    const usePrivate = req.query.private === '1' && privateEnabled();
+    // Once the private store is connected, every upload goes there; a client
+    // cannot opt out by leaving off ?private=1.
+    const usePrivate = privateEnabled();
     const common = {
       body: req.body,
       request: req,
