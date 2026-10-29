@@ -8,7 +8,7 @@ import { isOwner, isLegacyAgentKey } from '@/lib/auth';
 // pending.js). The FIRST computer to call in with a given shop key claims
 // it; any OTHER computer using the same key gets rejected with 409 instead
 // of silently running alongside the original and racing it for jobs.
-import { getShopByApiKey, registerPrinter, heartbeatPrinter, checkAndBindMachine } from '@/lib/db';
+import { getShopByApiKey, registerPrinter, heartbeatPrinter, checkAndBindMachine, recordAgentInfo } from '@/lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -38,11 +38,13 @@ export default async function handler(req, res) {
 
   if (shopId && printerName) {
     const printer = await registerPrinter({ shopId, printerId, name: printerName });
+    await recordAgentInfo(printer.id, { push: req.headers['x-push-state'], version: req.headers['x-agent-version'] }).catch(() => {});
     return res.status(200).json({ ok: true, printerId: printer.id, shopId });
   }
 
   if (printerId) {
     await heartbeatPrinter(printerId).catch(() => {});
+    await recordAgentInfo(printerId, { push: req.headers['x-push-state'], version: req.headers['x-agent-version'] }).catch(() => {});
   }
 
   return res.status(200).json({ ok: true, ts: Date.now() });

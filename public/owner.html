@@ -489,7 +489,8 @@ function renderPrinters(printers) {
     div.className = 'printer-card';
     div.innerHTML = `<div class="printer-shop-lbl">${p.shop_name || ''}</div>
       <div class="printer-name">${p.name}</div>
-      <div class="printer-status ${statusClass}">${statusText}</div>`;
+      <div class="printer-status ${statusClass}">${statusText}</div>
+      <div style="font-size:11px;color:#5B6478;margin-top:4px;">${p.push_state === 'connected' ? '⚡ Live push: connected' : p.push_state ? '⏱ Live push: ' + p.push_state + ' (polling)' : 'Live push: not reported'}${p.agent_version ? ' · v' + p.agent_version : ''}</div>`;
     grid.appendChild(div);
   });
 }
