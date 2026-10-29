@@ -136,6 +136,11 @@
     </div>
     <div id="svcList" class="pilot-grid"></div>
 
+    <div class="section-title" style="margin-top:24px;">Coupons &amp; referral codes
+      <button class="add-shop-btn" onclick="openCoupon()">+ New code</button>
+    </div>
+    <div id="couponList" class="pilot-grid"></div>
+
     <div class="section-title" style="margin-top:24px;">Pilot readiness — is a shop ready to go live?</div>
     <div id="pilotGrid" class="pilot-grid"></div>
 
@@ -196,6 +201,26 @@
       <div class="modal-btns">
         <button class="btn-primary" onclick="closeModal();loadDashboard();">Done</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Coupon modal -->
+<div class="modal-bg" id="cpBg">
+  <div class="modal">
+    <h3>New coupon / referral code</h3>
+    <div class="form-field"><label>Code (letters and numbers, e.g. DIWALI10)</label><input id="cpCode" maxlength="20" style="text-transform:uppercase;"></div>
+    <div class="form-field"><label>Type</label>
+      <select id="cpKind" style="width:100%;padding:10px;border:1px solid #E2E6EE;border-radius:6px;"><option value="percent">Percent off (%)</option><option value="flat">Flat amount off (₹)</option></select></div>
+    <div class="form-field"><label id="cpValLbl">Percent off</label><input id="cpValue" inputmode="decimal"></div>
+    <div class="form-field"><label>Minimum order (₹, optional)</label><input id="cpMin" inputmode="decimal"></div>
+    <div class="form-field"><label>Maximum number of uses (optional)</label><input id="cpMax" inputmode="numeric"></div>
+    <div class="form-field"><label>Expires on (optional)</label><input id="cpExp" type="date"></div>
+    <div class="form-field"><label>Note for yourself (e.g. "Instagram — Ravi")</label><input id="cpNote" maxlength="100"></div>
+    <div class="msg" id="cpMsg"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeCoupon()">Cancel</button>
+      <button class="btn-primary" onclick="saveCoupon()">Create</button>
     </div>
   </div>
 </div>
@@ -274,6 +299,7 @@ async function loadDashboard() {
 
   loadReport(key);
   loadServices();
+  loadCoupons();
   renderKPIs(stats);
   renderShops(stats.shops, stats.printers);
   renderPrinters(stats.printers);
@@ -389,6 +415,60 @@ async function saveSvc() {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { msg.textContent = data.error || 'Could not save.'; return; }
   closeSvc(); loadServices();
+}
+
+async function loadCoupons() {
+  try {
+    const res = await fetch('/api/owner/coupons', { headers: { 'x-owner-key': getKey() } });
+    if (!res.ok) return;
+    const { coupons } = await res.json();
+    const grid = document.getElementById('couponList'); grid.innerHTML = '';
+    if (!coupons.length) { grid.innerHTML = '<div style="color:#8A91A3;font-size:13px;">No codes yet. Create one to run an offer or track a referral.</div>'; return; }
+    coupons.forEach(c => {
+      const card = document.createElement('div'); card.className = 'pilot';
+      const h = document.createElement('h5');
+      const nm = document.createElement('span'); nm.style.fontFamily = "'IBM Plex Mono',monospace"; nm.textContent = c.code;
+      const badge = document.createElement('span'); badge.className = c.active ? 'go' : 'no'; badge.textContent = c.active ? 'ON' : 'OFF';
+      h.append(nm, badge);
+      const info = document.createElement('div'); info.style.cssText = 'font-size:13px;color:#5B6478;';
+      const off = c.kind === 'percent' ? c.value + '% off' : '₹' + (c.value / 100) + ' off';
+      info.textContent = `${off} · used ${c.used_count}${c.max_uses ? ' / ' + c.max_uses : ''}${c.valid_until ? ' · until ' + new Date(c.valid_until).toLocaleDateString('en-IN') : ''}${c.note ? ' · ' + c.note : ''}`;
+      const btn = document.createElement('button'); btn.className = 'link-btn'; btn.style.marginTop = '10px';
+      btn.textContent = c.active ? 'Turn off' : 'Turn on';
+      btn.addEventListener('click', async () => {
+        await fetch('/api/owner/coupons', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() }, body: JSON.stringify({ code: c.code, active: !c.active }) });
+        loadCoupons();
+      });
+      card.append(h, info, btn); grid.appendChild(card);
+    });
+  } catch { /* optional section */ }
+}
+function openCoupon() {
+  ['cpCode', 'cpValue', 'cpMin', 'cpMax', 'cpExp', 'cpNote'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('cpKind').value = 'percent'; document.getElementById('cpValLbl').textContent = 'Percent off';
+  document.getElementById('cpMsg').textContent = '';
+  document.getElementById('cpBg').classList.add('open');
+}
+function closeCoupon() { document.getElementById('cpBg').classList.remove('open'); }
+document.getElementById('cpKind').addEventListener('change', e => { document.getElementById('cpValLbl').textContent = e.target.value === 'percent' ? 'Percent off' : 'Rupees off'; });
+async function saveCoupon() {
+  const kind = document.getElementById('cpKind').value;
+  const val = parseFloat(document.getElementById('cpValue').value);
+  const msg = document.getElementById('cpMsg');
+  if (!Number.isFinite(val) || val <= 0) { msg.textContent = 'Enter the discount.'; return; }
+  const minRs = parseFloat(document.getElementById('cpMin').value);
+  const body = {
+    code: document.getElementById('cpCode').value, kind,
+    value: kind === 'percent' ? Math.round(val) : Math.round(val * 100),
+    minOrder: Number.isFinite(minRs) ? Math.round(minRs * 100) : 0,
+    maxUses: document.getElementById('cpMax').value || null,
+    validUntil: document.getElementById('cpExp').value ? document.getElementById('cpExp').value + 'T23:59:59+05:30' : null,
+    note: document.getElementById('cpNote').value,
+  };
+  const res = await fetch('/api/owner/coupons', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.textContent = data.error || 'Could not create the code.'; return; }
+  closeCoupon(); loadCoupons();
 }
 
 async function exportCsv() {

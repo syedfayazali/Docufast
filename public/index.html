@@ -124,6 +124,11 @@
     <!-- STEP 3 — review & pay -->
     <section class="step" id="step3" style="display:none;">
       <div class="summary" id="summary"></div>
+      <div class="coupon-row">
+        <input type="text" id="couponInput" placeholder="Have a coupon code?" maxlength="20" autocapitalize="characters" autocomplete="off">
+        <button type="button" class="ghost" id="couponBtn">Apply</button>
+      </div>
+      <div class="note" id="couponMsg" style="margin-top:6px;min-height:16px;"></div>
       <button class="primary" id="payBtn" disabled>Pay &amp; print</button>
       <button class="ghost" id="back3" type="button">Back</button>
       <div class="note">Pay securely with UPI, cards, or net banking via Razorpay.</div>

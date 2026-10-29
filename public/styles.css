@@ -115,3 +115,8 @@ a.nav-link:hover{color:var(--gold-deep);text-decoration:underline;}
 .chk{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:12px;color:var(--slate);}
 #passportPreview .tthumb{width:96px;height:120px;margin-top:10px;}
 select{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:6px;font-size:16px;background:var(--white);}
+
+.coupon-row{display:flex;gap:8px;margin-top:14px;}
+.coupon-row input{flex:1;padding:11px 12px;border:2px solid var(--rule);border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:15px;text-transform:uppercase;letter-spacing:.05em;}
+.coupon-row .ghost{flex:0 0 90px;margin-top:0;}
+#couponMsg.ok{color:#2E6B4F;font-weight:600;} #couponMsg.err{color:var(--error);font-weight:600;}

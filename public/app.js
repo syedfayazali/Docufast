@@ -88,7 +88,7 @@ async function compressImageIfNeeded(file) {
   return new File([compressedBlob], newName, { type: 'image/jpeg' });
 }
 
-const state = { file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single', service: null };
+const state = { file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single', service: null, coupon: null };
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
@@ -255,10 +255,11 @@ document.getElementById('copiesPlus').addEventListener('click', () => setCopies(
 function updatePrice() {
   const per = perPage(state.colorMode, state.duplex === 'double');
   const fee = state.service ? state.service.fee : 0;
-  const total = per * state.pages * state.copies + fee;
+  const discount = state.coupon ? state.coupon.discount : 0;
+  const total = per * state.pages * state.copies + fee - discount;
   amountLabel.textContent = '₹' + (total / 100).toFixed(2);
   document.getElementById('priceSub').textContent =
-    `${state.pages} page${state.pages > 1 ? 's' : ''} × ${state.copies} cop${state.copies > 1 ? 'ies' : 'y'} × ${rs(per)}` + (fee ? ` + ${rs(fee)} service` : '');
+    `${state.pages} page${state.pages > 1 ? 's' : ''} × ${state.copies} cop${state.copies > 1 ? 'ies' : 'y'} × ${rs(per)}` + (fee ? ` + ${rs(fee)} service` : '') + (discount ? ` − ${rs(discount)} coupon` : '');
   const sum = document.getElementById('summary');
   if (sum) {
     const rows = [
@@ -268,6 +269,7 @@ function updatePrice() {
       ['Sides', state.duplex === 'double' ? 'Double-sided' : 'Single-sided'],
       ...(state.service ? [['Service', state.service.name + (fee ? ' · ' + rs(fee) : '')]] : []),
       ['Rate', rs(per) + ' per page'],
+      ...(discount ? [['Coupon ' + state.coupon.code, '− ' + rs(discount)]] : []),
       ['Total', '₹' + (total / 100).toFixed(2)],
     ];
     sum.innerHTML = rows.map(([k, v]) => `<div class="row"><span></span><span></span></div>`).join('');
@@ -299,6 +301,7 @@ payBtn.addEventListener('click', async () => {
         duplex: state.duplex === 'double',
         shopSlug,
         serviceId: state.service ? state.service.id : undefined,
+        couponCode: state.coupon ? state.coupon.code : undefined,
       }),
     });
     createData = await res.json();
@@ -442,3 +445,31 @@ const tools = initTools({
   onBusy: msg => { if (msg) { next1.disabled = true; next1.textContent = msg; setStatus(msg); } },
 });
 fetch('/api/services').then(r => r.json()).then(d => tools.setServices(d.services || [])).catch(() => {});
+
+
+// --- Coupons ---
+// The server re-checks the code and recomputes the discount from the shop's
+// prices; the number shown here is only what the server told us.
+const couponInput = document.getElementById('couponInput');
+const couponMsg = document.getElementById('couponMsg');
+function setCouponMsg(t, cls) { couponMsg.textContent = t; couponMsg.className = 'note' + (cls ? ' ' + cls : ''); }
+async function applyCoupon() {
+  const code = couponInput.value.trim();
+  if (!code) { state.coupon = null; setCouponMsg(''); updatePrice(); return; }
+  setCouponMsg('Checking…');
+  try {
+    const res = await fetch('/api/coupons/check', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, shopSlug, serviceId: state.service ? state.service.id : undefined,
+        colorMode: state.colorMode, duplex: state.duplex === 'double', pages: state.pages, copies: state.copies }),
+    });
+    const d = await res.json();
+    if (d.valid) { state.coupon = { code: d.code, discount: d.discount }; setCouponMsg(`✓ ${d.code} applied — you save ${rs(d.discount)}`, 'ok'); }
+    else { state.coupon = null; setCouponMsg(d.message || 'That code is not valid.', 'err'); }
+  } catch { state.coupon = null; setCouponMsg('Could not check the code. Try again.', 'err'); }
+  updatePrice();
+}
+document.getElementById('couponBtn').addEventListener('click', applyCoupon);
+couponInput.addEventListener('keydown', e => { if (e.key === 'Enter') applyCoupon(); });
+// Any change to the order invalidates an applied discount — re-check it silently.
+['back3', 'next2'].forEach(id => document.getElementById(id).addEventListener('click', () => { if (state.coupon) { couponInput.value = state.coupon.code; applyCoupon(); } }));

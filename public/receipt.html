@@ -60,6 +60,7 @@ function line(k, v, cls) {
     line('Printing charge', money(r.printCharge)),
   );
   if (r.serviceName) L.append(line('Service', r.serviceName), line('Service fee', money(r.serviceFee)));
+  if (r.discount) L.append(line('Coupon ' + r.couponCode, '− ' + money(r.discount)));
   L.append(line('Total paid', money(r.total), 'tot'));
   if (r.status === 'refunded') L.append(line('Refunded', money(r.refundedAmount)));
   if (r.paymentRef) L.append(line('Payment ref', r.paymentRef));

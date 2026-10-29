@@ -1,5 +1,6 @@
-import { createJob, resolveShop, getActiveService } from '@/lib/db';
-import { generateCode, calcAmount } from '@/lib/pricing';
+import { createJob } from '@/lib/db';
+import { generateCode } from '@/lib/pricing';
+import { quoteOrder } from '@/lib/quote';
 import { createOrder, isConfigured } from '@/lib/razorpay';
 import { readBytes } from '@/lib/privateBlob';
 // pdf-parse is imported dynamically inside the handler to avoid
@@ -15,7 +16,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { filename, blobUrl, fileData, pages, copies, colorMode, duplex, shopSlug, serviceId } = req.body || {};
+    const { filename, blobUrl, fileData, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode } = req.body || {};
     if (!filename || (!blobUrl && !fileData) || !pages || !copies) {
       return res.status(400).json({ error: 'Missing filename, blobUrl, pages, or copies' });
     }
@@ -44,10 +45,10 @@ export default async function handler(req, res) {
       } catch (err) {
         return res.status(500).json({ error: 'File upload failed: ' + err.message });
       }
-      return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, code });
+      return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, code });
     }
 
-    return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId });
+    return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode });
 
   } catch (err) {
     console.error('Unhandled error in /api/jobs:', err.message, err.stack);
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, code: existingCode }) {
+async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, code: existingCode }) {
   // Auto-detect page count from file bytes server-side — this is the
   // authoritative count used for billing, regardless of what the client sent.
   let pageCount = Math.max(1, parseInt(pages, 10) || 1);
@@ -76,29 +77,17 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
     pageCount = 1;
   }
 
-  const copyCount = Math.max(1, parseInt(copies, 10) || 1);
+  const copyCount = Math.min(500, Math.max(1, parseInt(copies, 10) || 1));
   const mode = colorMode === 'color' ? 'color' : 'bw';
 
   const code = existingCode || generateCode();
-  // Resolve the shop by slug (from the customer's shop-specific link) so a
-  // client can never just claim an arbitrary shopId — and so jobs are
-  // actually visible to the right shop's agent. With no (or an unknown)
-  // slug, a platform with a single active shop can only mean that shop;
-  // otherwise the job would sit with shop_id NULL and never print.
-  const shop = await resolveShop(shopSlug);
-  const shopId = shop ? shop.id : null;
-
-  // The shop's own price list is the authority — never the client's number.
-  let amount = calcAmount(shop?.prices, { mode, duplex: !!duplex, pages: pageCount, copies: copyCount });
-
-  // Service orders (Aadhaar/PAN/passport…) add the owner's fee, read from the
-  // database — the client only names the service, it never sets the fee.
-  let service = null;
-  if (serviceId) {
-    service = await getActiveService(serviceId);
-    if (!service) return res.status(400).json({ error: 'That service is not available right now.' });
-    amount += service.fee;
-  }
+  // Shop, prices, service fee and coupon are all resolved on the server by one
+  // shared function — the client only names them, it never sets any money.
+  const q = await quoteOrder({ shopSlug, serviceId, colorMode: mode, duplex, pages: pageCount, copies: copyCount, couponCode });
+  if (q.error) return res.status(400).json({ error: q.error });
+  const shopId = q.shop ? q.shop.id : null;
+  const service = q.service;
+  const amount = q.total;
 
   const baseJob = {
     code, shopId, filename, blobUrl,
@@ -106,6 +95,7 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
     colorMode: mode, duplex: !!duplex,
     amount, status: 'pending_payment',
     serviceId: service?.id, serviceName: service?.name, serviceFee: service ? service.fee : null,
+    couponCode: q.coupon ? q.coupon.code : null, discount: q.discount || null,
   };
 
   if (isConfigured()) {
