@@ -1,4 +1,4 @@
-import { createJob, resolveShop } from '@/lib/db';
+import { createJob, resolveShop, getActiveService } from '@/lib/db';
 import { generateCode, calcAmount } from '@/lib/pricing';
 import { createOrder, isConfigured } from '@/lib/razorpay';
 import { readBytes } from '@/lib/privateBlob';
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { filename, blobUrl, fileData, pages, copies, colorMode, duplex, shopSlug } = req.body || {};
+    const { filename, blobUrl, fileData, pages, copies, colorMode, duplex, shopSlug, serviceId } = req.body || {};
     if (!filename || (!blobUrl && !fileData) || !pages || !copies) {
       return res.status(400).json({ error: 'Missing filename, blobUrl, pages, or copies' });
     }
@@ -44,10 +44,10 @@ export default async function handler(req, res) {
       } catch (err) {
         return res.status(500).json({ error: 'File upload failed: ' + err.message });
       }
-      return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, code });
+      return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, code });
     }
 
-    return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug });
+    return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId });
 
   } catch (err) {
     console.error('Unhandled error in /api/jobs:', err.message, err.stack);
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, code: existingCode }) {
+async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, code: existingCode }) {
   // Auto-detect page count from file bytes server-side — this is the
   // authoritative count used for billing, regardless of what the client sent.
   let pageCount = Math.max(1, parseInt(pages, 10) || 1);
@@ -89,13 +89,23 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
   const shopId = shop ? shop.id : null;
 
   // The shop's own price list is the authority — never the client's number.
-  const amount = calcAmount(shop?.prices, { mode, duplex: !!duplex, pages: pageCount, copies: copyCount });
+  let amount = calcAmount(shop?.prices, { mode, duplex: !!duplex, pages: pageCount, copies: copyCount });
+
+  // Service orders (Aadhaar/PAN/passport…) add the owner's fee, read from the
+  // database — the client only names the service, it never sets the fee.
+  let service = null;
+  if (serviceId) {
+    service = await getActiveService(serviceId);
+    if (!service) return res.status(400).json({ error: 'That service is not available right now.' });
+    amount += service.fee;
+  }
 
   const baseJob = {
     code, shopId, filename, blobUrl,
     pages: pageCount, copies: copyCount,
     colorMode: mode, duplex: !!duplex,
     amount, status: 'pending_payment',
+    serviceId: service?.id, serviceName: service?.name, serviceFee: service ? service.fee : null,
   };
 
   if (isConfigured()) {

@@ -4,6 +4,7 @@
 //   the comment on MAX_UPLOAD_BYTES below for why) → detect pages →
 //   POST /api/jobs (gets razorpayOrderId) → open Razorpay modal →
 //   on success, POST /api/verify-payment → show ticket + poll until printed.
+import { initTools } from '/tools.js';
 import { upload as uploadPublic } from 'https://esm.sh/@vercel/blob@0.27.0/client';
 
 // New uploads go to the PRIVATE store once the server says it is enabled
@@ -87,7 +88,7 @@ async function compressImageIfNeeded(file) {
   return new File([compressedBlob], newName, { type: 'image/jpeg' });
 }
 
-const state = { file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single' };
+const state = { file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single', service: null };
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
@@ -142,10 +143,10 @@ dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 camInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
-async function handleFile(file) {
+async function handleFile(file, { skipCompress = false } = {}) {
   next1.disabled = true;
   state.blobUrl = null;
-  if (COMPRESSIBLE_TYPES.includes(file.type)) {
+  if (!skipCompress && COMPRESSIBLE_TYPES.includes(file.type)) {
     filenameLabel.textContent = file.name;
     setStatus('Compressing image…');
     file = await compressImageIfNeeded(file);
@@ -253,10 +254,11 @@ document.getElementById('copiesPlus').addEventListener('click', () => setCopies(
 
 function updatePrice() {
   const per = perPage(state.colorMode, state.duplex === 'double');
-  const total = per * state.pages * state.copies;
+  const fee = state.service ? state.service.fee : 0;
+  const total = per * state.pages * state.copies + fee;
   amountLabel.textContent = '₹' + (total / 100).toFixed(2);
   document.getElementById('priceSub').textContent =
-    `${state.pages} page${state.pages > 1 ? 's' : ''} × ${state.copies} cop${state.copies > 1 ? 'ies' : 'y'} × ${rs(per)}`;
+    `${state.pages} page${state.pages > 1 ? 's' : ''} × ${state.copies} cop${state.copies > 1 ? 'ies' : 'y'} × ${rs(per)}` + (fee ? ` + ${rs(fee)} service` : '');
   const sum = document.getElementById('summary');
   if (sum) {
     const rows = [
@@ -264,6 +266,7 @@ function updatePrice() {
       ['Pages × copies', `${state.pages} × ${state.copies}`],
       ['Colour', state.colorMode === 'color' ? 'Colour' : 'Black & white'],
       ['Sides', state.duplex === 'double' ? 'Double-sided' : 'Single-sided'],
+      ...(state.service ? [['Service', state.service.name + (fee ? ' · ' + rs(fee) : '')]] : []),
       ['Rate', rs(per) + ' per page'],
       ['Total', '₹' + (total / 100).toFixed(2)],
     ];
@@ -295,6 +298,7 @@ payBtn.addEventListener('click', async () => {
         colorMode: state.colorMode,
         duplex: state.duplex === 'double',
         shopSlug,
+        serviceId: state.service ? state.service.id : undefined,
       }),
     });
     createData = await res.json();
@@ -417,3 +421,24 @@ function pollUntilPrinted(code) {
     } catch { /* network hiccup — retry next tick */ }
   }, 3000);
 }
+
+
+// --- Document tools (photos -> PDF, passport sheet, service checklists) ---
+function setColourMode(mode) {
+  state.colorMode = mode;
+  document.querySelectorAll('.cards[data-group="color"] .ocard').forEach(o => o.classList.toggle('active', o.dataset.value === mode));
+  renderPriceLabels(); updatePrice();
+}
+const tools = initTools({
+  onFile: (file, meta) => {
+    state.service = meta.service || null;
+    if (meta.forceColour) setColourMode('color');
+    filenameLabel.textContent = file.name;
+    next1.style.display = '';
+    handleFile(file, { skipCompress: true });
+  },
+  onService: s => { state.service = s; updatePrice(); },
+  onError: msg => setStatus(msg, 'err'),
+  onBusy: msg => { if (msg) { next1.disabled = true; next1.textContent = msg; setStatus(msg); } },
+});
+fetch('/api/services').then(r => r.json()).then(d => tools.setServices(d.services || [])).catch(() => {});

@@ -169,7 +169,9 @@ function jobCard(job, kind) {
   const file = document.createElement('div'); file.className = 'jfile'; file.textContent = job.filename; file.title = job.filename;
   const meta = document.createElement('div'); meta.className = 'jmeta';
   meta.textContent = `${job.pages} pg × ${job.copies} · ${job.colorMode === 'color' ? 'Colour' : 'B&W'}${job.duplex ? ' · Double-sided' : ''} · ₹${(job.amount / 100).toFixed(2)}`;
-  div.append(code, file, meta);
+  div.append(code);
+  if (job.serviceName) { const sv = document.createElement('div'); sv.className = 'jmeta'; sv.style.fontWeight = '700'; sv.style.color = 'var(--navy)'; sv.textContent = '🗂 ' + job.serviceName; div.append(sv); }
+  div.append(file, meta);
   if (kind === 'failed') {
     const err = document.createElement('div'); err.className = 'jerr'; err.textContent = job.printError || 'Print failed';
     div.appendChild(err);

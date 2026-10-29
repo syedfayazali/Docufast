@@ -101,7 +101,7 @@ function render(data) {
   $('lookupCard').style.display = 'none';
   $('statusCard').style.display = 'block';
   $('bigCode').textContent = job.code;
-  $('fileLine').textContent = `${job.filename} · ${job.pages} page${job.pages > 1 ? 's' : ''} × ${job.copies}`;
+  $('fileLine').textContent = `${job.serviceName ? job.serviceName + ' · ' : ''}${job.filename} · ${job.pages} page${job.pages > 1 ? 's' : ''} × ${job.copies}`;
   $('shopLine').textContent = data.shopName ? `Printing at ${data.shopName}${data.shopCity ? ', ' + data.shopCity : ''}` : '';
 
   const tl = $('timeline'); tl.innerHTML = '';

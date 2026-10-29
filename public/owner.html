@@ -131,6 +131,11 @@
       <button class="link-btn" onclick="exportCsv()">Download</button>
     </div>
 
+    <div class="section-title" style="margin-top:24px;">Services &amp; document checklists
+      <span style="font-size:12px;color:#5B6478;font-weight:400;">Switched-off services are hidden from customers. Review each list, set your fee, then switch it on.</span>
+    </div>
+    <div id="svcList" class="pilot-grid"></div>
+
     <div class="section-title" style="margin-top:24px;">Pilot readiness — is a shop ready to go live?</div>
     <div id="pilotGrid" class="pilot-grid"></div>
 
@@ -195,6 +200,23 @@
   </div>
 </div>
 
+<!-- Service editor modal -->
+<div class="modal-bg" id="svcBg">
+  <div class="modal">
+    <h3 id="svcTitle">Service</h3>
+    <div class="form-field"><label>Name customers see</label><input id="svName"></div>
+    <div class="form-field"><label>Your service fee (₹, on top of printing)</label><input id="svFee" inputmode="decimal"></div>
+    <div class="form-field"><label>Documents the customer must upload — one per line. Add "| optional" to make one optional.</label>
+      <textarea id="svSlots" rows="7" style="width:100%;padding:10px;border:1px solid #E2E6EE;border-radius:6px;font-size:13px;"></textarea></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:6px;"><input type="checkbox" id="svActive"> Show this service to customers</label>
+    <div class="msg" id="svMsg"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeSvc()">Cancel</button>
+      <button class="btn-primary" onclick="saveSvc()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Price list modal -->
 <div class="modal-bg" id="priceBg">
   <div class="modal">
@@ -251,6 +273,7 @@ async function loadDashboard() {
   const { jobs } = await jobsRes.json();
 
   loadReport(key);
+  loadServices();
   renderKPIs(stats);
   renderShops(stats.shops, stats.printers);
   renderPrinters(stats.printers);
@@ -315,6 +338,57 @@ function renderReport(r) {
     p.gates.forEach(g => { const li = document.createElement('li'); li.textContent = (g.ok ? '✅ ' : '⬜ ') + g.label; ul.appendChild(li); });
     card.append(h, ul); grid.appendChild(card);
   });
+}
+
+let svcCache = [], svcEditing = null;
+async function loadServices() {
+  try {
+    const res = await fetch('/api/owner/services', { headers: { 'x-owner-key': getKey() } });
+    if (!res.ok) return;
+    svcCache = (await res.json()).services || [];
+    const grid = document.getElementById('svcList'); grid.innerHTML = '';
+    svcCache.forEach(sv => {
+      const card = document.createElement('div'); card.className = 'pilot';
+      const h = document.createElement('h5');
+      const nm = document.createElement('span'); nm.textContent = sv.name;
+      const badge = document.createElement('span'); badge.className = sv.active ? 'go' : 'no'; badge.textContent = sv.active ? 'ON' : 'OFF';
+      h.append(nm, badge);
+      const info = document.createElement('div'); info.style.cssText = 'font-size:13px;color:#5B6478;';
+      info.textContent = `Fee ₹${(sv.fee / 100).toFixed(sv.fee % 100 ? 2 : 0)} · ${sv.slots.length} documents`;
+      const btn = document.createElement('button'); btn.className = 'link-btn'; btn.style.marginTop = '10px'; btn.textContent = 'Edit';
+      btn.addEventListener('click', () => openSvc(sv.id));
+      card.append(h, info, btn); grid.appendChild(card);
+    });
+  } catch { /* services section is optional */ }
+}
+function openSvc(id) {
+  const sv = svcCache.find(x => x.id === id); if (!sv) return;
+  svcEditing = id;
+  document.getElementById('svcTitle').textContent = 'Edit — ' + sv.name;
+  document.getElementById('svName').value = sv.name;
+  document.getElementById('svFee').value = String(sv.fee / 100);
+  document.getElementById('svSlots').value = sv.slots.map(x => x.label + (x.required ? '' : ' | optional')).join('\n');
+  document.getElementById('svActive').checked = !!sv.active;
+  document.getElementById('svMsg').textContent = '';
+  document.getElementById('svcBg').classList.add('open');
+}
+function closeSvc() { document.getElementById('svcBg').classList.remove('open'); }
+async function saveSvc() {
+  const msg = document.getElementById('svMsg');
+  const fee = Math.round(parseFloat(document.getElementById('svFee').value || '0') * 100);
+  if (!Number.isFinite(fee) || fee < 0) { msg.textContent = 'Enter a valid fee (0 or more).'; return; }
+  const slots = document.getElementById('svSlots').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const [label, flag] = l.split('|').map(x => x.trim());
+    return { label, required: !(flag && /^optional$/i.test(flag)) };
+  });
+  const res = await fetch('/api/owner/services', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    body: JSON.stringify({ id: svcEditing, name: document.getElementById('svName').value, fee, slots, active: document.getElementById('svActive').checked }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.textContent = data.error || 'Could not save.'; return; }
+  closeSvc(); loadServices();
 }
 
 async function exportCsv() {
