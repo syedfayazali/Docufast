@@ -72,6 +72,26 @@
   .api-key-box { background: #E7ECF7; border-radius: 8px; padding: 12px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #0A2E6E; word-break: break-all; margin-top: 14px; }
   .msg { font-size: 13px; color: #C0412B; margin-top: 8px; }
   #loader { text-align: center; padding: 40px; color: #8A91A3; font-size: 14px; }
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .chart-grid { grid-template-columns: 1fr; } }
+  .chart-card { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 14px 16px; }
+  .chart-t { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 600; margin-bottom: 10px; }
+  .bars { display: flex; align-items: flex-end; gap: 4px; height: 140px; }
+  .bars .b { flex: 1; background: #0A2E6E; border-radius: 3px 3px 0 0; min-height: 2px; position: relative; }
+  .bars .b.zero { background: #E2E6EE; }
+  .bars .b:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #071F4D; color: #fff; font-size: 11px; padding: 3px 7px; border-radius: 4px; white-space: nowrap; z-index: 5; }
+  .bar-axis { display: flex; justify-content: space-between; font-size: 10px; color: #8A91A3; margin-top: 4px; }
+  .hbar { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 13px; }
+  .hbar .n { width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar .t { flex: 1; background: #F0F2F7; border-radius: 4px; height: 14px; }
+  .hbar .t i { display: block; height: 14px; background: #F4B000; border-radius: 4px; }
+  .pilot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .pilot { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 14px 16px; }
+  .pilot h5 { margin: 0 0 8px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .pilot .go { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #E7F4EC; color: #2E6B4F; }
+  .pilot .no { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #FDF1D6; color: #8a5f00; }
+  .pilot li { list-style: none; font-size: 13px; margin: 5px 0; display: flex; gap: 8px; }
+  .pilot ul { margin: 0; padding: 0; }
 </style>
 </head>
 <body>
@@ -98,7 +118,23 @@
       <div class="kpi warn" id="kpiPrinterCard"><div class="lbl">Printers online</div><div class="num" id="kpiPrinters">—</div><div class="sub" id="kpiPrinterSub"></div></div>
     </div>
 
-    <div class="section-title">
+    <div class="section-title">Last 14 days</div>
+    <div class="chart-grid">
+      <div class="chart-card"><div class="chart-t">Revenue per day (₹)</div><div class="bars" id="chartDaily"></div></div>
+      <div class="chart-card"><div class="chart-t">Busiest hours (orders, last 30 days)</div><div class="bars" id="chartHours"></div></div>
+    </div>
+    <div class="chart-card" style="margin-top:14px;"><div class="chart-t">Revenue by shop (14 days)</div><div id="chartShops"></div></div>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#5B6478;">Export orders (CSV for Excel):</span>
+      <input type="date" id="expFrom" style="padding:6px;border:1px solid #E2E6EE;border-radius:6px;">
+      <input type="date" id="expTo" style="padding:6px;border:1px solid #E2E6EE;border-radius:6px;">
+      <button class="link-btn" onclick="exportCsv()">Download</button>
+    </div>
+
+    <div class="section-title" style="margin-top:24px;">Pilot readiness — is a shop ready to go live?</div>
+    <div id="pilotGrid" class="pilot-grid"></div>
+
+    <div class="section-title" style="margin-top:24px;">
       All shops
       <button class="add-shop-btn" onclick="openAddShop()">+ Add shop</button>
     </div>
@@ -214,6 +250,7 @@ async function loadDashboard() {
   const stats = await statsRes.json();
   const { jobs } = await jobsRes.json();
 
+  loadReport(key);
   renderKPIs(stats);
   renderShops(stats.shops, stats.printers);
   renderPrinters(stats.printers);
@@ -221,6 +258,74 @@ async function loadDashboard() {
 
   document.getElementById('loader').style.display = 'none';
   document.getElementById('content').style.display = 'block';
+}
+
+async function loadReport(key) {
+  try {
+    const res = await fetch('/api/owner/reports?days=14', { headers: { 'x-owner-key': key } });
+    if (!res.ok) return;
+    renderReport(await res.json());
+  } catch { /* charts are optional — the rest of the dashboard still works */ }
+}
+
+function renderReport(r) {
+  const daily = document.getElementById('chartDaily'); daily.innerHTML = '';
+  const maxD = Math.max(1, ...r.daily.map(d => d.revenue));
+  r.daily.forEach(d => {
+    const b = document.createElement('div');
+    b.className = 'b' + (d.revenue ? '' : ' zero');
+    b.style.height = Math.max(2, Math.round(d.revenue / maxD * 100)) + '%';
+    b.dataset.tip = `${d.date.slice(5)} · ₹${(d.revenue / 100).toFixed(0)} · ${d.jobs} orders`;
+    daily.appendChild(b);
+  });
+  const dx = daily.nextElementSibling; if (dx) dx.remove();
+  daily.insertAdjacentHTML('afterend', `<div class="bar-axis"><span>${r.daily[0].date.slice(5)}</span><span>${r.daily[r.daily.length - 1].date.slice(5)}</span></div>`);
+
+  const hours = document.getElementById('chartHours'); hours.innerHTML = '';
+  const maxH = Math.max(1, ...r.hours.map(h => h.jobs));
+  r.hours.forEach(h => {
+    const b = document.createElement('div');
+    b.className = 'b' + (h.jobs ? '' : ' zero');
+    b.style.height = Math.max(2, Math.round(h.jobs / maxH * 100)) + '%';
+    const hr12 = ((h.hour + 11) % 12) + 1 + (h.hour < 12 ? 'am' : 'pm');
+    b.dataset.tip = `${hr12} · ${h.jobs} orders`;
+    hours.appendChild(b);
+  });
+  const hx = hours.nextElementSibling; if (hx) hx.remove();
+  hours.insertAdjacentHTML('afterend', '<div class="bar-axis"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>');
+
+  const shops = document.getElementById('chartShops'); shops.innerHTML = '';
+  const maxS = Math.max(1, ...r.perShop.map(s => s.revenue));
+  r.perShop.forEach(s => {
+    const row = document.createElement('div'); row.className = 'hbar';
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = s.name;
+    const t = document.createElement('span'); t.className = 't'; t.innerHTML = '<i></i>'; t.firstChild.style.width = Math.round(s.revenue / maxS * 100) + '%';
+    const v = document.createElement('span'); v.textContent = '₹' + (s.revenue / 100).toFixed(0) + ' · ' + s.jobs + ' orders';
+    row.append(n, t, v); shops.appendChild(row);
+  });
+
+  const grid = document.getElementById('pilotGrid'); grid.innerHTML = '';
+  r.readiness.forEach(p => {
+    const card = document.createElement('div'); card.className = 'pilot';
+    const h = document.createElement('h5');
+    const nm = document.createElement('span'); nm.textContent = p.name;
+    const badge = document.createElement('span'); badge.className = p.ready ? 'go' : 'no'; badge.textContent = p.ready ? 'READY' : 'NOT YET';
+    h.append(nm, badge);
+    const ul = document.createElement('ul');
+    p.gates.forEach(g => { const li = document.createElement('li'); li.textContent = (g.ok ? '✅ ' : '⬜ ') + g.label; ul.appendChild(li); });
+    card.append(h, ul); grid.appendChild(card);
+  });
+}
+
+async function exportCsv() {
+  const from = document.getElementById('expFrom').value, to = document.getElementById('expTo').value;
+  const q = new URLSearchParams({ format: 'csv' }); if (from) q.set('from', from); if (to) q.set('to', to);
+  const res = await fetch('/api/owner/reports?' + q, { headers: { 'x-owner-key': getKey() } });
+  if (!res.ok) { alert('Export failed.'); return; }
+  const blob = await res.blob();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `docufast-orders-${from || 'month'}-to-${to || 'today'}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
 }
 
 function fmt(paise) { return '₹' + (paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
