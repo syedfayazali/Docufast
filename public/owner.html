@@ -159,6 +159,23 @@
   </div>
 </div>
 
+<!-- Price list modal -->
+<div class="modal-bg" id="priceBg">
+  <div class="modal">
+    <h3 id="priceTitle">Price list</h3>
+    <div style="font-size:12px;color:#5B6478;margin-bottom:10px;">Rupees per page. Customers see these prices and are billed exactly these. Leave the double-sided boxes empty to charge the single-sided price.</div>
+    <div class="form-field"><label>Black &amp; white (₹/page)</label><input id="pBw" inputmode="decimal"></div>
+    <div class="form-field"><label>Colour (₹/page)</label><input id="pColor" inputmode="decimal"></div>
+    <div class="form-field"><label>B&amp;W double-sided (₹/page, optional)</label><input id="pDuplexBw" inputmode="decimal"></div>
+    <div class="form-field"><label>Colour double-sided (₹/page, optional)</label><input id="pDuplexColor" inputmode="decimal"></div>
+    <div class="msg" id="priceMsg"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closePrices()">Cancel</button>
+      <button class="btn-primary" onclick="savePrices()">Save prices</button>
+    </div>
+  </div>
+</div>
+
 <!-- QR / link popover (shared, repositioned per shop) -->
 <div class="qr-popover" id="qrPopover" style="position:relative;">
   <button class="qr-popover-close" onclick="closeQrPopover()">✕</button>
@@ -226,6 +243,7 @@ function renderShops(shops, printers) {
   if (!shops?.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8A91A3;padding:20px;">No shops yet — add one above.</td></tr>'; return; }
   shops.forEach(s => {
     shopNames[s.id] = s.name;
+    shopPrices[s.id] = s.prices || {};
     const shopPrinters = (printers || []).filter(p => p.shop_id === s.id);
     const onlineCount = shopPrinters.filter(p => p.status === 'online').length;
     const total = shopPrinters.length;
@@ -246,13 +264,46 @@ function renderShops(shops, printers) {
       <td><span class="pill ${s.active ? 'active' : 'offline'}">${s.active ? 'Active' : 'Paused'}</span></td>
       <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button>
-        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Staff PIN</button></td>`;
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Staff PIN</button>
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();openPrices('${s.id}')">Prices</button></td>`;
     tr.dataset.shopName = s.name;
     body.appendChild(tr);
   });
 }
 
 const shopNames = {};
+const shopPrices = {};
+let priceShopId = null;
+const rupees = p => (p === null || p === undefined) ? '' : String(p / 100);
+function openPrices(id) {
+  priceShopId = id;
+  const p = shopPrices[id] || {};
+  document.getElementById('priceTitle').textContent = 'Prices — ' + (shopNames[id] || 'shop');
+  document.getElementById('pBw').value = rupees(p.bw ?? 200);
+  document.getElementById('pColor').value = rupees(p.color ?? 800);
+  document.getElementById('pDuplexBw').value = rupees(p.duplexBw);
+  document.getElementById('pDuplexColor').value = rupees(p.duplexColor);
+  document.getElementById('priceMsg').textContent = '';
+  document.getElementById('priceBg').classList.add('open');
+}
+function closePrices() { document.getElementById('priceBg').classList.remove('open'); }
+async function savePrices() {
+  const toPaise = id => { const v = document.getElementById(id).value.trim(); return v === '' ? null : Math.round(parseFloat(v) * 100); };
+  const prices = { bw: toPaise('pBw'), color: toPaise('pColor'), duplexBw: toPaise('pDuplexBw'), duplexColor: toPaise('pDuplexColor') };
+  const msg = document.getElementById('priceMsg');
+  if (prices.bw === null || prices.color === null || Number.isNaN(prices.bw) || Number.isNaN(prices.color)) { msg.textContent = 'B&W and Colour prices are required.'; return; }
+  const res = await fetch('/api/shops/' + encodeURIComponent(priceShopId), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    body: JSON.stringify({ prices }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.textContent = data.error || 'Could not save prices.'; return; }
+  shopPrices[priceShopId] = data.prices;
+  closePrices();
+  loadDashboard();
+}
+
 async function newStaffPin(id) {
   const name = shopNames[id] || 'this shop';
   if (!confirm('Create a new staff PIN for ' + name + '? Any old PIN stops working.')) return;

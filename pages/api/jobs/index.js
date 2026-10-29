@@ -1,5 +1,5 @@
-import { createJob, getShopBySlug, getOnlyActiveShop } from '@/lib/db';
-import { generateCode, RATES } from '@/lib/pricing';
+import { createJob, resolveShop } from '@/lib/db';
+import { generateCode, calcAmount } from '@/lib/pricing';
 import { createOrder, isConfigured } from '@/lib/razorpay';
 import { readBytes } from '@/lib/privateBlob';
 // pdf-parse is imported dynamically inside the handler to avoid
@@ -78,25 +78,18 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
 
   const copyCount = Math.max(1, parseInt(copies, 10) || 1);
   const mode = colorMode === 'color' ? 'color' : 'bw';
-  const amount = RATES[mode] * pageCount * copyCount;
 
   const code = existingCode || generateCode();
   // Resolve the shop by slug (from the customer's shop-specific link) so a
   // client can never just claim an arbitrary shopId — and so jobs are
-  // actually visible to the right shop's agent, instead of getting
-  // created with shop_id=NULL and never showing up in that shop's queue.
-  let shopId = null;
-  if (shopSlug) {
-    const shop = await getShopBySlug(shopSlug);
-    if (shop && shop.active) shopId = shop.id;
-  }
-  // No (or unknown) shop link: if the platform has only one active shop the
-  // job can only mean that shop. Otherwise it would sit with shop_id NULL
-  // and no agent would ever pick it up after payment.
-  if (!shopId) {
-    const only = await getOnlyActiveShop();
-    if (only) shopId = only.id;
-  }
+  // actually visible to the right shop's agent. With no (or an unknown)
+  // slug, a platform with a single active shop can only mean that shop;
+  // otherwise the job would sit with shop_id NULL and never print.
+  const shop = await resolveShop(shopSlug);
+  const shopId = shop ? shop.id : null;
+
+  // The shop's own price list is the authority — never the client's number.
+  const amount = calcAmount(shop?.prices, { mode, duplex: !!duplex, pages: pageCount, copies: copyCount });
 
   const baseJob = {
     code, shopId, filename, blobUrl,
