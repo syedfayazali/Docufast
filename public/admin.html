@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuFast India — shop dashboard</title>
+<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<style>
+  body { background: #f5f6fa; }
+  .page { max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
+  .key-bar { background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; margin-top: 20px; display: flex; gap: 10px; align-items: flex-end; }
+  .key-bar .field { flex: 1; margin: 0; }
+  .key-bar label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--slate); display: block; margin-bottom: 6px; }
+  .key-bar input { width: 100%; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 6px; font-size: 14px; font-family: 'IBM Plex Mono', monospace; color: var(--navy-deep); }
+  .key-bar input:focus { outline: 2px solid var(--gold); }
+  .load-btn { padding: 11px 24px; background: var(--gold); color: var(--navy-deep); border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: 'Space Grotesk', sans-serif; }
+  .load-btn:hover { background: var(--gold-deep); }
+  .kpi-row { display: flex; gap: 12px; margin-top: 16px; }
+  .kpi { flex: 1; background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 16px; }
+  .kpi .num { font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 700; color: var(--navy); }
+  .kpi .lbl { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; font-weight: 600; }
+  .card { background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 0; margin-top: 16px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--slate); font-weight: 600; border-bottom: 1px solid var(--rule); background: #f8f9fb; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--rule); color: var(--navy-deep); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .code-cell { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--navy); }
+  .pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .pill.paid { background: var(--gold-tint); color: var(--gold-deep); }
+  .pill.printed { background: var(--navy-tint); color: var(--navy); }
+  .pill.pending { background: var(--gold-tint); color: var(--gold-deep); }
+  .pill.error { background: var(--error-tint); color: var(--error); }
+  .retry-btn { padding: 5px 12px; background: transparent; color: var(--navy); border: 1px solid var(--rule); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .retry-btn:hover { border-color: var(--navy); }
+  #statusMsg { font-size: 13px; margin-top: 8px; color: var(--error); display: none; }
+  #loader { text-align: center; padding: 40px; color: var(--slate); font-size: 14px; }
+  #content { display: none; }
+  .shop-name-banner { background: var(--navy); color: #fff; border-radius: 10px; padding: 14px 18px; margin-top: 16px; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
+  .shop-name-banner .badge { font-size: 11px; background: rgba(244,176,0,.2); color: var(--gold); padding: 3px 10px; border-radius: 20px; }
+  .today-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .today-row .kpi { min-width: 120px; }
+  .printer-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: rgba(255,255,255,.15); color: #fff; }
+  .printer-badge i { width: 9px; height: 9px; border-radius: 50%; background: #9aa3b5; display: inline-block; }
+  .printer-badge.on i { background: #3ddc84; } .printer-badge.off i { background: #ff6b5c; }
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; align-items: start; }
+  @media (max-width: 760px) { .board { grid-template-columns: 1fr; } }
+  .col { background: #eef0f6; border-radius: 12px; padding: 10px; min-height: 120px; }
+  .col h4 { margin: 4px 6px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--slate); display: flex; justify-content: space-between; }
+  .col h4 b { color: var(--navy); }
+  .jcard { background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .jcard.new { animation: flash 1.2s ease-out 3; }
+  @keyframes flash { 0%,100% { box-shadow: 0 0 0 0 rgba(244,176,0,0); } 50% { box-shadow: 0 0 0 6px rgba(244,176,0,.55); } }
+  .jcard .jcode { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 700; color: var(--navy); letter-spacing: .05em; }
+  .jcard .jfile { font-size: 13px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .jcard .jmeta { font-size: 12px; color: var(--slate); margin-top: 4px; }
+  .jcard .jerr { font-size: 12px; color: var(--error); margin-top: 6px; }
+  .jcard .retry-btn { margin-top: 8px; width: 100%; padding: 9px; background: var(--gold); border: none; color: var(--navy-deep); font-weight: 700; }
+  .empty-col { text-align: center; color: var(--slate-light); font-size: 13px; padding: 18px 0; }
+  .newjob-banner { display: none; margin-top: 16px; background: var(--gold); color: var(--navy-deep); border-radius: 10px; padding: 12px 16px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+  .newjob-banner.show { display: block; animation: flash 1.2s ease-out 3; }
+  .snd-btn { font-size: 12px; background: transparent; border: 1px solid var(--rule); border-radius: 6px; padding: 5px 10px; cursor: pointer; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="brand-band">
+  <div style="max-width:900px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;">
+    <img src="/logo.png" alt="DocuFast India" style="height:56px;display:block;">
+    <span style="font-size:12px;color:var(--slate);font-weight:600;background:var(--navy-tint);padding:4px 12px;border-radius:20px;">Shop Dashboard</span>
+  </div>
+</div>
+
+<div class="page">
+  <div class="key-bar">
+    <div class="field">
+      <label for="shopCode">Shop code</label>
+      <input type="text" id="shopCode" autocapitalize="off" autocomplete="username" placeholder="e.g. mehdipatnam">
+    </div>
+    <div class="field">
+      <label for="shopPin">PIN</label>
+      <input type="password" id="shopPin" inputmode="numeric" autocomplete="current-password" placeholder="6-digit PIN from DocuFast India">
+    </div>
+    <button class="load-btn" onclick="loadDashboard()">Load my jobs</button>
+  </div>
+  <div id="statusMsg"></div>
+  <div id="loader" style="display:none;">Loading…</div>
+
+  <div id="content">
+    <div class="shop-name-banner">
+      <span id="shopName">Your shop</span>
+      <span style="display:flex;gap:8px;align-items:center;"><span class="printer-badge" id="printerBadge"><i></i><span>Printer</span></span><span class="badge" id="shopBadge">Active</span></span>
+    </div>
+
+    <div class="card" id="shopLinkCard" style="display:none; padding:16px 18px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);font-weight:600;margin-bottom:8px;">
+        Your customer link &amp; QR code — this is unique to your shop
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <img id="shopQrImg" alt="Your shop's QR code" width="140" height="140"
+            style="display:block;border:1px solid var(--rule);border-radius:8px;background:#fff;padding:8px;">
+          <a id="downloadQrBtn" class="retry-btn" download="docufast-qr.png"
+            style="display:inline-block;margin-top:8px;text-decoration:none;">Download QR</a>
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input id="shopLinkInput" readonly
+              style="flex:1;padding:10px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--navy-deep);background:#f8f9fb;">
+            <button class="retry-btn" id="copyLinkBtn" onclick="copyShopLink()">Copy</button>
+          </div>
+          <p style="font-size:12px;color:var(--slate);margin-top:10px;">
+            Put this QR code on your counter, window, or a printed poster.
+            Every scan is tagged to your shop, so jobs land only in your queue.
+            Want a full printable poster instead of just the code?
+            <a class="nav-link" id="posterLink" href="#" target="_blank">Open your poster page →</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="newjob-banner" id="newBanner">🔔 New paid order!</div>
+
+    <div class="today-row">
+      <div class="kpi"><div class="num" id="kpiJobs">0</div><div class="lbl">Orders today</div></div>
+      <div class="kpi"><div class="num" id="kpiPages">0</div><div class="lbl">Pages printed today</div></div>
+      <div class="kpi"><div class="num" id="kpiRevenue">₹0</div><div class="lbl">Collected today</div></div>
+      <div class="kpi"><div class="num" id="kpiPending">0</div><div class="lbl">Waiting to print</div></div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+      <button class="snd-btn" id="soundBtn" type="button">🔔 Sound on</button>
+    </div>
+
+    <div class="board">
+      <div class="col"><h4><span>To print</span><b id="cntQueue">0</b></h4><div id="colQueue"></div></div>
+      <div class="col"><h4><span>Needs attention</span><b id="cntFailed">0</b></h4><div id="colFailed"></div></div>
+      <div class="col"><h4><span>Printed</span><b id="cntPrinted">0</b></h4><div id="colPrinted"></div></div>
+    </div>
+
+    <p style="margin-top:16px;font-size:13px;color:var(--slate);">
+      Auto-refreshes every 5 seconds. 
+      <a class="nav-link" href="/" style="margin-left:8px;">← Customer upload page</a>
+    </p>
+  </div>
+</div>
+
+<script src="/admin.js"></script>
+</body>
+</html>

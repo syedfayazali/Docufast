@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuFast India — upload &amp; print</title>
+<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+
+<div class="brand-band">
+  <div class="wrap" style="padding:0 20px;">
+    <img src="/logo-tagline.png" alt="DocuFast India — Documents Made Easy, Delivered To You" style="height:72px;display:block;">
+    <div class="trust-bar">
+      <span>🔒 Secure payments via Razorpay</span>
+      <span>⚡ Prints in minutes</span>
+      <span>🇮🇳 Made for India</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="card" id="uploadCard">
+    <ol class="steps" id="steps" aria-label="Progress">
+      <li class="on" data-step="1"><span>1</span>Upload</li>
+      <li data-step="2"><span>2</span>Options</li>
+      <li data-step="3"><span>3</span>Pay</li>
+    </ol>
+    <div class="shop-line" id="shopLine"></div>
+
+    <!-- STEP 1 — upload -->
+    <section class="step" id="step1">
+      <div class="modes" id="modes" role="tablist">
+        <button type="button" class="mode active" data-mode="file">📄 A file</button>
+        <button type="button" class="mode" data-mode="photos">🖼️ Photos → PDF</button>
+        <button type="button" class="mode" data-mode="passport">🪪 Passport photos</button>
+      </div>
+
+      <div id="panelFile">
+        <div class="dropzone" id="dropzone">
+          <div class="icon">&#8675;</div>
+          <div>Drop a file here, or tap to choose</div>
+          <div style="font-size:12px;color:var(--slate);margin-top:4px;">PDF, JPG, PNG, DOCX — up to 25MB</div>
+          <div class="filename" id="filenameLabel"></div>
+          <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+        </div>
+        <button class="ghost cam-btn" id="camBtn" type="button">📷 Take a photo of a document</button>
+        <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
+      </div>
+
+      <div id="panelPhotos" style="display:none;">
+        <div class="note" style="margin-top:0;">Add several photos or PDFs. We join them, in this order, into one PDF.</div>
+        <div id="photoList"></div>
+        <input type="file" id="photosInput" accept="image/*,application/pdf,.pdf" multiple style="display:none">
+        <button class="ghost" id="photosAdd" type="button">＋ Add photos or PDFs</button>
+        <label class="chk"><input type="checkbox" id="photosEnhance"> Brighten dim photos</label>
+        <button class="primary" id="photosMake" type="button" disabled>Add photos first</button>
+      </div>
+
+      <div id="panelPassport" style="display:none;">
+        <div class="note" style="margin-top:0;">Pick one clear face photo. We put copies of it on a single A4 sheet at 35 × 45 mm, ready to cut.</div>
+        <div id="passportPreview"></div>
+        <input type="file" id="passportInput" accept="image/*" style="display:none">
+        <div class="nav-row" style="gap:8px;">
+          <button class="ghost" id="passportPick" type="button" style="margin-top:12px;">Choose photo</button>
+          <button class="ghost" id="passportRotate" type="button" style="margin-top:12px;" disabled>⟳ Rotate</button>
+        </div>
+        <div class="field"><label for="passportCount">Photos on the sheet</label>
+          <select id="passportCount"><option value="6">6</option><option value="8" selected>8</option><option value="12">12</option></select></div>
+        <button class="primary" id="passportMake" type="button" disabled>Make photo sheet</button>
+      </div>
+
+      <div id="panelService" style="display:none;">
+        <h3 id="serviceTitle" style="font-size:17px;"></h3>
+        <div class="note" id="serviceFeeNote" style="margin-top:2px;"></div>
+        <div class="note">Add each document. Phone photos or PDFs both work.</div>
+        <div id="serviceSlots"></div>
+        <button class="primary" id="serviceMake" type="button" disabled>Continue</button>
+      </div>
+
+      <div class="upload-status" id="uploadStatus"></div>
+
+      <div class="field" id="pagesField" style="display:none;">
+        <label for="pages">Number of pages</label>
+        <input type="number" id="pages" min="1" value="1">
+        <div class="note" id="pagesNote"></div>
+      </div>
+
+      <button class="primary" id="next1" disabled>Choose a file to continue</button>
+    </section>
+
+    <!-- STEP 2 — options -->
+    <section class="step" id="step2" style="display:none;">
+      <div class="file-chip" id="fileChip"></div>
+
+      <div class="group-label">Colour</div>
+      <div class="cards" data-group="color">
+        <button type="button" class="ocard active" data-value="bw"><b>Black &amp; white</b><span id="priceBw"></span></button>
+        <button type="button" class="ocard" data-value="color"><b>Colour</b><span id="priceColor"></span></button>
+      </div>
+
+      <div class="group-label">Sides</div>
+      <div class="cards" data-group="duplex">
+        <button type="button" class="ocard active" data-value="single"><b>Single-sided</b><span>One side of each sheet</span></button>
+        <button type="button" class="ocard" data-value="double"><b>Double-sided</b><span id="priceDouble"></span></button>
+      </div>
+
+      <div class="group-label">Copies</div>
+      <div class="stepper">
+        <button type="button" id="copiesMinus" aria-label="Fewer copies">−</button>
+        <input type="number" id="copies" min="1" value="1" inputmode="numeric">
+        <button type="button" id="copiesPlus" aria-label="More copies">+</button>
+      </div>
+
+      <div class="nav-row">
+        <button class="ghost" id="back2" type="button">Back</button>
+        <button class="primary" id="next2" type="button">Continue</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 — review & pay -->
+    <section class="step" id="step3" style="display:none;">
+      <div class="summary" id="summary"></div>
+      <button class="primary" id="payBtn" disabled>Pay &amp; print</button>
+      <button class="ghost" id="back3" type="button">Back</button>
+      <div class="note">Pay securely with UPI, cards, or net banking via Razorpay.</div>
+    </section>
+
+    <div class="price-bar" id="priceBar" style="display:none;">
+      <div><div class="label">Total</div><div class="sub" id="priceSub"></div></div>
+      <div class="amount" id="amountLabel">₹0.00</div>
+    </div>
+  </div>
+
+  <div class="card" id="ticketCard" style="display:none;">
+    <span class="status-pill paid" id="statusPill">Paid</span>
+    <div class="stub">
+      <div class="main">
+        <div class="label" id="ticketLabel">Order code</div>
+        <div class="file" id="ticketFilename"></div>
+        <div class="meta" id="ticketMeta"></div>
+      </div>
+      <div class="code" id="ticketCode"></div>
+    </div>
+    <div class="note" id="ticketNote">Printing now — collect it from the tray.</div>
+    <a class="ghost" id="trackLink" href="#" style="display:block;text-align:center;text-decoration:none;">Track this order (save this link)</a>
+    <button class="ghost" onclick="location.reload()">Upload another file</button>
+  </div>
+
+</div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

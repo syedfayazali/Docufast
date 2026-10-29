@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuFast India — owner dashboard</title>
+<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<style>
+  body { background: #f5f6fa; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+  .top-bar { background: var(--white); border-bottom: 3px solid #F4B000; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .top-bar .logo { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #0A2E6E; }
+  .top-bar .logo span { color: #F4B000; }
+  .owner-badge { font-size: 11px; background: #E7ECF7; color: #0A2E6E; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .top-right { display: flex; align-items: center; gap: 12px; }
+  .key-field { font-size: 13px; padding: 6px 10px; border: 1px solid #E2E6EE; border-radius: 6px; background: #fff; color: #071F4D; width: 220px; }
+  .key-field::placeholder { color: #8A91A3; }
+  .login-card { max-width: 360px; margin: 64px auto 0; background: #fff; border: 1px solid #E2E6EE; border-radius: 12px; padding: 24px; }
+  .login-card h2 { font-size: 18px; color: #0A2E6E; margin-bottom: 6px; }
+  .login-card p { font-size: 13px; color: #5B6478; margin-bottom: 14px; }
+  .login-card .key-field { width: 100%; box-sizing: border-box; padding: 10px 12px; margin-bottom: 12px; }
+  .login-card .load-btn { width: 100%; padding: 10px; }
+  .pw-label { display: block; font-size: 12px; font-weight: 600; color: #5B6478; margin: 10px 0 4px; }
+  .pw-input { width: 100%; box-sizing: border-box; padding: 9px 12px; }
+  .login-err { font-size: 13px; color: #B3261E; margin: -4px 0 12px; }
+  .pw-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding: 10px 14px; background: #FFF6DB; border: 1px solid #F4B000; border-radius: 8px; font-size: 13px; color: #5A4200; }
+  .load-btn { font-size: 13px; padding: 6px 14px; background: #F4B000; color: #071F4D; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 0 0; }
+  .kpi { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 16px 18px; }
+  .kpi .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 600; }
+  .kpi .num { font-size: 26px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; color: #0A2E6E; margin-top: 6px; }
+  .kpi .sub { font-size: 11px; color: #8A91A3; margin-top: 3px; }
+  .kpi.warn .num { color: #B8762A; }
+  .section-title { font-size: 13px; font-weight: 600; color: #5B6478; text-transform: uppercase; letter-spacing: .05em; margin: 20px 0 10px; display: flex; align-items: center; justify-content: space-between; }
+  .add-shop-btn { font-size: 12px; color: #0A2E6E; border: 1px solid #0A2E6E; padding: 4px 12px; border-radius: 6px; cursor: pointer; background: #fff; font-weight: 600; }
+  .shops-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; overflow: hidden; }
+  .shops-table th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 600; border-bottom: 1px solid #E2E6EE; background: #f8f9fb; }
+  .shops-table th:not(:first-child) { text-align: right; }
+  .shops-table td { padding: 12px 14px; border-bottom: 1px solid #E2E6EE; font-size: 13px; color: #071F4D; vertical-align: middle; }
+  .shops-table td:not(:first-child) { text-align: right; }
+  .shops-table tr:last-child td { border-bottom: none; }
+  .shops-table tr:hover td { background: #f8f9fb; cursor: pointer; }
+  .shop-name { font-weight: 600; color: #0A2E6E; }
+  .shop-city { font-size: 11px; color: #8A91A3; margin-top: 1px; }
+  .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+  .pill.online { background: #E3EEE5; color: #2E6B4F; }
+  .pill.offline { background: #F5E2DE; color: #C0412B; }
+  .pill.warn { background: #F3E6CF; color: #B8762A; }
+  .pill.active { background: #E7ECF7; color: #0A2E6E; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+  .link-btn { font-size: 12px; color: #0A2E6E; border: 1px solid #E2E6EE; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: #fff; font-weight: 600; }
+  .link-btn:hover { border-color: #0A2E6E; }
+  .qr-popover { display: none; position: fixed; z-index: 200; background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 16px; box-shadow: 0 8px 24px rgba(7,31,77,.18); text-align: center; }
+  .qr-popover.open { display: block; }
+  .qr-popover img { width: 160px; height: 160px; display: block; margin: 0 auto 10px; border: 1px solid #E2E6EE; border-radius: 6px; }
+  .qr-popover input { width: 220px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; padding: 6px 8px; border: 1px solid #E2E6EE; border-radius: 6px; color: #071F4D; margin-bottom: 8px; }
+  .qr-popover-close { position: absolute; top: 8px; right: 10px; cursor: pointer; color: #8A91A3; font-size: 14px; background: none; border: none; }
+  .printer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .printer-card { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 12px 14px; }
+  .printer-shop-lbl { font-size: 10px; color: #8A91A3; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .printer-name { font-size: 13px; font-weight: 600; color: #0A2E6E; margin: 3px 0 2px; }
+  .printer-status { font-size: 11px; }
+  .printer-status.online { color: #2E6B4F; }
+  .printer-status.offline { color: #C0412B; }
+  .printer-status.warn { color: #B8762A; }
+  .recent-jobs { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; overflow: hidden; }
+  .job-row { display: grid; grid-template-columns: 80px 1fr 120px 100px 90px 90px; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #E2E6EE; align-items: center; font-size: 12px; }
+  .job-row.hdr { background: #f8f9fb; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 600; }
+  .job-code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #0A2E6E; font-size: 13px; }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(7,31,77,.5); z-index: 100; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 24px; width: 440px; }
+  .modal h3 { font-size: 16px; font-weight: 700; color: #0A2E6E; margin-bottom: 16px; }
+  .form-field { margin-bottom: 14px; }
+  .form-field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; margin-bottom: 5px; }
+  .form-field input { width: 100%; padding: 9px 12px; border: 1px solid #E2E6EE; border-radius: 6px; font-size: 14px; color: #071F4D; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+  .btn-primary { flex: 1; padding: 10px; background: #F4B000; color: #071F4D; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-ghost { flex: 1; padding: 10px; background: transparent; color: #5B6478; border: 1px solid #E2E6EE; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .api-key-box { background: #E7ECF7; border-radius: 8px; padding: 12px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #0A2E6E; word-break: break-all; margin-top: 14px; }
+  .msg { font-size: 13px; color: #C0412B; margin-top: 8px; }
+  #loader { text-align: center; padding: 40px; color: #8A91A3; font-size: 14px; }
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .chart-grid { grid-template-columns: 1fr; } }
+  .chart-card { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 14px 16px; }
+  .chart-t { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 600; margin-bottom: 10px; }
+  .bars { display: flex; align-items: flex-end; gap: 4px; height: 140px; }
+  .bars .b { flex: 1; background: #0A2E6E; border-radius: 3px 3px 0 0; min-height: 2px; position: relative; }
+  .bars .b.zero { background: #E2E6EE; }
+  .bars .b:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #071F4D; color: #fff; font-size: 11px; padding: 3px 7px; border-radius: 4px; white-space: nowrap; z-index: 5; }
+  .bar-axis { display: flex; justify-content: space-between; font-size: 10px; color: #8A91A3; margin-top: 4px; }
+  .hbar { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 13px; }
+  .hbar .n { width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar .t { flex: 1; background: #F0F2F7; border-radius: 4px; height: 14px; }
+  .hbar .t i { display: block; height: 14px; background: #F4B000; border-radius: 4px; }
+  .pilot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .pilot { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 14px 16px; }
+  .pilot h5 { margin: 0 0 8px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .pilot .go { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #E7F4EC; color: #2E6B4F; }
+  .pilot .no { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #FDF1D6; color: #8a5f00; }
+  .pilot li { list-style: none; font-size: 13px; margin: 5px 0; display: flex; gap: 8px; }
+  .pilot ul { margin: 0; padding: 0; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <img src="/logo.png" alt="DocuFast India" style="height:48px;display:block;">
+    <span class="owner-badge">Owner admin</span>
+  </div>
+  <div class="top-right" id="ownerBtns" style="display:none;">
+    <button class="link-btn" onclick="openPwModal()">Change password</button>
+    <button class="load-btn" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<div class="page">
+  <div id="pwBanner" class="pw-banner" style="display:none;">
+    <span>You are signing in with the shared owner key. Set your own password so the key is no longer needed.</span>
+    <button class="load-btn" onclick="openPwModal()">Set password</button>
+  </div>
+
+  <form id="loginCard" class="login-card" style="display:none;" onsubmit="signIn(event)">
+    <h2>Owner sign-in</h2>
+    <p>Enter your owner password to open the dashboard.</p>
+    <input class="key-field" type="password" id="ownerPw" placeholder="Password" autocomplete="current-password">
+    <div id="loginErr" class="login-err" style="display:none;"></div>
+    <button class="load-btn" id="loginBtn" type="submit">Sign in</button>
+  </form>
+
+  <div id="loader">Loading…</div>
+  <div id="content" style="display:none;">
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="lbl">Revenue today</div><div class="num" id="kpiTodayRev">₹0</div><div class="sub" id="kpiTodayJobs">0 jobs</div></div>
+      <div class="kpi"><div class="lbl">Revenue this month</div><div class="num" id="kpiMonthRev">₹0</div><div class="sub" id="kpiShops">0 shops</div></div>
+      <div class="kpi"><div class="lbl">Jobs today</div><div class="num" id="kpiJobs">0</div><div class="sub">across all shops</div></div>
+      <div class="kpi warn" id="kpiPrinterCard"><div class="lbl">Printers online</div><div class="num" id="kpiPrinters">—</div><div class="sub" id="kpiPrinterSub"></div></div>
+    </div>
+
+    <div class="section-title">Last 14 days</div>
+    <div class="chart-grid">
+      <div class="chart-card"><div class="chart-t">Revenue per day (₹)</div><div class="bars" id="chartDaily"></div></div>
+      <div class="chart-card"><div class="chart-t">Busiest hours (orders, last 30 days)</div><div class="bars" id="chartHours"></div></div>
+    </div>
+    <div class="chart-card" style="margin-top:14px;"><div class="chart-t">Revenue by shop (14 days)</div><div id="chartShops"></div></div>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#5B6478;">Export orders (CSV for Excel):</span>
+      <input type="date" id="expFrom" style="padding:6px;border:1px solid #E2E6EE;border-radius:6px;">
+      <input type="date" id="expTo" style="padding:6px;border:1px solid #E2E6EE;border-radius:6px;">
+      <button class="link-btn" onclick="exportCsv()">Download</button>
+    </div>
+
+    <div class="section-title" style="margin-top:24px;">Services &amp; document checklists
+      <span style="font-size:12px;color:#5B6478;font-weight:400;">Switched-off services are hidden from customers. Review each list, set your fee, then switch it on.</span>
+    </div>
+    <div id="svcList" class="pilot-grid"></div>
+
+    <div class="section-title" style="margin-top:24px;">Pilot readiness — is a shop ready to go live?</div>
+    <div id="pilotGrid" class="pilot-grid"></div>
+
+    <div class="section-title" style="margin-top:24px;">
+      All shops
+      <button class="add-shop-btn" onclick="openAddShop()">+ Add shop</button>
+    </div>
+
+    <table class="shops-table">
+      <thead>
+        <tr>
+          <th>Shop</th>
+          <th>Today ₹</th>
+          <th>Month ₹</th>
+          <th>Jobs today</th>
+          <th>Printers</th>
+          <th>Status</th>
+          <th>Link / Key</th>
+        </tr>
+      </thead>
+      <tbody id="shopsBody"></tbody>
+    </table>
+
+    <div class="section-title" style="margin-top:24px;">Printer status — all shops</div>
+    <div class="printer-grid" id="printerGrid"></div>
+
+    <div class="section-title" style="margin-top:24px;">Recent jobs</div>
+    <div class="recent-jobs">
+      <div class="job-row hdr">
+        <span>Code</span><span>File</span><span>Shop</span><span>Amount</span><span>Type</span><span>Status</span>
+      </div>
+      <div id="jobsBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add shop modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Add new shop</h3>
+    <div id="modalForm">
+      <div class="form-field"><label>Shop name</label><input id="fName" placeholder="e.g. Mahabubnagar Main"></div>
+      <div class="form-field"><label>URL slug</label><input id="fSlug" placeholder="e.g. mahabubnagar-main"></div>
+      <div class="form-field"><label>City</label><input id="fCity" placeholder="e.g. Mahabubnagar"></div>
+      <div class="form-field"><label>Address</label><input id="fAddress" placeholder="e.g. Opp. Bus Stand"></div>
+      <div class="msg" id="formMsg"></div>
+      <div class="modal-btns">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" onclick="submitShop()">Create shop</button>
+      </div>
+    </div>
+    <div id="modalResult" style="display:none;">
+      <div id="resultHeading" style="font-size:13px;color:#2E6B4F;font-weight:600;">Shop created successfully</div>
+      <div style="font-size:13px;color:#5B6478;margin-top:8px;">Share this API key with the shop owner to configure their print agent:</div>
+      <div class="api-key-box" id="newApiKey"></div>
+      <div style="font-size:12px;color:#C0412B;margin-top:8px;">Save this key — it won't be shown again.</div>
+      <div class="modal-btns">
+        <button class="btn-primary" onclick="closeModal();loadDashboard();">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Service editor modal -->
+<div class="modal-bg" id="svcBg">
+  <div class="modal">
+    <h3 id="svcTitle">Service</h3>
+    <div class="form-field"><label>Name customers see</label><input id="svName"></div>
+    <div class="form-field"><label>Your service fee (₹, on top of printing)</label><input id="svFee" inputmode="decimal"></div>
+    <div class="form-field"><label>Documents the customer must upload — one per line. Add "| optional" to make one optional.</label>
+      <textarea id="svSlots" rows="7" style="width:100%;padding:10px;border:1px solid #E2E6EE;border-radius:6px;font-size:13px;"></textarea></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:6px;"><input type="checkbox" id="svActive"> Show this service to customers</label>
+    <div class="msg" id="svMsg"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeSvc()">Cancel</button>
+      <button class="btn-primary" onclick="saveSvc()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Price list modal -->
+<div class="modal-bg" id="priceBg">
+  <div class="modal">
+    <h3 id="priceTitle">Price list</h3>
+    <div style="font-size:12px;color:#5B6478;margin-bottom:10px;">Rupees per page. Customers see these prices and are billed exactly these. Leave the double-sided boxes empty to charge the single-sided price.</div>
+    <div class="form-field"><label>Black &amp; white (₹/page)</label><input id="pBw" inputmode="decimal"></div>
+    <div class="form-field"><label>Colour (₹/page)</label><input id="pColor" inputmode="decimal"></div>
+    <div class="form-field"><label>B&amp;W double-sided (₹/page, optional)</label><input id="pDuplexBw" inputmode="decimal"></div>
+    <div class="form-field"><label>Colour double-sided (₹/page, optional)</label><input id="pDuplexColor" inputmode="decimal"></div>
+    <div class="msg" id="priceMsg"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closePrices()">Cancel</button>
+      <button class="btn-primary" onclick="savePrices()">Save prices</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR / link popover (shared, repositioned per shop) -->
+<div class="qr-popover" id="qrPopover" style="position:relative;">
+  <button class="qr-popover-close" onclick="closeQrPopover()">✕</button>
+  <img id="qrPopoverImg" alt="Shop QR code">
+  <input id="qrPopoverLink" readonly onclick="this.select()">
+  <div style="display:flex;gap:8px;">
+    <button class="link-btn" style="flex:1;" onclick="copyPopoverLink()">Copy link</button>
+    <button class="link-btn" style="flex:1;" id="qrPopoverPoster">Open poster</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="pwModalBg">
+  <form class="modal" onsubmit="event.preventDefault(); savePassword();">
+    <h3>Change owner password</h3>
+    <label class="pw-label">Current password (or the shared owner key)</label>
+    <input class="key-field pw-input" type="password" id="pwCur" autocomplete="current-password">
+    <label class="pw-label">New password (at least 10 characters)</label>
+    <input class="key-field pw-input" type="password" id="pwNew" autocomplete="new-password">
+    <label class="pw-label">Repeat new password</label>
+    <input class="key-field pw-input" type="password" id="pwNew2" autocomplete="new-password">
+    <div id="pwMsg" style="font-size:13px;min-height:18px;margin-top:8px;"></div>
+    <div class="modal-btns">
+      <button type="button" class="btn-ghost" onclick="closePwModal()">Cancel</button>
+      <button type="submit" class="btn-primary">Save password</button>
+    </div>
+  </form>
+</div>
+
+<script>
+// ---- Sign-in ----
+// The password is sent once to /api/owner/login; the server answers with a
+// 12-hour HttpOnly cookie, so nothing secret is kept in the browser.
+let signedIn = false;
+
+// If the server says the session is gone (expired, signed out elsewhere),
+// drop back to the sign-in form instead of showing empty panels.
+const _fetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  const res = await _fetch(...args);
+  const url = String(args[0] && args[0].url ? args[0].url : args[0]);
+  const ownerCall = url.startsWith('/api/owner') || url.startsWith('/api/shops/');
+  if (res.status === 401 && signedIn && ownerCall && !/\/api\/owner\/(login|password)$/.test(url)) showLogin('Your session ended. Please sign in again.');
+  return res;
+};
+
+function showLogin(message) {
+  signedIn = false;
+  document.getElementById('content').style.display = 'none';
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('loginCard').style.display = 'block';
+  document.getElementById('ownerBtns').style.display = 'none';
+  document.getElementById('pwBanner').style.display = 'none';
+  const err = document.getElementById('loginErr');
+  err.textContent = message || '';
+  err.style.display = message ? 'block' : 'none';
+  document.getElementById('ownerPw').focus();
+}
+
+async function signIn(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById('ownerPw');
+  const btn = document.getElementById('loginBtn');
+  const password = input.value;
+  if (!password) return;
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/owner/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { showLogin(data.error || 'Could not sign in.'); input.value = ''; return; }
+    input.value = '';
+    startSession();
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+
+async function signOut() {
+  await fetch('/api/owner/logout', { method: 'POST' });
+  showLogin('You are signed out.');
+}
+
+async function startSession() {
+  signedIn = true;
+  document.getElementById('loginCard').style.display = 'none';
+  document.getElementById('ownerBtns').style.display = 'flex';
+  document.getElementById('loader').style.display = 'block';
+  // Show the "set your own password" reminder until the owner has done it.
+  fetch('/api/owner/session').then(r => r.ok ? r.json() : null).then(s => {
+    document.getElementById('pwBanner').style.display = s && !s.passwordSet ? 'flex' : 'none';
+  }).catch(() => {});
+  loadDashboard();
+}
+
+async function checkSession() {
+  // One-time move: an owner key saved in this browser by the old page is used
+  // once to sign in, then deleted from the browser.
+  let oldKey = '';
+  try { oldKey = localStorage.getItem('df_owner_key') || ''; localStorage.removeItem('df_owner_key'); } catch {}
+  const res = await fetch('/api/owner/session');
+  if (res.ok) { startSession(); return; }
+  if (oldKey) {
+    const login = await fetch('/api/owner/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: oldKey }),
+    });
+    if (login.ok) { startSession(); return; }
+  }
+  showLogin('');
+}
+
+// ---- Change password ----
+function openPwModal() {
+  ['pwCur', 'pwNew', 'pwNew2'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('pwMsg').textContent = '';
+  document.getElementById('pwModalBg').classList.add('open');
+  document.getElementById('pwCur').focus();
+}
+function closePwModal() { document.getElementById('pwModalBg').classList.remove('open'); }
+
+async function savePassword() {
+  const current = document.getElementById('pwCur').value;
+  const next = document.getElementById('pwNew').value;
+  const msg = document.getElementById('pwMsg');
+  msg.style.color = '#B3261E';
+  if (next !== document.getElementById('pwNew2').value) { msg.textContent = 'The two new passwords do not match.'; return; }
+  const res = await fetch('/api/owner/password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ current, next }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.textContent = data.error || 'Could not change the password.'; return; }
+  msg.style.color = '#1B7F3B';
+  msg.textContent = 'Password changed.';
+  document.getElementById('pwBanner').style.display = 'none';
+  setTimeout(closePwModal, 1200);
+}
+
+async function loadDashboard() {
+  if (!signedIn) return;
+  document.getElementById('content').style.display = 'none';
+
+  const [statsRes, jobsRes] = await Promise.all([
+    fetch('/api/owner/stats'),
+    fetch('/api/owner/jobs'),
+  ]);
+
+  if (!statsRes.ok) {
+    if (statsRes.status !== 401) document.getElementById('loader').textContent = 'Failed to load — check console.';
+    return;
+  }
+
+  const stats = await statsRes.json();
+  const { jobs } = await jobsRes.json();
+
+  loadReport();
+  loadServices();
+  renderKPIs(stats);
+  renderShops(stats.shops, stats.printers);
+  renderPrinters(stats.printers);
+  renderJobs(jobs, stats.shops);
+
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+async function loadReport() {
+  try {
+    const res = await fetch('/api/owner/reports?days=14');
+    if (!res.ok) return;
+    renderReport(await res.json());
+  } catch { /* charts are optional — the rest of the dashboard still works */ }
+}
+
+function renderReport(r) {
+  const daily = document.getElementById('chartDaily'); daily.innerHTML = '';
+  const maxD = Math.max(1, ...r.daily.map(d => d.revenue));
+  r.daily.forEach(d => {
+    const b = document.createElement('div');
+    b.className = 'b' + (d.revenue ? '' : ' zero');
+    b.style.height = Math.max(2, Math.round(d.revenue / maxD * 100)) + '%';
+    b.dataset.tip = `${d.date.slice(5)} · ₹${(d.revenue / 100).toFixed(0)} · ${d.jobs} orders`;
+    daily.appendChild(b);
+  });
+  const dx = daily.nextElementSibling; if (dx) dx.remove();
+  daily.insertAdjacentHTML('afterend', `<div class="bar-axis"><span>${r.daily[0].date.slice(5)}</span><span>${r.daily[r.daily.length - 1].date.slice(5)}</span></div>`);
+
+  const hours = document.getElementById('chartHours'); hours.innerHTML = '';
+  const maxH = Math.max(1, ...r.hours.map(h => h.jobs));
+  r.hours.forEach(h => {
+    const b = document.createElement('div');
+    b.className = 'b' + (h.jobs ? '' : ' zero');
+    b.style.height = Math.max(2, Math.round(h.jobs / maxH * 100)) + '%';
+    const hr12 = ((h.hour + 11) % 12) + 1 + (h.hour < 12 ? 'am' : 'pm');
+    b.dataset.tip = `${hr12} · ${h.jobs} orders`;
+    hours.appendChild(b);
+  });
+  const hx = hours.nextElementSibling; if (hx) hx.remove();
+  hours.insertAdjacentHTML('afterend', '<div class="bar-axis"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>');
+
+  const shops = document.getElementById('chartShops'); shops.innerHTML = '';
+  const maxS = Math.max(1, ...r.perShop.map(s => s.revenue));
+  r.perShop.forEach(s => {
+    const row = document.createElement('div'); row.className = 'hbar';
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = s.name;
+    const t = document.createElement('span'); t.className = 't'; t.innerHTML = '<i></i>'; t.firstChild.style.width = Math.round(s.revenue / maxS * 100) + '%';
+    const v = document.createElement('span'); v.textContent = '₹' + (s.revenue / 100).toFixed(0) + ' · ' + s.jobs + ' orders';
+    row.append(n, t, v); shops.appendChild(row);
+  });
+
+  const grid = document.getElementById('pilotGrid'); grid.innerHTML = '';
+  r.readiness.forEach(p => {
+    const card = document.createElement('div'); card.className = 'pilot';
+    const h = document.createElement('h5');
+    const nm = document.createElement('span'); nm.textContent = p.name;
+    const badge = document.createElement('span'); badge.className = p.ready ? 'go' : 'no'; badge.textContent = p.ready ? 'READY' : 'NOT YET';
+    h.append(nm, badge);
+    const ul = document.createElement('ul');
+    p.gates.forEach(g => { const li = document.createElement('li'); li.textContent = (g.ok ? '✅ ' : '⬜ ') + g.label; ul.appendChild(li); });
+    card.append(h, ul); grid.appendChild(card);
+  });
+}
+
+let svcCache = [], svcEditing = null;
+async function loadServices() {
+  try {
+    const res = await fetch('/api/owner/services');
+    if (!res.ok) return;
+    svcCache = (await res.json()).services || [];
+    const grid = document.getElementById('svcList'); grid.innerHTML = '';
+    svcCache.forEach(sv => {
+      const card = document.createElement('div'); card.className = 'pilot';
+      const h = document.createElement('h5');
+      const nm = document.createElement('span'); nm.textContent = sv.name;
+      const badge = document.createElement('span'); badge.className = sv.active ? 'go' : 'no'; badge.textContent = sv.active ? 'ON' : 'OFF';
+      h.append(nm, badge);
+      const info = document.createElement('div'); info.style.cssText = 'font-size:13px;color:#5B6478;';
+      info.textContent = `Fee ₹${(sv.fee / 100).toFixed(sv.fee % 100 ? 2 : 0)} · ${sv.slots.length} documents`;
+      const btn = document.createElement('button'); btn.className = 'link-btn'; btn.style.marginTop = '10px'; btn.textContent = 'Edit';
+      btn.addEventListener('click', () => openSvc(sv.id));
+      card.append(h, info, btn); grid.appendChild(card);
+    });
+  } catch { /* services section is optional */ }
+}
+function openSvc(id) {
+  const sv = svcCache.find(x => x.id === id); if (!sv) return;
+  svcEditing = id;
+  document.getElementById('svcTitle').textContent = 'Edit — ' + sv.name;
+  document.getElementById('svName').value = sv.name;
+  document.getElementById('svFee').value = String(sv.fee / 100);
+  document.getElementById('svSlots').value = sv.slots.map(x => x.label + (x.required ? '' : ' | optional')).join('\n');
+  document.getElementById('svActive').checked = !!sv.active;
+  document.getElementById('svMsg').textContent = '';
+  document.getElementById('svcBg').classList.add('open');
+}
+function closeSvc() { document.getElementById('svcBg').classList.remove('open'); }
+async function saveSvc() {
+  const msg = document.getElementById('svMsg');
+  const fee = Math.round(parseFloat(document.getElementById('svFee').value || '0') * 100);
+  if (!Number.isFinite(fee) || fee < 0) { msg.textContent = 'Enter a valid fee (0 or more).'; return; }
+  const slots = document.getElementById('svSlots').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const [label, flag] = l.split('|').map(x => x.trim());
+    return { label, required: !(flag && /^optional$/i.test(flag)) };
+  });
+  const res = await fetch('/api/owner/services', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: svcEditing, name: document.getElementById('svName').value, fee, slots, active: document.getElementById('svActive').checked }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.textContent = data.error || 'Could not save.'; return; }
+  closeSvc(); loadServices();
+}
+
+async function exportCsv() {
+  const from = document.getElementById('expFrom').value, to = document.getElementById('expTo').value;
+  const q = new URLSearchParams({ format: 'csv' }); if (from) q.set('from', from); if (to) q.set('to', to);
+  const res = await fetch('/api/owner/reports?' + q);
+  if (!res.ok) { alert('Export failed.'); return; }
+  const blob = await res.blob();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `docufast-orders-${from || 'month'}-to-${to || 'today'}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+}
+
+function fmt(paise) { return '₹' + (paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
+
+function renderKPIs(s) {
+  document.getElementById('kpiTodayRev').textContent = fmt(s.todayRevenue);
+  document.getElementById('kpiTodayJobs').textContent = s.todayJobs + ' jobs today';
+  document.getElementById('kpiMonthRev').textContent = fmt(s.monthRevenue);
+  document.getElementById('kpiShops').textContent = (s.shops?.length || 0) + ' active shops';
+  document.getElementById('kpiJobs').textContent = s.todayJobs;
+  document.getElementById('kpiPrinters').textContent = `${s.printersOnline} / ${s.printersTotal}`;
+  document.getElementById('kpiPrinterSub').textContent = s.printersOnline < s.printersTotal
+    ? `${s.printersTotal - s.printersOnline} offline right now` : 'all online';
+  document.getElementById('kpiPrinterCard').className = 'kpi' + (s.printersOnline < s.printersTotal ? ' warn' : '');
+}
+
+function renderShops(shops, printers) {
+  const body = document.getElementById('shopsBody');
+  body.innerHTML = '';
+  if (!shops?.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8A91A3;padding:20px;">No shops yet — add one above.</td></tr>'; return; }
+  shops.forEach(s => {
+    shopNames[s.id] = s.name;
+    shopPrices[s.id] = s.prices || {};
+    const shopPrinters = (printers || []).filter(p => p.shop_id === s.id);
+    const onlineCount = shopPrinters.filter(p => p.status === 'online').length;
+    const total = shopPrinters.length;
+    const printerPill = total === 0 ? '<span class="pill warn">No printers</span>'
+      : onlineCount === total ? `<span class="pill online"><span class="dot"></span>${onlineCount}/${total}</span>`
+      : onlineCount === 0 ? `<span class="pill offline"><span class="dot"></span>0/${total}</span>`
+      : `<span class="pill warn"><span class="dot"></span>${onlineCount}/${total}</span>`;
+    const tr = document.createElement('tr');
+    const stuckBadge = s.stuckJobs > 0
+      ? `<span class="pill offline" style="margin-left:6px;" title="Paid but unprinted for 15+ minutes — the shop's agent is likely offline">⚠ ${s.stuckJobs} stuck</span>`
+      : '';
+    tr.innerHTML = `
+      <td><div class="shop-name">${s.name}${stuckBadge}</div><div class="shop-city">${s.city || s.slug}</div></td>
+      <td>${fmt(parseInt(s.today_revenue) || 0)}</td>
+      <td>${fmt(parseInt(s.month_revenue) || 0)}</td>
+      <td>${s.today_jobs || 0}</td>
+      <td>${printerPill}</td>
+      <td><span class="pill ${s.active ? 'active' : 'offline'}">${s.active ? 'Active' : 'Paused'}</span></td>
+      <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button>
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button>
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Staff PIN</button>
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();openPrices('${s.id}')">Prices</button></td>`;
+    tr.dataset.shopName = s.name;
+    body.appendChild(tr);
+  });
+}
+
+const shopNames = {};
+const shopPrices = {};
+let priceShopId = null;
+const rupees = p => (p === null || p === undefined) ? '' : String(p / 100);
+function openPrices(id) {
+  priceShopId = id;
+  const p = shopPrices[id] || {};
+  document.getElementById('priceTitle').textContent = 'Prices — ' + (shopNames[id] || 'shop');
+  document.getElementById('pBw').value = rupees(p.bw ?? 200);
+  document.getElementById('pColor').value = rupees(p.color ?? 800);
+  document.getElementById('pDuplexBw').value = rupees(p.duplexBw);
+  document.getElementById('pDuplexColor').value = rupees(p.duplexColor);
+  document.getElementById('priceMsg').textContent = '';
+  document.getElementById('priceBg').classList.add('open');
+}
+function closePrices() { document.getElementById('priceBg').classList.remove('open'); }
+async function savePrices() {
+  const toPaise = id => { const v = document.getElementById(id).value.trim(); return v === '' ? null : Math.round(parseFloat(v) * 100); };
+  const prices = { bw: toPaise('pBw'), color: toPaise('pColor'), duplexBw: toPaise('pDuplexBw'), duplexColor: toPaise('pDuplexColor') };
+  const msg = document.getElementById('priceMsg');
+  if (prices.bw === null || prices.color === null || Number.isNaN(prices.bw) || Number.isNaN(prices.color)) { msg.textContent = 'B&W and Colour prices are required.'; return; }
+  const res = await fetch('/api/shops/' + encodeURIComponent(priceShopId), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prices }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.textContent = data.error || 'Could not save prices.'; return; }
+  shopPrices[priceShopId] = data.prices;
+  closePrices();
+  loadDashboard();
+}
+
+async function newStaffPin(id) {
+  const name = shopNames[id] || 'this shop';
+  if (!confirm('Create a new staff PIN for ' + name + '? Any old PIN stops working.')) return;
+  const res = await fetch('/api/shops/' + encodeURIComponent(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newStaffPin: true }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(data.error || 'Could not create a PIN.'); return; }
+  document.getElementById('modalForm').style.display = 'none';
+  document.getElementById('modalResult').style.display = 'block';
+  document.getElementById('modalTitle').textContent = 'Staff login for ' + name;
+  document.getElementById('resultHeading').textContent = 'Give staff this shop code and PIN (page: /admin.html)';
+  document.getElementById('newApiKey').textContent = 'Shop code: ' + data.shopCode + '    PIN: ' + data.pin;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+async function rotateKey(id) {
+  const name = (shopNames[id]) || 'this shop';
+  if (!confirm('Issue a NEW key for ' + name + '?\n\nThe old key stops working immediately and the shop\'s print agent will go offline until you enter the new key in it.')) return;
+  const res = await fetch('/api/shops/' + encodeURIComponent(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rotateKey: true }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(data.error || 'Could not rotate the key.'); return; }
+  document.getElementById('modalForm').style.display = 'none';
+  document.getElementById('modalResult').style.display = 'block';
+  document.getElementById('modalTitle').textContent = 'New key for ' + name;
+  document.getElementById('resultHeading').textContent = 'New key issued — the old key no longer works';
+  document.getElementById('newApiKey').textContent = data.apiKey;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function showQrPopover(evt, slug) {
+  const link = `${window.location.origin}/?shop=${encodeURIComponent(slug)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(link)}`;
+  document.getElementById('qrPopoverImg').src = qrUrl;
+  document.getElementById('qrPopoverLink').value = link;
+  document.getElementById('qrPopoverPoster').onclick = () => window.open(`/signage.html?shop=${encodeURIComponent(slug)}`, '_blank');
+
+  const pop = document.getElementById('qrPopover');
+  pop.style.position = 'fixed';
+  const rect = evt.target.getBoundingClientRect();
+  pop.style.top = `${rect.bottom + 6}px`;
+  pop.style.left = `${Math.min(rect.left, window.innerWidth - 260)}px`;
+  pop.classList.add('open');
+}
+
+function closeQrPopover() {
+  document.getElementById('qrPopover').classList.remove('open');
+}
+
+async function copyPopoverLink() {
+  const input = document.getElementById('qrPopoverLink');
+  try { await navigator.clipboard.writeText(input.value); }
+  catch { input.select(); document.execCommand('copy'); }
+}
+
+// Close the popover on an outside click, but not when the click is what opened it.
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('qrPopover');
+  if (pop.classList.contains('open') && !pop.contains(e.target)) closeQrPopover();
+});
+
+function renderPrinters(printers) {
+  const grid = document.getElementById('printerGrid');
+  grid.innerHTML = '';
+  if (!printers?.length) { grid.innerHTML = '<div style="color:#8A91A3;font-size:13px;grid-column:span 3;">No printers registered yet.</div>'; return; }
+  printers.forEach(p => {
+    const minsAgo = p.last_seen ? Math.round((Date.now() - new Date(p.last_seen)) / 60000) : null;
+    const statusClass = p.status === 'online' ? 'online' : minsAgo !== null && minsAgo < 15 ? 'warn' : 'offline';
+    const statusText = p.status === 'online' ? `Online · ${p.jobs_today || 0} jobs today`
+      : minsAgo !== null ? `Offline ${minsAgo} min` : 'Never connected';
+    const div = document.createElement('div');
+    div.className = 'printer-card';
+    div.innerHTML = `<div class="printer-shop-lbl">${p.shop_name || ''}</div>
+      <div class="printer-name">${p.name}</div>
+      <div class="printer-status ${statusClass}">${statusText}</div>
+      <div style="font-size:11px;color:#5B6478;margin-top:4px;">${p.push_state === 'connected' ? '⚡ Live push: connected' : p.push_state ? '⏱ Live push: ' + p.push_state + ' (polling)' : 'Live push: not reported'}${p.agent_version ? ' · v' + p.agent_version : ''}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+function renderJobs(jobs, shops) {
+  const shopMap = {};
+  (shops || []).forEach(s => { shopMap[s.id] = s.name; });
+  const body = document.getElementById('jobsBody');
+  body.innerHTML = '';
+  jobs.slice(0, 50).forEach(j => {
+    const statusColor = j.status === 'printed' ? '#2E6B4F' : j.printError ? '#C0412B' : '#B8762A';
+    const div = document.createElement('div');
+    div.className = 'job-row';
+    div.innerHTML = `
+      <span class="job-code">${j.code}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${j.filename}</span>
+      <span style="color:#5B6478;">${j.shopId ? (shopMap[j.shopId] || j.shopId) : '—'}</span>
+      <span>₹${((j.amount || 0) / 100).toFixed(2)}</span>
+      <span>${j.colorMode === 'color' ? 'Colour' : 'B&W'} ${j.duplex ? '·D' : ''}</span>
+      <span style="color:${statusColor};font-weight:600;">${j.printError ? 'Failed' : j.status}
+        ${(j.status === 'paid' || j.status === 'printed') ? `<button class="link-btn" style="margin-left:6px;" onclick="refundJob('${j.code}', ${j.amount || 0})">Refund</button>` : ''}</span>`;
+    body.appendChild(div);
+  });
+}
+
+async function refundJob(code, amount) {
+  if (!confirm('Refund ₹' + (amount / 100).toFixed(2) + ' for order ' + code + ' to the customer?\n\nThis cannot be undone and the file is deleted.')) return;
+  const res = await fetch('/api/owner/refund', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(data.error || 'Refund failed.'); return; }
+  alert('Refunded. The customer will see it in 5–7 working days.');
+  loadDashboard();
+}
+
+function openAddShop() {
+  document.getElementById('modalForm').style.display = 'block';
+  document.getElementById('modalResult').style.display = 'none';
+  document.getElementById('modalTitle').textContent = 'Add new shop';
+  document.getElementById('formMsg').textContent = '';
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
+
+document.getElementById('fName').addEventListener('input', function () {
+  const slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  document.getElementById('fSlug').value = slug;
+});
+
+async function submitShop() {
+  const name = document.getElementById('fName').value.trim();
+  const slug = document.getElementById('fSlug').value.trim();
+  const city = document.getElementById('fCity').value.trim();
+  const address = document.getElementById('fAddress').value.trim();
+  const msg = document.getElementById('formMsg');
+  if (!name || !slug) { msg.textContent = 'Name and slug are required.'; return; }
+  msg.textContent = '';
+  const res = await fetch('/api/owner/shops', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, slug, city, address }),
+  });
+  const data = await res.json();
+  if (!res.ok) { msg.textContent = data.error || 'Failed to create shop.'; return; }
+  document.getElementById('modalForm').style.display = 'none';
+  document.getElementById('modalResult').style.display = 'block';
+  document.getElementById('modalTitle').textContent = data.shop.name;
+  document.getElementById('resultHeading').textContent = 'Shop created successfully';
+  document.getElementById('newApiKey').textContent = data.shop.api_key;
+}
+
+checkSession();
+setInterval(() => { if (signedIn && document.getElementById('content').style.display !== 'none') loadDashboard(); }, 30000);
+</script>
+</body>
+</html>
