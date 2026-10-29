@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Payment receipt — DocuFast India</title>
-<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="icon" type="image/png" href="/brand-icon.png">
 <link rel="stylesheet" href="/styles.css">
 <style>
 .rc{max-width:520px;margin:20px auto;padding:0 20px 40px;}
@@ -13,7 +13,7 @@
 .rc .line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--rule);font-size:14px;}
 .rc .line span:last-child{text-align:right;font-weight:600;}
 .rc .tot{font-size:18px;border-bottom:none;border-top:2px solid var(--navy);margin-top:6px;padding-top:12px;}
-.rc .tot span:last-child{font-family:'IBM Plex Mono',monospace;color:var(--navy);}
+.rc .tot span:last-child{font-family:'JetBrains Mono',monospace;color:var(--navy);}
 .rc .disc{font-size:11px;color:var(--slate);margin-top:16px;}
 .rc .acts{display:flex;gap:10px;margin-top:16px;}
 .rc .acts button,.rc .acts a{flex:1;text-align:center;text-decoration:none;}
@@ -21,7 +21,12 @@
 </style>
 </head>
 <body>
-<div class="brand-band"><div class="wrap" style="padding:0 20px;"><a href="/"><img src="/logo-tagline.png" alt="DocuFast India" style="height:56px;display:block;"></a></div></div>
+<header class="brand-band">
+  <div class="inner">
+    <a href="/" aria-label="DocuFast India home"><img class="logo" src="/brand.png" alt="DocuFast India"></a>
+    <a class="nav-link" href="/"><i class="ic" data-ic="arrowLeft"></i> New print</a>
+  </div>
+</header>
 <div class="rc">
   <div class="paper" id="paper" style="display:none;">
     <h2>Payment receipt</h2>
@@ -69,5 +74,6 @@ function line(k, v, cls) {
   document.getElementById('acts').style.display = 'flex';
 })();
 </script>
+<script src="/ui.js"></script>
 </body>
 </html>

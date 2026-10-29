@@ -38,13 +38,13 @@ export default async function handler(req, res) {
 
   if (shopId && printerName) {
     const printer = await registerPrinter({ shopId, printerId, name: printerName });
-    await recordAgentInfo(printer.id, { push: req.headers['x-push-state'], version: req.headers['x-agent-version'] }).catch(() => {});
+    await recordAgentInfo(printer.id, { push: req.headers['x-push-state'], version: req.headers['x-agent-version'], reason: req.headers['x-push-reason'] }).catch(() => {});
     return res.status(200).json({ ok: true, printerId: printer.id, shopId });
   }
 
   if (printerId) {
     await heartbeatPrinter(printerId).catch(() => {});
-    await recordAgentInfo(printerId, { push: req.headers['x-push-state'], version: req.headers['x-agent-version'] }).catch(() => {});
+    await recordAgentInfo(printerId, { push: req.headers['x-push-state'], version: req.headers['x-agent-version'], reason: req.headers['x-push-reason'] }).catch(() => {});
   }
 
   return res.status(200).json({ ok: true, ts: Date.now() });

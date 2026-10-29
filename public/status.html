@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Order status — DocuFast India</title>
-<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="icon" type="image/png" href="/brand-icon.png">
 <link rel="stylesheet" href="/styles.css">
 <style>
-.big-code{font-family:'IBM Plex Mono',monospace;font-size:44px;font-weight:700;letter-spacing:.08em;color:var(--navy);text-align:center;margin:6px 0 2px;}
+.big-code{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:700;letter-spacing:.08em;color:var(--navy);text-align:center;margin:6px 0 2px;}
 .sub-center{text-align:center;font-size:13px;color:var(--slate);}
 .timeline{list-style:none;margin:22px 0 0;padding:0;}
 .timeline li{display:flex;gap:14px;align-items:flex-start;padding:0 0 22px;position:relative;}
@@ -23,25 +23,26 @@
 .banner.err{background:var(--error-tint);color:var(--error);}
 .banner.ok{background:var(--navy-tint);color:var(--navy);}
 .lookup{display:flex;gap:8px;margin-top:6px;}
-.lookup input{flex:1;padding:12px;border:2px solid var(--rule);border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:18px;text-transform:uppercase;letter-spacing:.06em;}
-.lookup button{padding:0 18px;border:none;border-radius:10px;background:var(--gold);font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;}
+.lookup input{flex:1;padding:12px;border:2px solid var(--rule);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:18px;text-transform:uppercase;letter-spacing:.06em;}
+.lookup button{padding:0 18px;border:none;border-radius:10px;background:var(--navy);color:#fff;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;}
 .hist{margin:6px 0 0;padding:0;list-style:none;font-size:12px;color:var(--slate);}
 .hist li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--rule);}
 .del-box{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule);}
-.del-box button{width:100%;padding:12px;border-radius:10px;border:2px solid var(--error);background:#fff;color:var(--error);font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;}
+.del-box button{width:100%;padding:12px;border-radius:10px;border:2px solid var(--error);background:#fff;color:var(--error);font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;}
 .del-box .note{margin-top:6px;}
 .recent{margin-top:24px;}
 .recent a{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--rule);text-decoration:none;color:var(--navy-deep);font-size:14px;}
-.recent a b{font-family:'IBM Plex Mono',monospace;color:var(--navy);}
+.recent a b{font-family:'JetBrains Mono',monospace;color:var(--navy);}
 .recent a span{color:var(--slate);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 </style>
 </head>
 <body>
-<div class="brand-band">
-  <div class="wrap" style="padding:0 20px;">
-    <a href="/"><img src="/logo-tagline.png" alt="DocuFast India" style="height:56px;display:block;"></a>
+<header class="brand-band">
+  <div class="inner">
+    <a href="/" aria-label="DocuFast India home"><img class="logo" src="/brand.png" alt="DocuFast India"></a>
+    <a class="nav-link" href="/"><i class="ic" data-ic="arrowLeft"></i> New print</a>
   </div>
-</div>
+</header>
 <div class="wrap">
   <div class="card" id="lookupCard">
     <h3 style="font-size:18px;">Track your order</h3>
@@ -211,5 +212,6 @@ $('shareBtn').addEventListener('click', async () => {
 showRecent();
 if (code) { load(); timer = setInterval(load, 4000); }
 </script>
+<script src="/ui.js"></script>
 </body>
 </html>

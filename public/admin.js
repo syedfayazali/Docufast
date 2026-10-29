@@ -121,7 +121,7 @@ let firstLoad = true;
 let soundOn = true;
 try { soundOn = localStorage.getItem('df_sound') !== 'off'; } catch {}
 const soundBtn = document.getElementById('soundBtn');
-function paintSoundBtn() { soundBtn.textContent = soundOn ? '🔔 Sound on' : '🔕 Sound off'; }
+function paintSoundBtn() { soundBtn.innerHTML = (soundOn ? window.dfIcon('bell') + ' Sound on' : window.dfIcon('bellOff') + ' Sound off'); window.dfIcons && window.dfIcons(soundBtn); }
 paintSoundBtn();
 soundBtn.addEventListener('click', () => {
   soundOn = !soundOn; paintSoundBtn();
@@ -153,11 +153,11 @@ function notifyNewPaid(jobs) {
   if (firstLoad) { firstLoad = false; return; }
   if (!fresh.length) return;
   const b = document.getElementById('newBanner');
-  b.textContent = '🔔 New paid order' + (fresh.length > 1 ? 's' : '') + ': ' + fresh.join(', ');
+  b.innerHTML = window.dfIcon('bell') + ' '; b.appendChild(document.createTextNode('New paid order' + (fresh.length > 1 ? 's' : '') + ': ' + fresh.join(', '))); window.dfIcons && window.dfIcons(b);
   b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
   newCodes = new Set(fresh);
   if (soundOn) beep();
-  const old = document.title; document.title = '🔔 New order — DocuFast';
+  const old = document.title; document.title = '(New) order — DocuFast';
   setTimeout(() => { document.title = old; b.classList.remove('show'); }, 8000);
 }
 let newCodes = new Set();
@@ -170,7 +170,7 @@ function jobCard(job, kind) {
   const meta = document.createElement('div'); meta.className = 'jmeta';
   meta.textContent = `${job.pages} pg × ${job.copies} · ${job.colorMode === 'color' ? 'Colour' : 'B&W'}${job.duplex ? ' · Double-sided' : ''} · ₹${(job.amount / 100).toFixed(2)}`;
   div.append(code);
-  if (job.serviceName) { const sv = document.createElement('div'); sv.className = 'jmeta'; sv.style.fontWeight = '700'; sv.style.color = 'var(--navy)'; sv.textContent = '🗂 ' + job.serviceName; div.append(sv); }
+  if (job.serviceName) { const sv = document.createElement('div'); sv.className = 'jmeta'; sv.style.fontWeight = '700'; sv.style.color = 'var(--navy)'; sv.textContent = job.serviceName; div.append(sv); }
   div.append(file, meta);
   if (kind === 'failed') {
     const err = document.createElement('div'); err.className = 'jerr'; err.textContent = job.printError || 'Print failed';
