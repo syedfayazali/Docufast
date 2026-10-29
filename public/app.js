@@ -5,7 +5,6 @@
 //   POST /api/jobs (gets razorpayOrderId) → open Razorpay modal →
 //   on success, POST /api/verify-payment → show ticket + poll until printed.
 import { initTools } from '/tools.js';
-import { upload as uploadPublic } from 'https://esm.sh/@vercel/blob@0.27.0/client';
 
 // New uploads go to the PRIVATE store once the server says it is enabled
 // (/api/config -> privateUploads); until then the original public store is
@@ -188,21 +187,13 @@ async function handleFile(file, { skipCompress = false } = {}) {
 
   try {
     const onUploadProgress = ({ percentage }) => { next1.textContent = `Uploading… ${Math.round(percentage)}%`; };
-    let blob;
-    if (await privateUploadsEnabled()) {
-      const { upload: uploadPrivate } = await import('https://esm.sh/@vercel/blob@2.8.2/client');
-      blob = await uploadPrivate(file.name, file, {
-        access: 'private',
-        handleUploadUrl: '/api/blob-upload-token?private=1',
-        onUploadProgress,
-      });
-    } else {
-      blob = await uploadPublic(file.name, file, {
-        access: 'public',
-        handleUploadUrl: '/api/blob-upload-token',
-        onUploadProgress,
-      });
-    }
+    if (!(await privateUploadsEnabled())) throw new Error('Secure upload is not available right now. Please try again shortly.');
+    const { upload: uploadPrivate } = await import('https://esm.sh/@vercel/blob@2.8.2/client');
+    const blob = await uploadPrivate(file.name, file, {
+      access: 'private',
+      handleUploadUrl: '/api/blob-upload-token?private=1',
+      onUploadProgress,
+    });
     state.blobUrl = blob.url;
   } catch (err) {
     setStatus('Upload failed: ' + err.message + ' — please try again.', 'err');
