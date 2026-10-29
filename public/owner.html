@@ -16,6 +16,15 @@
   .top-right { display: flex; align-items: center; gap: 12px; }
   .key-field { font-size: 13px; padding: 6px 10px; border: 1px solid #E2E6EE; border-radius: 6px; background: #fff; color: #071F4D; width: 220px; }
   .key-field::placeholder { color: #8A91A3; }
+  .login-card { max-width: 360px; margin: 64px auto 0; background: #fff; border: 1px solid #E2E6EE; border-radius: 12px; padding: 24px; }
+  .login-card h2 { font-size: 18px; color: #0A2E6E; margin-bottom: 6px; }
+  .login-card p { font-size: 13px; color: #5B6478; margin-bottom: 14px; }
+  .login-card .key-field { width: 100%; box-sizing: border-box; padding: 10px 12px; margin-bottom: 12px; }
+  .login-card .load-btn { width: 100%; padding: 10px; }
+  .pw-label { display: block; font-size: 12px; font-weight: 600; color: #5B6478; margin: 10px 0 4px; }
+  .pw-input { width: 100%; box-sizing: border-box; padding: 9px 12px; }
+  .login-err { font-size: 13px; color: #B3261E; margin: -4px 0 12px; }
+  .pw-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding: 10px 14px; background: #FFF6DB; border: 1px solid #F4B000; border-radius: 8px; font-size: 13px; color: #5A4200; }
   .load-btn { font-size: 13px; padding: 6px 14px; background: #F4B000; color: #071F4D; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
   .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 0 0; }
   .kpi { background: #fff; border: 1px solid #E2E6EE; border-radius: 10px; padding: 16px 18px; }
@@ -101,14 +110,27 @@
     <img src="/logo.png" alt="DocuFast India" style="height:48px;display:block;">
     <span class="owner-badge">Owner admin</span>
   </div>
-  <div class="top-right">
-    <input class="key-field" type="password" id="ownerKey" placeholder="Owner key…">
-    <button class="load-btn" onclick="loadDashboard()">Load</button>
+  <div class="top-right" id="ownerBtns" style="display:none;">
+    <button class="link-btn" onclick="openPwModal()">Change password</button>
+    <button class="load-btn" onclick="signOut()">Sign out</button>
   </div>
 </div>
 
 <div class="page">
-  <div id="loader">Enter your owner key above to load the dashboard.</div>
+  <div id="pwBanner" class="pw-banner" style="display:none;">
+    <span>You are signing in with the shared owner key. Set your own password so the key is no longer needed.</span>
+    <button class="load-btn" onclick="openPwModal()">Set password</button>
+  </div>
+
+  <form id="loginCard" class="login-card" style="display:none;" onsubmit="signIn(event)">
+    <h2>Owner sign-in</h2>
+    <p>Enter your owner password to open the dashboard.</p>
+    <input class="key-field" type="password" id="ownerPw" placeholder="Password" autocomplete="current-password">
+    <div id="loginErr" class="login-err" style="display:none;"></div>
+    <button class="load-btn" id="loginBtn" type="submit">Sign in</button>
+  </form>
+
+  <div id="loader">Loading…</div>
   <div id="content" style="display:none;">
 
     <div class="kpi-grid">
@@ -270,34 +292,156 @@
   </div>
 </div>
 
-<script>
-const ownerKeyInput = document.getElementById('ownerKey');
-ownerKeyInput.value = localStorage.getItem('df_owner_key') || '';
+<div class="modal-bg" id="pwModalBg">
+  <form class="modal" onsubmit="event.preventDefault(); savePassword();">
+    <h3>Change owner password</h3>
+    <label class="pw-label">Current password (or the shared owner key)</label>
+    <input class="key-field pw-input" type="password" id="pwCur" autocomplete="current-password">
+    <label class="pw-label">New password (at least 10 characters)</label>
+    <input class="key-field pw-input" type="password" id="pwNew" autocomplete="new-password">
+    <label class="pw-label">Repeat new password</label>
+    <input class="key-field pw-input" type="password" id="pwNew2" autocomplete="new-password">
+    <div id="pwMsg" style="font-size:13px;min-height:18px;margin-top:8px;"></div>
+    <div class="modal-btns">
+      <button type="button" class="btn-ghost" onclick="closePwModal()">Cancel</button>
+      <button type="submit" class="btn-primary">Save password</button>
+    </div>
+  </form>
+</div>
 
-function getKey() { return ownerKeyInput.value.trim(); }
-function saveKey() { localStorage.setItem('df_owner_key', getKey()); }
+<script>
+// ---- Sign-in ----
+// The password is sent once to /api/owner/login; the server answers with a
+// 12-hour HttpOnly cookie, so nothing secret is kept in the browser.
+let signedIn = false;
+
+// If the server says the session is gone (expired, signed out elsewhere),
+// drop back to the sign-in form instead of showing empty panels.
+const _fetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  const res = await _fetch(...args);
+  const url = String(args[0] && args[0].url ? args[0].url : args[0]);
+  const ownerCall = url.startsWith('/api/owner') || url.startsWith('/api/shops/');
+  if (res.status === 401 && signedIn && ownerCall && !/\/api\/owner\/(login|password)$/.test(url)) showLogin('Your session ended. Please sign in again.');
+  return res;
+};
+
+function showLogin(message) {
+  signedIn = false;
+  document.getElementById('content').style.display = 'none';
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('loginCard').style.display = 'block';
+  document.getElementById('ownerBtns').style.display = 'none';
+  document.getElementById('pwBanner').style.display = 'none';
+  const err = document.getElementById('loginErr');
+  err.textContent = message || '';
+  err.style.display = message ? 'block' : 'none';
+  document.getElementById('ownerPw').focus();
+}
+
+async function signIn(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById('ownerPw');
+  const btn = document.getElementById('loginBtn');
+  const password = input.value;
+  if (!password) return;
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/owner/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { showLogin(data.error || 'Could not sign in.'); input.value = ''; return; }
+    input.value = '';
+    startSession();
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+
+async function signOut() {
+  await fetch('/api/owner/logout', { method: 'POST' });
+  showLogin('You are signed out.');
+}
+
+async function startSession() {
+  signedIn = true;
+  document.getElementById('loginCard').style.display = 'none';
+  document.getElementById('ownerBtns').style.display = 'flex';
+  document.getElementById('loader').style.display = 'block';
+  // Show the "set your own password" reminder until the owner has done it.
+  fetch('/api/owner/session').then(r => r.ok ? r.json() : null).then(s => {
+    document.getElementById('pwBanner').style.display = s && !s.passwordSet ? 'flex' : 'none';
+  }).catch(() => {});
+  loadDashboard();
+}
+
+async function checkSession() {
+  // One-time move: an owner key saved in this browser by the old page is used
+  // once to sign in, then deleted from the browser.
+  let oldKey = '';
+  try { oldKey = localStorage.getItem('df_owner_key') || ''; localStorage.removeItem('df_owner_key'); } catch {}
+  const res = await fetch('/api/owner/session');
+  if (res.ok) { startSession(); return; }
+  if (oldKey) {
+    const login = await fetch('/api/owner/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: oldKey }),
+    });
+    if (login.ok) { startSession(); return; }
+  }
+  showLogin('');
+}
+
+// ---- Change password ----
+function openPwModal() {
+  ['pwCur', 'pwNew', 'pwNew2'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('pwMsg').textContent = '';
+  document.getElementById('pwModalBg').classList.add('open');
+  document.getElementById('pwCur').focus();
+}
+function closePwModal() { document.getElementById('pwModalBg').classList.remove('open'); }
+
+async function savePassword() {
+  const current = document.getElementById('pwCur').value;
+  const next = document.getElementById('pwNew').value;
+  const msg = document.getElementById('pwMsg');
+  msg.style.color = '#B3261E';
+  if (next !== document.getElementById('pwNew2').value) { msg.textContent = 'The two new passwords do not match.'; return; }
+  const res = await fetch('/api/owner/password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ current, next }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.textContent = data.error || 'Could not change the password.'; return; }
+  msg.style.color = '#1B7F3B';
+  msg.textContent = 'Password changed.';
+  document.getElementById('pwBanner').style.display = 'none';
+  setTimeout(closePwModal, 1200);
+}
 
 async function loadDashboard() {
-  saveKey();
-  const key = getKey();
-  if (!key) { document.getElementById('loader').textContent = 'Enter your owner key above.'; return; }
-  document.getElementById('loader').textContent = 'Loading…';
+  if (!signedIn) return;
   document.getElementById('content').style.display = 'none';
 
   const [statsRes, jobsRes] = await Promise.all([
-    fetch('/api/owner/stats', { headers: { 'x-owner-key': key } }),
-    fetch('/api/owner/jobs', { headers: { 'x-owner-key': key } }),
+    fetch('/api/owner/stats'),
+    fetch('/api/owner/jobs'),
   ]);
 
   if (!statsRes.ok) {
-    document.getElementById('loader').textContent = statsRes.status === 401 ? 'Invalid owner key.' : 'Failed to load — check console.';
+    if (statsRes.status !== 401) document.getElementById('loader').textContent = 'Failed to load — check console.';
     return;
   }
 
   const stats = await statsRes.json();
   const { jobs } = await jobsRes.json();
 
-  loadReport(key);
+  loadReport();
   loadServices();
   loadCoupons();
   renderKPIs(stats);
@@ -309,9 +453,9 @@ async function loadDashboard() {
   document.getElementById('content').style.display = 'block';
 }
 
-async function loadReport(key) {
+async function loadReport() {
   try {
-    const res = await fetch('/api/owner/reports?days=14', { headers: { 'x-owner-key': key } });
+    const res = await fetch('/api/owner/reports?days=14');
     if (!res.ok) return;
     renderReport(await res.json());
   } catch { /* charts are optional — the rest of the dashboard still works */ }
@@ -369,7 +513,7 @@ function renderReport(r) {
 let svcCache = [], svcEditing = null;
 async function loadServices() {
   try {
-    const res = await fetch('/api/owner/services', { headers: { 'x-owner-key': getKey() } });
+    const res = await fetch('/api/owner/services');
     if (!res.ok) return;
     svcCache = (await res.json()).services || [];
     const grid = document.getElementById('svcList'); grid.innerHTML = '';
@@ -409,7 +553,7 @@ async function saveSvc() {
   });
   const res = await fetch('/api/owner/services', {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id: svcEditing, name: document.getElementById('svName').value, fee, slots, active: document.getElementById('svActive').checked }),
   });
   const data = await res.json().catch(() => ({}));
@@ -474,7 +618,7 @@ async function saveCoupon() {
 async function exportCsv() {
   const from = document.getElementById('expFrom').value, to = document.getElementById('expTo').value;
   const q = new URLSearchParams({ format: 'csv' }); if (from) q.set('from', from); if (to) q.set('to', to);
-  const res = await fetch('/api/owner/reports?' + q, { headers: { 'x-owner-key': getKey() } });
+  const res = await fetch('/api/owner/reports?' + q);
   if (!res.ok) { alert('Export failed.'); return; }
   const blob = await res.blob();
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -553,7 +697,7 @@ async function savePrices() {
   if (prices.bw === null || prices.color === null || Number.isNaN(prices.bw) || Number.isNaN(prices.color)) { msg.textContent = 'B&W and Colour prices are required.'; return; }
   const res = await fetch('/api/shops/' + encodeURIComponent(priceShopId), {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prices }),
   });
   const data = await res.json().catch(() => ({}));
@@ -568,7 +712,7 @@ async function newStaffPin(id) {
   if (!confirm('Create a new staff PIN for ' + name + '? Any old PIN stops working.')) return;
   const res = await fetch('/api/shops/' + encodeURIComponent(id), {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ newStaffPin: true }),
   });
   const data = await res.json().catch(() => ({}));
@@ -586,7 +730,7 @@ async function rotateKey(id) {
   if (!confirm('Issue a NEW key for ' + name + '?\n\nThe old key stops working immediately and the shop\'s print agent will go offline until you enter the new key in it.')) return;
   const res = await fetch('/api/shops/' + encodeURIComponent(id), {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rotateKey: true }),
   });
   const data = await res.json().catch(() => ({}));
@@ -674,7 +818,7 @@ async function refundJob(code, amount) {
   if (!confirm('Refund ₹' + (amount / 100).toFixed(2) + ' for order ' + code + ' to the customer?\n\nThis cannot be undone and the file is deleted.')) return;
   const res = await fetch('/api/owner/refund', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
   });
   const data = await res.json().catch(() => ({}));
@@ -698,7 +842,6 @@ document.getElementById('fName').addEventListener('input', function () {
 });
 
 async function submitShop() {
-  const key = getKey();
   const name = document.getElementById('fName').value.trim();
   const slug = document.getElementById('fSlug').value.trim();
   const city = document.getElementById('fCity').value.trim();
@@ -708,7 +851,7 @@ async function submitShop() {
   msg.textContent = '';
   const res = await fetch('/api/owner/shops', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-owner-key': key },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, slug, city, address }),
   });
   const data = await res.json();
@@ -720,8 +863,8 @@ async function submitShop() {
   document.getElementById('newApiKey').textContent = data.shop.api_key;
 }
 
-if (ownerKeyInput.value) loadDashboard();
-setInterval(() => { if (getKey() && document.getElementById('content').style.display !== 'none') loadDashboard(); }, 30000);
+checkSession();
+setInterval(() => { if (signedIn && document.getElementById('content').style.display !== 'none') loadDashboard(); }, 30000);
 </script>
 </body>
 </html>
