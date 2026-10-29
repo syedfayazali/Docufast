@@ -163,6 +163,16 @@
     </div>
     <div id="couponList" class="pilot-grid"></div>
 
+    <div class="section-title" style="margin-top:24px;">Business accounts &mdash; monthly billing
+      <button class="add-shop-btn" onclick="newAccount()">+ New account</button>
+    </div>
+    <div id="accList" class="pilot-grid"></div>
+
+    <div class="section-title" style="margin-top:24px;">Partner shops &mdash; share &amp; payouts
+      <a class="link-btn" href="/api/owner/partners?format=csv">Download CSV</a>
+    </div>
+    <div id="partnerList" class="pilot-grid"></div>
+
     <div class="section-title" style="margin-top:24px;">Pilot readiness — is a shop ready to go live?</div>
     <div id="pilotGrid" class="pilot-grid"></div>
 
@@ -223,6 +233,19 @@
       <div class="modal-btns">
         <button class="btn-primary" onclick="closeModal();loadDashboard();">Done</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Generic form modal (accounts, payments, partners) -->
+<div class="modal-bg" id="fmBg">
+  <div class="modal">
+    <h3 id="fmTitle"></h3>
+    <div id="fmFields"></div>
+    <div class="msg" id="fmMsg"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" id="fmCancel">Cancel</button>
+      <button class="btn-primary" id="fmOk">Save</button>
     </div>
   </div>
 </div>
@@ -444,6 +467,8 @@ async function loadDashboard() {
   loadReport();
   loadServices();
   loadCoupons();
+  loadAccounts();
+  loadPartners();
   renderKPIs(stats);
   renderShops(stats.shops, stats.printers);
   renderPrinters(stats.printers);
@@ -613,6 +638,99 @@ async function saveCoupon() {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { msg.textContent = data.error || 'Could not create the code.'; return; }
   closeCoupon(); loadCoupons();
+}
+
+// ---- Generic form modal: askForm(title, [{key,label,value,type}], okLabel, submit(values)->error|null) ----
+function askForm(title, fields, okLabel, submit, note) {
+  document.getElementById('fmTitle').textContent = title;
+  const box = document.getElementById('fmFields'); box.innerHTML = '';
+  if (note) { const n = document.createElement('div'); n.style.cssText = 'font-size:12px;color:#5B6478;margin-bottom:12px;'; n.textContent = note; box.appendChild(n); }
+  const inputs = {};
+  fields.forEach(f => {
+    const w = document.createElement('div'); w.className = 'form-field';
+    const l = document.createElement('label'); l.textContent = f.label;
+    const i = document.createElement('input'); i.value = f.value ?? ''; if (f.inputmode) i.inputMode = f.inputmode;
+    w.append(l, i); box.appendChild(w); inputs[f.key] = i;
+  });
+  const msg = document.getElementById('fmMsg'); msg.textContent = '';
+  document.getElementById('fmOk').textContent = okLabel;
+  const bg = document.getElementById('fmBg'); bg.classList.add('open');
+  document.getElementById('fmCancel').onclick = () => bg.classList.remove('open');
+  document.getElementById('fmOk').onclick = async () => {
+    const vals = {}; for (const k in inputs) vals[k] = inputs[k].value;
+    const err = await submit(vals);
+    if (err) msg.textContent = err; else bg.classList.remove('open');
+  };
+}
+const rs = p => '₹' + (p / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+async function jsonPost(url, method, body) {
+  const r = await fetch(url, { method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  return { ok: r.ok, data: await r.json().catch(() => ({})) };
+}
+function showCodeOnce(name, code) {
+  askForm('Account code for ' + name, [{ key: 'c', label: 'Give this secret code to the business. It is shown only now.', value: code }], 'Done', async () => null,
+    'Copy it before closing. If lost, use "New code" on the account to replace it.');
+  document.getElementById('fmCancel').style.display = 'none';
+  const ok = document.getElementById('fmOk'); const prev = ok.onclick;
+  ok.onclick = async () => { await prev(); document.getElementById('fmCancel').style.display = ''; };
+}
+function newAccount() {
+  askForm('New business account', [
+    { key: 'name', label: 'Business name' }, { key: 'contact', label: 'Contact phone / email (optional)' },
+    { key: 'creditLimit', label: 'Credit limit (₹)', value: '5000', inputmode: 'decimal' },
+  ], 'Create', async v => {
+    const r = await jsonPost('/api/owner/accounts', 'POST', v);
+    if (!r.ok) return r.data.error || 'Could not create.';
+    loadAccounts(); setTimeout(() => showCodeOnce(r.data.name, r.data.code), 50); return null;
+  });
+}
+async function loadAccounts() {
+  try {
+    const res = await fetch('/api/owner/accounts', { credentials: 'same-origin' }); if (!res.ok) return;
+    const { accounts } = await res.json();
+    const grid = document.getElementById('accList'); grid.innerHTML = '';
+    if (!accounts.length) { grid.innerHTML = '<div style="color:#8A91A3;font-size:13px;">No business accounts yet. Create one for a regular customer who pays monthly.</div>'; return; }
+    accounts.forEach(a => {
+      const card = document.createElement('div'); card.className = 'pilot';
+      const h = document.createElement('h5'); const nm = document.createElement('span'); nm.textContent = a.name;
+      const b = document.createElement('span'); b.className = a.active ? 'go' : 'no'; b.textContent = a.active ? 'ON' : 'OFF'; h.append(nm, b);
+      const info = document.createElement('div'); info.style.cssText = 'font-size:13px;color:#5B6478;line-height:1.6;';
+      info.textContent = `Owes ${rs(a.balance)} of ${rs(a.credit_limit)} limit · ${a.jobs} orders${a.contact ? ' · ' + a.contact : ''}`;
+      const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;';
+      const mk = (t, fn) => { const x = document.createElement('button'); x.className = 'link-btn'; x.textContent = t; x.addEventListener('click', fn); row.appendChild(x); };
+      mk('Record payment', () => askForm('Payment from ' + a.name, [{ key: 'amount', label: 'Amount received (₹)', inputmode: 'decimal' }, { key: 'note', label: 'Note (cash, UPI ref…)' }], 'Save', async v => {
+        const r = await jsonPost('/api/owner/accounts', 'POST', { action: 'payment', id: a.id, ...v }); if (!r.ok) return r.data.error; loadAccounts(); return null; }));
+      mk('Statement', () => { location.href = '/api/owner/accounts?statement=' + encodeURIComponent(a.id) + '&format=csv'; });
+      mk('Limit', () => askForm('Credit limit for ' + a.name, [{ key: 'creditLimit', label: 'Credit limit (₹)', value: a.credit_limit / 100, inputmode: 'decimal' }], 'Save', async v => {
+        const r = await jsonPost('/api/owner/accounts', 'PATCH', { id: a.id, creditLimit: v.creditLimit }); if (!r.ok) return r.data.error; loadAccounts(); return null; }));
+      mk('New code', async () => { if (!confirm('Replace the secret code? The old one stops working.')) return;
+        const r = await jsonPost('/api/owner/accounts', 'POST', { action: 'rotate', id: a.id }); if (r.ok) showCodeOnce(a.name, r.data.code); });
+      mk(a.active ? 'Turn off' : 'Turn on', async () => { await jsonPost('/api/owner/accounts', 'PATCH', { id: a.id, active: !a.active }); loadAccounts(); });
+      card.append(h, info, row); grid.appendChild(card);
+    });
+  } catch { /* optional section */ }
+}
+async function loadPartners() {
+  try {
+    const res = await fetch('/api/owner/partners', { credentials: 'same-origin' }); if (!res.ok) return;
+    const { shops } = await res.json();
+    const grid = document.getElementById('partnerList'); grid.innerHTML = '';
+    shops.forEach(s => {
+      const card = document.createElement('div'); card.className = 'pilot';
+      const h = document.createElement('h5'); const nm = document.createElement('span'); nm.textContent = s.name; h.append(nm);
+      if (s.sharePct !== null) { const b = document.createElement('span'); b.className = 'go'; b.textContent = s.sharePct + '%'; h.append(b); }
+      const info = document.createElement('div'); info.style.cssText = 'font-size:13px;color:#5B6478;line-height:1.6;';
+      info.textContent = s.sharePct === null ? `Own shop · sales ${rs(s.sales)}` :
+        `${s.partnerName || 'Partner'} · sales ${rs(s.sales)} (this month ${rs(s.monthSales)}) · share ${rs(s.share)} · paid ${rs(s.paidOut)} · due ${rs(s.due)}`;
+      const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:12px;margin-top:10px;';
+      const mk = (t, fn) => { const x = document.createElement('button'); x.className = 'link-btn'; x.textContent = t; x.addEventListener('click', fn); row.appendChild(x); };
+      mk('Set share', () => askForm('Partner share — ' + s.name, [{ key: 'partnerName', label: 'Partner name', value: s.partnerName || '' }, { key: 'sharePct', label: 'Partner share of sales (%) — leave empty for own shop', value: s.sharePct ?? '', inputmode: 'decimal' }], 'Save', async v => {
+        const r = await jsonPost('/api/owner/partners', 'PATCH', { shopId: s.id, ...v }); if (!r.ok) return r.data.error; loadPartners(); return null; }));
+      if (s.sharePct !== null) mk('Record payout', () => askForm('Payout to ' + (s.partnerName || s.name), [{ key: 'amount', label: 'Amount paid (₹)', value: s.due > 0 ? s.due / 100 : '', inputmode: 'decimal' }, { key: 'note', label: 'Note (UPI ref…)' }], 'Save', async v => {
+        const r = await jsonPost('/api/owner/partners', 'POST', { shopId: s.id, ...v }); if (!r.ok) return r.data.error; loadPartners(); return null; }));
+      card.append(h, info, row); grid.appendChild(card);
+    });
+  } catch { /* optional section */ }
 }
 
 async function exportCsv() {

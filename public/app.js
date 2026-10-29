@@ -88,7 +88,8 @@ async function compressImageIfNeeded(file) {
   return new File([compressedBlob], newName, { type: 'image/jpeg' });
 }
 
-const state = { file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single', service: null, coupon: null };
+function payLabel() { return state.account ? 'Bill to ' + state.account.name + ' & print' : 'Pay & print'; }
+const state = { account: null, file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single', service: null, coupon: null };
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
@@ -325,6 +326,7 @@ payBtn.addEventListener('click', async () => {
         serviceId: state.service ? state.service.id : undefined,
         couponCode: state.coupon ? state.coupon.code : undefined,
         consent: consentChk.checked,
+        accountCode: state.account ? state.account.code : undefined,
       }),
     });
     createData = await res.json();
@@ -333,11 +335,14 @@ payBtn.addEventListener('click', async () => {
   } catch (err) {
     alert(err.message);
     payBtn.disabled = false;
-    payBtn.textContent = 'Pay & print';
+    payBtn.textContent = payLabel();
     return;
   }
 
-  if (createData.razorpayEnabled) {
+  if (createData.accountBilled) {
+    showTicket(createData.job);
+    pollUntilPrinted(createData.job.code);
+  } else if (createData.razorpayEnabled) {
     openRazorpayModal(createData);
   } else {
     // Mock fallback
@@ -345,7 +350,7 @@ payBtn.addEventListener('click', async () => {
     await new Promise(r => setTimeout(r, 800));
     const payRes = await fetch(`/api/jobs/${createData.code}/pay`, { method: 'POST' });
     const payData = await payRes.json();
-    if (!payRes.ok) { alert(payData.error); payBtn.disabled = false; payBtn.textContent = 'Pay & print'; return; }
+    if (!payRes.ok) { alert(payData.error); payBtn.disabled = false; payBtn.textContent = payLabel(); return; }
     showTicket(payData.job);
     pollUntilPrinted(payData.job.code);
   }
@@ -377,7 +382,7 @@ function openRazorpayModal({ code, amount, razorpayOrderId, razorpayKeyId }) {
       } catch (err) {
         alert('Payment received but verification failed: ' + err.message + '\nPlease contact us with your payment ID: ' + response.razorpay_payment_id);
         payBtn.disabled = false;
-        payBtn.textContent = 'Pay & print';
+        payBtn.textContent = payLabel();
       }
     },
     prefill: { contact: '', email: '' },
@@ -386,7 +391,7 @@ function openRazorpayModal({ code, amount, razorpayOrderId, razorpayKeyId }) {
       ondismiss: function () {
         // User closed the modal without paying
         payBtn.disabled = false;
-        payBtn.textContent = 'Pay & print';
+        payBtn.textContent = payLabel();
       },
     },
   };
@@ -395,7 +400,7 @@ function openRazorpayModal({ code, amount, razorpayOrderId, razorpayKeyId }) {
   rzp.on('payment.failed', function (response) {
     alert('Payment failed: ' + response.error.description + '\nPlease try again.');
     payBtn.disabled = false;
-    payBtn.textContent = 'Pay & print';
+    payBtn.textContent = payLabel();
   });
   rzp.open();
 }
@@ -509,3 +514,26 @@ document.getElementById('couponBtn').addEventListener('click', applyCoupon);
 couponInput.addEventListener('keydown', e => { if (e.key === 'Enter') applyCoupon(); });
 // Any change to the order invalidates an applied discount — re-check it silently.
 ['back3', 'next2'].forEach(id => document.getElementById(id).addEventListener('click', () => { if (state.coupon) { couponInput.value = state.coupon.code; applyCoupon(); } }));
+
+
+// --- Business account (monthly billing) ---
+(function () {
+  const input = document.getElementById('acctInput'), btn = document.getElementById('acctBtn'), msg = document.getElementById('acctMsg');
+  if (!input) return;
+  const setPay = () => { payBtn.textContent = state.account ? 'Bill to ' + state.account.name + ' & print' : 'Pay & print'; };
+  btn.addEventListener('click', async () => {
+    if (state.account) { state.account = null; input.value = ''; input.disabled = false; btn.textContent = 'Use'; msg.textContent = ''; setPay(); return; }
+    const code = input.value.trim();
+    if (!code) return;
+    msg.textContent = 'Checking…'; msg.style.color = '';
+    try {
+      const r = await fetch('/api/accounts/check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Invalid code');
+      state.account = { code, name: d.name };
+      input.disabled = true; btn.textContent = 'Remove';
+      msg.textContent = 'Billing to ' + d.name + ' — no payment needed now.'; msg.style.color = '#0a7a3c';
+      setPay();
+    } catch (e) { msg.textContent = e.message; msg.style.color = '#b42318'; }
+  });
+})();
