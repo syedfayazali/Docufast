@@ -9,15 +9,25 @@ import { upload as uploadPublic } from 'https://esm.sh/@vercel/blob@0.27.0/clien
 // New uploads go to the PRIVATE store once the server says it is enabled
 // (/api/config -> privateUploads); until then the original public store is
 // used unchanged.
-let privateModeP = null;
-function privateUploadsEnabled() {
-  if (!privateModeP) {
-    privateModeP = fetch('/api/config').then(r => r.json()).then(c => !!c.privateUploads).catch(() => false);
+let configP = null;
+function loadConfig() {
+  if (!configP) {
+    const q = shopSlug ? `?shop=${encodeURIComponent(shopSlug)}` : '';
+    configP = fetch('/api/config' + q).then(r => r.json()).catch(() => ({}));
   }
-  return privateModeP;
+  return configP;
 }
+function privateUploadsEnabled() { return loadConfig().then(c => !!c.privateUploads); }
 
-const RATES = { bw: 2, color: 8 }; // ₹ per page (display only — server is the authority)
+// Display prices (paise per page) come from the shop's price list; the server
+// recomputes the amount from the same list when the order is created.
+let prices = { bw: 200, color: 800, duplexBw: null, duplexColor: null };
+function perPage(mode, duplex) {
+  const single = mode === 'color' ? prices.color : prices.bw;
+  const dbl = mode === 'color' ? prices.duplexColor : prices.duplexBw;
+  return duplex && dbl ? dbl : single;
+}
+const rs = paise => '₹' + (paise / 100).toFixed(paise % 100 === 0 ? 0 : 2);
 
 // Vercel's serverless functions hard-cap request bodies at roughly 4.5MB
 // regardless of any app-level config — a real multi-page scanned PDF (ID
@@ -81,46 +91,79 @@ const state = { file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw',
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
+const camInput = document.getElementById('camInput');
 const filenameLabel = document.getElementById('filenameLabel');
 const pagesInput = document.getElementById('pages');
+const pagesField = document.getElementById('pagesField');
 const copiesInput = document.getElementById('copies');
 const amountLabel = document.getElementById('amountLabel');
 const payBtn = document.getElementById('payBtn');
+const next1 = document.getElementById('next1');
+const uploadStatus = document.getElementById('uploadStatus');
+
+function setStatus(text, cls) { uploadStatus.textContent = text; uploadStatus.className = 'upload-status' + (cls ? ' ' + cls : ''); }
+
+// --- Steps ---
+function goStep(n) {
+  [1, 2, 3].forEach(i => { document.getElementById('step' + i).style.display = i === n ? 'block' : 'none'; });
+  document.querySelectorAll('#steps li').forEach(li => {
+    const i = Number(li.dataset.step);
+    li.className = i === n ? 'on' : i < n ? 'done' : '';
+  });
+  document.getElementById('priceBar').style.display = n >= 2 ? 'flex' : 'none';
+  updatePrice();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+next1.addEventListener('click', () => { if (state.blobUrl) goStep(2); });
+document.getElementById('next2').addEventListener('click', () => goStep(3));
+document.getElementById('back2').addEventListener('click', () => goStep(1));
+document.getElementById('back3').addEventListener('click', () => goStep(2));
+
+// Show the shop's real prices on the option cards.
+loadConfig().then(cfg => {
+  if (cfg.prices) prices = cfg.prices;
+  if (cfg.shopName) document.getElementById('shopLine').textContent = 'Printing at ' + cfg.shopName;
+  renderPriceLabels();
+});
+function renderPriceLabels() {
+  document.getElementById('priceBw').textContent = rs(prices.bw) + ' per page';
+  document.getElementById('priceColor').textContent = rs(prices.color) + ' per page';
+  const dbl = perPage(state.colorMode, true);
+  const single = perPage(state.colorMode, false);
+  document.getElementById('priceDouble').textContent = dbl === single ? 'Both sides of the sheet' : rs(dbl) + ' per page';
+}
 
 // --- File pick ---
 dropzone.addEventListener('click', () => fileInput.click());
+document.getElementById('camBtn').addEventListener('click', () => camInput.click());
 ['dragover', 'dragenter'].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.add('drag'); }));
 ['dragleave', 'drop'].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.remove('drag'); }));
 dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+camInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
 async function handleFile(file) {
+  next1.disabled = true;
+  state.blobUrl = null;
   if (COMPRESSIBLE_TYPES.includes(file.type)) {
     filenameLabel.textContent = file.name;
-    document.getElementById('pagesNote').textContent = 'Compressing image…';
-    const before = file.size;
+    setStatus('Compressing image…');
     file = await compressImageIfNeeded(file);
-    if (file.size < before) {
-      console.log(`Compressed ${(before / 1024 / 1024).toFixed(1)}MB -> ${(file.size / 1024 / 1024).toFixed(1)}MB`);
-    }
   }
 
   if (file.size > MAX_UPLOAD_BYTES) {
-    alert(`That file is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is ${MAX_UPLOAD_BYTES / 1024 / 1024}MB.`);
+    setStatus(`That file is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is ${MAX_UPLOAD_BYTES / 1024 / 1024}MB.`, 'err');
     return;
   }
 
   state.file = file;
-  state.blobUrl = null;
   filenameLabel.textContent = file.name;
-  payBtn.disabled = true;
-  payBtn.textContent = 'Uploading…';
-  pagesInput.readOnly = true;
-  pagesInput.style.background = '#E7ECF7';
-  document.getElementById('pagesNote').textContent = 'Uploading file…';
+  pagesField.style.display = 'none';
+  next1.textContent = 'Uploading…';
+  setStatus('Uploading file…');
 
   try {
-    const onUploadProgress = ({ percentage }) => { payBtn.textContent = `Uploading… ${percentage}%`; };
+    const onUploadProgress = ({ percentage }) => { next1.textContent = `Uploading… ${Math.round(percentage)}%`; };
     let blob;
     if (await privateUploadsEnabled()) {
       const { upload: uploadPrivate } = await import('https://esm.sh/@vercel/blob@2.8.2/client');
@@ -138,18 +181,17 @@ async function handleFile(file) {
     }
     state.blobUrl = blob.url;
   } catch (err) {
-    document.getElementById('pagesNote').textContent = 'Upload failed — please try again.';
-    payBtn.textContent = 'Pay & print';
-    alert('Upload failed: ' + err.message);
+    setStatus('Upload failed: ' + err.message + ' — please try again.', 'err');
+    next1.textContent = 'Choose a file to continue';
     return;
   }
 
-  payBtn.textContent = 'Detecting pages…';
-  document.getElementById('pagesNote').textContent = 'Detecting page count…';
+  next1.textContent = 'Detecting pages…';
+  setStatus('Detecting page count…');
 
-  // Send the blob URL (not the file bytes) for page-count detection — the
-  // server fetches it directly from Blob storage, which has no
-  // request-body-size limit the way an inbound POST does.
+  // The server fetches the uploaded file itself to count pages (no request
+  // body size limit that way).
+  let detected = 0;
   try {
     const res = await fetch('/api/detect-pages', {
       method: 'POST',
@@ -157,53 +199,73 @@ async function handleFile(file) {
       body: JSON.stringify({ filename: file.name, blobUrl: state.blobUrl }),
     });
     const data = await res.json();
+    if (data.pages && data.pages > 0) detected = data.pages;
+  } catch { /* fall through to manual entry */ }
 
-    if (data.pages && data.pages > 0) {
-      state.pages = data.pages;
-      pagesInput.value = data.pages;
-      pagesInput.readOnly = true;
-      pagesInput.style.background = '#E7ECF7';
-      document.getElementById('pagesNote').textContent =
-        `✓ Auto-detected: ${data.pages} page${data.pages > 1 ? 's' : ''}`;
-    } else {
-      // Could not detect — let user enter manually
-      pagesInput.readOnly = false;
-      pagesInput.style.background = '';
-      pagesInput.value = 1;
-      state.pages = 1;
-      document.getElementById('pagesNote').textContent =
-        'Could not auto-detect — please enter the number of pages';
-      pagesInput.focus();
-    }
-  } catch {
-    // Network error — let user enter manually
-    pagesInput.readOnly = false;
-    pagesInput.style.background = '';
-    document.getElementById('pagesNote').textContent = 'Enter the number of pages manually';
+  if (detected) {
+    state.pages = detected;
+    pagesInput.value = detected;
+    pagesField.style.display = 'none';
+    setStatus(`✓ ${file.name} — ${detected} page${detected > 1 ? 's' : ''} detected`, 'ok');
+  } else {
+    state.pages = 1;
+    pagesInput.value = 1;
+    pagesField.style.display = 'block';
+    document.getElementById('pagesNote').textContent = 'We could not count the pages automatically — please enter how many pages to print.';
+    setStatus('✓ Uploaded', 'ok');
   }
 
-  updatePrice();
-  payBtn.disabled = false;
-  payBtn.textContent = 'Pay & print';
+  document.getElementById('fileChip').textContent = `${file.name} · ${state.pages} page${state.pages > 1 ? 's' : ''}`;
+  next1.disabled = false;
+  next1.textContent = 'Continue';
 }
 
 // --- Options ---
-document.querySelectorAll('.toggle-row').forEach(row => {
-  row.querySelectorAll('.opt').forEach(opt => {
-    opt.addEventListener('click', () => {
-      row.querySelectorAll('.opt').forEach(o => o.classList.remove('active'));
-      opt.classList.add('active');
-      if (opt.dataset.group === 'color') state.colorMode = opt.dataset.value;
-      if (opt.dataset.group === 'duplex') state.duplex = opt.dataset.value;
+document.querySelectorAll('.cards').forEach(row => {
+  row.querySelectorAll('.ocard').forEach(card => {
+    card.addEventListener('click', () => {
+      row.querySelectorAll('.ocard').forEach(o => o.classList.remove('active'));
+      card.classList.add('active');
+      if (row.dataset.group === 'color') state.colorMode = card.dataset.value;
+      if (row.dataset.group === 'duplex') state.duplex = card.dataset.value;
+      renderPriceLabels();
       updatePrice();
     });
   });
 });
-pagesInput.addEventListener('input', () => { state.pages = Math.max(1, parseInt(pagesInput.value) || 1); updatePrice(); });
-copiesInput.addEventListener('input', () => { state.copies = Math.max(1, parseInt(copiesInput.value) || 1); updatePrice(); });
+pagesInput.addEventListener('input', () => {
+  state.pages = Math.max(1, parseInt(pagesInput.value) || 1);
+  document.getElementById('fileChip').textContent = `${state.file?.name || ''} · ${state.pages} page${state.pages > 1 ? 's' : ''}`;
+  updatePrice();
+});
+function setCopies(n) { state.copies = Math.min(500, Math.max(1, n || 1)); copiesInput.value = state.copies; updatePrice(); }
+copiesInput.addEventListener('input', () => { state.copies = Math.min(500, Math.max(1, parseInt(copiesInput.value) || 1)); updatePrice(); });
+document.getElementById('copiesMinus').addEventListener('click', () => setCopies(state.copies - 1));
+document.getElementById('copiesPlus').addEventListener('click', () => setCopies(state.copies + 1));
 
 function updatePrice() {
-  amountLabel.textContent = '₹' + (RATES[state.colorMode] * state.pages * state.copies).toFixed(2);
+  const per = perPage(state.colorMode, state.duplex === 'double');
+  const total = per * state.pages * state.copies;
+  amountLabel.textContent = '₹' + (total / 100).toFixed(2);
+  document.getElementById('priceSub').textContent =
+    `${state.pages} page${state.pages > 1 ? 's' : ''} × ${state.copies} cop${state.copies > 1 ? 'ies' : 'y'} × ${rs(per)}`;
+  const sum = document.getElementById('summary');
+  if (sum) {
+    const rows = [
+      ['File', state.file?.name || '—'],
+      ['Pages × copies', `${state.pages} × ${state.copies}`],
+      ['Colour', state.colorMode === 'color' ? 'Colour' : 'Black & white'],
+      ['Sides', state.duplex === 'double' ? 'Double-sided' : 'Single-sided'],
+      ['Rate', rs(per) + ' per page'],
+      ['Total', '₹' + (total / 100).toFixed(2)],
+    ];
+    sum.innerHTML = rows.map(([k, v]) => `<div class="row"><span></span><span></span></div>`).join('');
+    sum.querySelectorAll('.row').forEach((row, i) => {
+      row.children[0].textContent = rows[i][0];
+      row.children[1].textContent = rows[i][1];
+    });
+  }
+  payBtn.disabled = !state.blobUrl;
 }
 
 // --- Pay button ---

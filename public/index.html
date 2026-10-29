@@ -24,48 +24,77 @@
 <div class="wrap">
 
   <div class="card" id="uploadCard">
-    <div class="dropzone" id="dropzone">
-      <div class="icon">&#8675;</div>
-      <div>Drop a file here, or tap to choose</div>
-      <div style="font-size:12px;color:var(--slate);margin-top:4px;">PDF, JPG, PNG, DOCX — up to 3MB</div>
-      <div class="filename" id="filenameLabel"></div>
-      <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-    </div>
+    <ol class="steps" id="steps" aria-label="Progress">
+      <li class="on" data-step="1"><span>1</span>Upload</li>
+      <li data-step="2"><span>2</span>Options</li>
+      <li data-step="3"><span>3</span>Pay</li>
+    </ol>
+    <div class="shop-line" id="shopLine"></div>
 
-    <div class="field">
-      <label for="pages">Number of pages</label>
-      <input type="number" id="pages" min="1" value="1">
-      <div class="note" id="pagesNote">Will be auto-detected for PDF files</div>
-    </div>
-
-    <div class="field">
-      <label for="copies">Copies</label>
-      <input type="number" id="copies" min="1" value="1">
-    </div>
-
-    <div class="field">
-      <label>Color</label>
-      <div class="toggle-row">
-        <div class="opt active" data-group="color" data-value="bw">Black &amp; white — ₹2/page</div>
-        <div class="opt" data-group="color" data-value="color">Color — ₹8/page</div>
+    <!-- STEP 1 — upload -->
+    <section class="step" id="step1">
+      <div class="dropzone" id="dropzone">
+        <div class="icon">&#8675;</div>
+        <div>Drop a file here, or tap to choose</div>
+        <div style="font-size:12px;color:var(--slate);margin-top:4px;">PDF, JPG, PNG, DOCX — up to 25MB</div>
+        <div class="filename" id="filenameLabel"></div>
+        <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
       </div>
-    </div>
+      <button class="ghost cam-btn" id="camBtn" type="button">📷 Take a photo of a document</button>
+      <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
 
-    <div class="field">
-      <label>Sides</label>
-      <div class="toggle-row">
-        <div class="opt active" data-group="duplex" data-value="single">Single-sided</div>
-        <div class="opt" data-group="duplex" data-value="double">Double-sided</div>
+      <div class="upload-status" id="uploadStatus"></div>
+
+      <div class="field" id="pagesField" style="display:none;">
+        <label for="pages">Number of pages</label>
+        <input type="number" id="pages" min="1" value="1">
+        <div class="note" id="pagesNote"></div>
       </div>
-    </div>
 
-    <div class="price-row">
-      <div class="label">Total</div>
+      <button class="primary" id="next1" disabled>Choose a file to continue</button>
+    </section>
+
+    <!-- STEP 2 — options -->
+    <section class="step" id="step2" style="display:none;">
+      <div class="file-chip" id="fileChip"></div>
+
+      <div class="group-label">Colour</div>
+      <div class="cards" data-group="color">
+        <button type="button" class="ocard active" data-value="bw"><b>Black &amp; white</b><span id="priceBw"></span></button>
+        <button type="button" class="ocard" data-value="color"><b>Colour</b><span id="priceColor"></span></button>
+      </div>
+
+      <div class="group-label">Sides</div>
+      <div class="cards" data-group="duplex">
+        <button type="button" class="ocard active" data-value="single"><b>Single-sided</b><span>One side of each sheet</span></button>
+        <button type="button" class="ocard" data-value="double"><b>Double-sided</b><span id="priceDouble"></span></button>
+      </div>
+
+      <div class="group-label">Copies</div>
+      <div class="stepper">
+        <button type="button" id="copiesMinus" aria-label="Fewer copies">−</button>
+        <input type="number" id="copies" min="1" value="1" inputmode="numeric">
+        <button type="button" id="copiesPlus" aria-label="More copies">+</button>
+      </div>
+
+      <div class="nav-row">
+        <button class="ghost" id="back2" type="button">Back</button>
+        <button class="primary" id="next2" type="button">Continue</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 — review & pay -->
+    <section class="step" id="step3" style="display:none;">
+      <div class="summary" id="summary"></div>
+      <button class="primary" id="payBtn" disabled>Pay &amp; print</button>
+      <button class="ghost" id="back3" type="button">Back</button>
+      <div class="note">Pay securely with UPI, cards, or net banking via Razorpay.</div>
+    </section>
+
+    <div class="price-bar" id="priceBar" style="display:none;">
+      <div><div class="label">Total</div><div class="sub" id="priceSub"></div></div>
       <div class="amount" id="amountLabel">₹0.00</div>
     </div>
-
-    <button class="primary" id="payBtn" disabled>Choose a file to continue</button>
-    <div class="note">Pay securely with UPI, cards, or net banking via Razorpay.</div>
   </div>
 
   <div class="card" id="ticketCard" style="display:none;">

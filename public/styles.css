@@ -59,3 +59,42 @@ table.admin-table th{color:var(--slate);font-weight:600;text-transform:uppercase
 .kpi .lbl{font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;font-weight:600;}
 a.nav-link{color:var(--navy);font-size:13px;text-decoration:none;font-weight:600;}
 a.nav-link:hover{color:var(--gold-deep);text-decoration:underline;}
+
+/* ---- 3-step customer flow ---- */
+.steps{list-style:none;display:flex;gap:6px;margin:0 0 14px;padding:0;}
+.steps li{flex:1;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--slate-light);padding-bottom:10px;border-bottom:3px solid var(--rule);}
+.steps li span{width:22px;height:22px;border-radius:50%;background:var(--rule);color:var(--slate);display:inline-flex;align-items:center;justify-content:center;font-size:12px;}
+.steps li.on{color:var(--navy);border-bottom-color:var(--gold);}
+.steps li.on span{background:var(--navy);color:var(--white);}
+.steps li.done{color:var(--navy);border-bottom-color:var(--navy);}
+.steps li.done span{background:var(--navy);color:var(--white);}
+.shop-line{font-size:12px;color:var(--slate);margin-bottom:12px;}
+.shop-line:empty{display:none;}
+.cam-btn{margin-top:10px;}
+.upload-status{font-size:13px;color:var(--slate);margin-top:12px;min-height:18px;}
+.upload-status.ok{color:#2E6B4F;font-weight:600;}
+.upload-status.err{color:var(--error);font-weight:600;}
+.file-chip{font-family:'IBM Plex Mono',monospace;font-size:13px;background:var(--navy-tint);color:var(--navy);padding:8px 12px;border-radius:6px;word-break:break-all;}
+.group-label{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);font-weight:600;margin:20px 0 8px;}
+.cards{display:flex;gap:10px;}
+.ocard{flex:1;text-align:left;padding:14px 12px;border:2px solid var(--rule);border-radius:10px;background:var(--white);cursor:pointer;font-family:'Inter',sans-serif;color:var(--navy-deep);display:flex;flex-direction:column;gap:4px;}
+.ocard b{font-size:15px;font-family:'Space Grotesk',sans-serif;}
+.ocard span{font-size:12px;color:var(--slate);}
+.ocard.active{border-color:var(--navy);background:var(--navy-tint);}
+.ocard.active b{color:var(--navy);}
+.stepper{display:flex;align-items:center;gap:10px;}
+.stepper button{width:44px;height:44px;border-radius:10px;border:2px solid var(--rule);background:var(--white);font-size:22px;font-weight:700;color:var(--navy);cursor:pointer;}
+.stepper button:active{background:var(--navy-tint);}
+.stepper input{width:90px;text-align:center;padding:10px;border:2px solid var(--rule);border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;}
+.nav-row{display:flex;gap:10px;}
+.nav-row .ghost{flex:0 0 30%;margin-top:18px;}
+.nav-row .primary{flex:1;}
+.summary{border:1px solid var(--rule);border-radius:10px;padding:4px 16px;}
+.summary .row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--rule);font-size:14px;}
+.summary .row:last-child{border-bottom:none;}
+.summary .row span:first-child{color:var(--slate);}
+.summary .row span:last-child{font-weight:600;text-align:right;word-break:break-word;}
+.price-bar{position:sticky;bottom:0;margin:20px -24px -24px;padding:14px 24px;background:var(--navy);color:var(--white);display:flex;justify-content:space-between;align-items:center;border-radius:0 0 10px 10px;}
+.price-bar .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.75;font-weight:600;}
+.price-bar .sub{font-size:12px;opacity:.85;margin-top:2px;}
+.price-bar .amount{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:var(--gold);}
