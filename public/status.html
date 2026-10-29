@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order status — DocuFast India</title>
+<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.big-code{font-family:'IBM Plex Mono',monospace;font-size:44px;font-weight:700;letter-spacing:.08em;color:var(--navy);text-align:center;margin:6px 0 2px;}
+.sub-center{text-align:center;font-size:13px;color:var(--slate);}
+.timeline{list-style:none;margin:22px 0 0;padding:0;}
+.timeline li{display:flex;gap:14px;align-items:flex-start;padding:0 0 22px;position:relative;}
+.timeline li:not(:last-child)::before{content:'';position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--rule);}
+.timeline .dot{width:28px;height:28px;border-radius:50%;background:var(--rule);color:var(--slate);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex:0 0 28px;}
+.timeline li.done .dot{background:var(--navy);color:var(--white);}
+.timeline li.now .dot{background:var(--gold);color:var(--navy-deep);box-shadow:0 0 0 5px var(--gold-tint);}
+.timeline li.bad .dot{background:var(--error);color:var(--white);}
+.timeline .t{font-weight:600;font-size:15px;}
+.timeline .d{font-size:13px;color:var(--slate);margin-top:2px;}
+.banner{border-radius:10px;padding:12px 14px;font-size:14px;margin-top:16px;}
+.banner.warn{background:var(--gold-tint);color:#7a5600;}
+.banner.err{background:var(--error-tint);color:var(--error);}
+.banner.ok{background:var(--navy-tint);color:var(--navy);}
+.lookup{display:flex;gap:8px;margin-top:6px;}
+.lookup input{flex:1;padding:12px;border:2px solid var(--rule);border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:18px;text-transform:uppercase;letter-spacing:.06em;}
+.lookup button{padding:0 18px;border:none;border-radius:10px;background:var(--gold);font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;}
+.recent{margin-top:24px;}
+.recent a{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--rule);text-decoration:none;color:var(--navy-deep);font-size:14px;}
+.recent a b{font-family:'IBM Plex Mono',monospace;color:var(--navy);}
+.recent a span{color:var(--slate);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+</style>
+</head>
+<body>
+<div class="brand-band">
+  <div class="wrap" style="padding:0 20px;">
+    <a href="/"><img src="/logo-tagline.png" alt="DocuFast India" style="height:56px;display:block;"></a>
+  </div>
+</div>
+<div class="wrap">
+  <div class="card" id="lookupCard">
+    <h3 style="font-size:18px;">Track your order</h3>
+    <div class="note" style="margin-top:6px;">Enter the 6-character code from your receipt.</div>
+    <form class="lookup" id="lookupForm">
+      <input id="codeInput" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123">
+      <button type="submit">Check</button>
+    </form>
+    <div class="banner err" id="lookupErr" style="display:none;"></div>
+    <div class="recent" id="recent" style="display:none;"><div class="group-label" style="margin-top:0;">Your recent orders on this phone</div><div id="recentList"></div></div>
+  </div>
+
+  <div class="card" id="statusCard" style="display:none;">
+    <div class="sub-center" id="shopLine"></div>
+    <div class="big-code" id="bigCode"></div>
+    <div class="sub-center" id="fileLine"></div>
+    <div id="banner"></div>
+    <ul class="timeline" id="timeline"></ul>
+    <button class="ghost" id="shareBtn" type="button">Copy link to this order</button>
+    <a href="/" class="ghost" style="display:block;text-align:center;text-decoration:none;">Print something else</a>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const code = (new URLSearchParams(location.search).get('code') || '').trim().toUpperCase();
+let timer = null;
+
+function recent() { try { return JSON.parse(localStorage.getItem('df_recent') || '[]'); } catch { return []; } }
+function showRecent() {
+  const list = recent();
+  if (!list.length) return;
+  $('recent').style.display = 'block';
+  $('recentList').innerHTML = '';
+  list.slice(0, 8).forEach(r => {
+    const a = document.createElement('a');
+    a.href = '/status.html?code=' + encodeURIComponent(r.code);
+    const b = document.createElement('b'); b.textContent = r.code;
+    const sp = document.createElement('span'); sp.textContent = r.filename || '';
+    a.append(b, sp); $('recentList').appendChild(a);
+  });
+}
+
+$('lookupForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const c = $('codeInput').value.trim().toUpperCase();
+  if (c.length < 4) { $('lookupErr').textContent = 'Enter the code from your receipt.'; $('lookupErr').style.display = 'block'; return; }
+  location.href = '/status.html?code=' + encodeURIComponent(c);
+});
+
+function step(cls, mark, title, desc) {
+  const li = document.createElement('li'); li.className = cls;
+  const d = document.createElement('div'); d.className = 'dot'; d.textContent = mark;
+  const w = document.createElement('div');
+  const t = document.createElement('div'); t.className = 't'; t.textContent = title;
+  const x = document.createElement('div'); x.className = 'd'; x.textContent = desc || '';
+  w.append(t, x); li.append(d, w); return li;
+}
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : '';
+
+function render(data) {
+  const { job, stage } = data;
+  $('lookupCard').style.display = 'none';
+  $('statusCard').style.display = 'block';
+  $('bigCode').textContent = job.code;
+  $('fileLine').textContent = `${job.filename} · ${job.pages} page${job.pages > 1 ? 's' : ''} × ${job.copies}`;
+  $('shopLine').textContent = data.shopName ? `Printing at ${data.shopName}${data.shopCity ? ', ' + data.shopCity : ''}` : '';
+
+  const tl = $('timeline'); tl.innerHTML = '';
+  const banner = $('banner'); banner.innerHTML = '';
+  const note = (cls, text) => { const b = document.createElement('div'); b.className = 'banner ' + cls; b.textContent = text; banner.appendChild(b); };
+  const where = [data.shopName, data.shopAddress, data.shopCity].filter(Boolean).join(', ');
+
+  if (stage === 'unpaid') {
+    tl.append(step('now', '1', 'Waiting for payment', 'Your order is created but payment has not completed.'),
+              step('', '2', 'Printing', ''), step('', '3', 'Ready to collect', ''));
+    note('warn', 'If money was deducted, wait a minute and refresh. Otherwise go back and pay again.');
+  } else if (stage === 'queued' || stage === 'waiting') {
+    tl.append(step('done', '✓', 'Paid', 'Payment received'),
+              step('now', '2', stage === 'waiting' ? 'Waiting for the shop' : 'Printing',
+                   stage === 'waiting' ? "The shop's print computer is offline right now. It will print as soon as it is back." :
+                   (data.ahead > 0 ? `${data.ahead} order${data.ahead > 1 ? 's' : ''} ahead of yours` : 'Sending to the printer now')),
+              step('', '3', 'Ready to collect', ''));
+    if (stage === 'waiting') note('warn', 'You can ask the shop to switch on the print computer. Your file is safe and your code stays valid.');
+  } else if (stage === 'printed') {
+    tl.append(step('done', '✓', 'Paid', ''),
+              step('done', '✓', 'Printed', job.printedAt ? 'at ' + fmtTime(job.printedAt) : ''),
+              step('now', '✓', 'Ready to collect', 'Collect it from the tray and show this code if asked.'));
+    note('ok', 'Done! Your document has been printed.');
+  } else if (stage === 'problem') {
+    tl.append(step('done', '✓', 'Paid', ''), step('bad', '!', 'Printing hit a problem', ''), step('', '3', 'Ready to collect', ''));
+    note('err', `Your payment is safe, but the printer could not finish. Please show code ${job.code} at ${where || 'the counter'} and the staff will reprint it.`);
+  } else {
+    tl.append(step('bad', '!', 'Order expired', 'The file was removed from our system.'));
+    note('warn', 'Please upload your document again.');
+  }
+
+  if (stage === 'printed' || stage === 'expired') { if (timer) clearInterval(timer); }
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/jobs/' + encodeURIComponent(code));
+    if (res.status === 404) { $('statusCard').style.display = 'none'; $('lookupCard').style.display = 'block'; $('lookupErr').textContent = 'No order found with that code. Check it and try again.'; $('lookupErr').style.display = 'block'; if (timer) clearInterval(timer); return; }
+    if (!res.ok) return;
+    render(await res.json());
+  } catch { /* offline blip — next tick retries */ }
+}
+
+$('shareBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(location.href); $('shareBtn').textContent = 'Link copied ✓'; }
+  catch { prompt('Copy this link', location.href); }
+});
+
+showRecent();
+if (code) { load(); timer = setInterval(load, 4000); }
+</script>
+</body>
+</html>

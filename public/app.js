@@ -362,10 +362,20 @@ function openRazorpayModal({ code, amount, razorpayOrderId, razorpayKeyId }) {
 }
 
 // --- Ticket display ---
+function rememberOrder(job) {
+  try {
+    const list = JSON.parse(localStorage.getItem('df_recent') || '[]').filter(r => r.code !== job.code);
+    list.unshift({ code: job.code, filename: job.filename, at: Date.now() });
+    localStorage.setItem('df_recent', JSON.stringify(list.slice(0, 20)));
+  } catch { /* storage unavailable — history is a convenience only */ }
+}
+
 function showTicket(job) {
+  rememberOrder(job);
   document.getElementById('uploadCard').style.display = 'none';
   document.getElementById('ticketCard').style.display = 'block';
   document.getElementById('ticketCode').textContent = job.code;
+  document.getElementById('trackLink').href = '/status.html?code=' + encodeURIComponent(job.code);
   document.getElementById('ticketFilename').textContent = job.filename;
   document.getElementById('ticketMeta').textContent =
     `${job.pages} page${job.pages > 1 ? 's' : ''} × ${job.copies} ${job.copies > 1 ? 'copies' : 'copy'}, ${job.colorMode === 'color' ? 'color' : 'B&W'} — ₹${(job.amount / 100).toFixed(2)}`;
