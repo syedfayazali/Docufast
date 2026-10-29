@@ -31,6 +31,19 @@
     </ol>
     <div class="shop-line" id="shopLine"></div>
 
+    <!-- Consent + retention (DPDP Act). Must be ticked before any file is chosen. -->
+    <div class="consent" id="consentBox">
+      <label class="chk"><input type="checkbox" id="consentChk">
+        <span>I agree that DocuFast and this shop may process the document I upload only to print it. <a href="#privacyNote" id="privacyToggle">Privacy note</a></span>
+      </label>
+      <div class="note" id="privacyNote" style="display:none;margin-top:8px;">
+        Your file is stored privately and only the shop's printer can fetch it, through a link that expires in 10 minutes.
+        It is deleted automatically: <b>2 hours</b> after upload if you do not pay, <b>30 minutes</b> after it is printed,
+        and <b>48 hours</b> after a failed print. You can delete it yourself at any time from your order's status page.
+        We keep only the order record (code, pages, amount) for accounts.
+      </div>
+    </div>
+
     <!-- STEP 1 — upload -->
     <section class="step" id="step1">
       <div class="modes" id="modes" role="tablist">

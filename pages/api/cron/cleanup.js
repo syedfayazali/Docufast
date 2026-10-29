@@ -15,8 +15,9 @@
 // Runs on Vercel Cron (see vercel.json) — set CRON_SECRET in your env vars
 // and Vercel automatically sends it as a Bearer token on every cron
 // invocation, which is what the check below verifies.
-import { findAbandonedJobs, findStaleFailedJobs, markJobExpired, clearJobBlob, findExpiredPrintedBlobs } from '@/lib/db';
+import { findAbandonedJobs, findStaleFailedJobs, markJobExpired, clearJobBlob, findExpiredPrintedBlobs, listUnpaidRazorpayJobsAll, markPaid } from '@/lib/db';
 import { deleteFile } from '@/lib/blob';
+import { findCapturedPayment, isConfigured } from '@/lib/razorpay';
 
 export default async function handler(req, res) {
   if (process.env.CRON_SECRET) {
@@ -26,9 +27,23 @@ export default async function handler(req, res) {
     }
   }
 
-  const results = { abandoned: 0, staleFailed: 0, printedPurged: 0, errors: [] };
+  const results = { reconciled: 0, abandoned: 0, staleFailed: 0, printedPurged: 0, errors: [] };
 
   try {
+    // 0. Payment reconcile (moved here from the agent poll): rescue orders
+    // Razorpay captured but we never heard about. Runs BEFORE the abandoned
+    // sweep so a paid-but-unconfirmed job is marked paid, not expired.
+    if (isConfigured()) {
+      for (const j of await listUnpaidRazorpayJobsAll(24)) {
+        try {
+          const paymentId = await findCapturedPayment(j.razorpay_order_id).catch(() => null);
+          if (paymentId) { await markPaid(j.code, paymentId); results.reconciled++; }
+        } catch (err) {
+          results.errors.push(`reconcile ${j.code}: ${err.message}`);
+        }
+      }
+    }
+
     const abandoned = await findAbandonedJobs(2); // 2 hours
     for (const job of abandoned) {
       try {

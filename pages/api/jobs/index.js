@@ -1,4 +1,4 @@
-import { createJob } from '@/lib/db';
+import { createJob, newDeleteToken } from '@/lib/db';
 import { generateCode } from '@/lib/pricing';
 import { quoteOrder } from '@/lib/quote';
 import { createOrder, isConfigured } from '@/lib/razorpay';
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { filename, blobUrl, fileData, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode } = req.body || {};
+    const { filename, blobUrl, fileData, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, consent } = req.body || {};
     if (!filename || (!blobUrl && !fileData) || !pages || !copies) {
       return res.status(400).json({ error: 'Missing filename, blobUrl, pages, or copies' });
     }
@@ -45,10 +45,10 @@ export default async function handler(req, res) {
       } catch (err) {
         return res.status(500).json({ error: 'File upload failed: ' + err.message });
       }
-      return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, code });
+      return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, code, consent: consent === true });
     }
 
-    return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode });
+    return createJobAndRespond({ res, filename, blobUrl: finalBlobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, consent: consent === true });
 
   } catch (err) {
     console.error('Unhandled error in /api/jobs:', err.message, err.stack);
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, code: existingCode }) {
+async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, code: existingCode, consent }) {
   // Auto-detect page count from file bytes server-side — this is the
   // authoritative count used for billing, regardless of what the client sent.
   let pageCount = Math.max(1, parseInt(pages, 10) || 1);
@@ -89,6 +89,9 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
   const service = q.service;
   const amount = q.total;
 
+  // Secret the customer's browser keeps so only they can delete this upload early.
+  const deleteToken = newDeleteToken();
+
   const baseJob = {
     code, shopId, filename, blobUrl,
     pages: pageCount, copies: copyCount,
@@ -96,6 +99,7 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
     amount, status: 'pending_payment',
     serviceId: service?.id, serviceName: service?.name, serviceFee: service ? service.fee : null,
     couponCode: q.coupon ? q.coupon.code : null, discount: q.discount || null,
+    consent: !!consent, deleteTokenHash: deleteToken.hash,
   };
 
   if (isConfigured()) {
@@ -105,7 +109,7 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
       console.log('Razorpay order created:', orderId);
       await createJob({ ...baseJob, paymentProvider: 'razorpay', razorpayOrderId: orderId });
       return res.status(201).json({
-        code, amount,
+        code, amount, deleteToken: deleteToken.token,
         razorpayEnabled: true,
         razorpayOrderId: orderId,
         razorpayKeyId: process.env.RAZORPAY_KEY_ID,
@@ -117,5 +121,5 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
   }
 
   await createJob({ ...baseJob, paymentProvider: 'mock' });
-  return res.status(201).json({ code, amount, razorpayEnabled: false });
+  return res.status(201).json({ code, amount, deleteToken: deleteToken.token, razorpayEnabled: false });
 }

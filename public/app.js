@@ -135,8 +135,29 @@ function renderPriceLabels() {
 }
 
 // --- File pick ---
-dropzone.addEventListener('click', () => fileInput.click());
-document.getElementById('camBtn').addEventListener('click', () => camInput.click());
+// DPDP: no file is chosen or uploaded until the customer has given consent.
+const consentChk = document.getElementById('consentChk');
+const consentBox = document.getElementById('consentBox');
+document.getElementById('privacyToggle').addEventListener('click', e => {
+  e.preventDefault();
+  const n = document.getElementById('privacyNote');
+  n.style.display = n.style.display === 'none' ? 'block' : 'none';
+});
+consentChk.addEventListener('change', () => { if (consentChk.checked) { consentBox.classList.remove('need'); setStatus(''); } });
+function needConsent() {
+  if (consentChk.checked) return false;
+  consentBox.classList.add('need');
+  setStatus('Please tick the consent box above before choosing a file.', 'err');
+  consentBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return true;
+}
+
+dropzone.addEventListener('click', () => { if (!needConsent()) fileInput.click(); });
+// Tool panels (photos, passport, service) also need consent before any file is picked.
+document.addEventListener('click', e => {
+  if (e.target.closest('#photosAdd, #passportPick, #serviceSlots button') && needConsent()) { e.stopImmediatePropagation(); e.preventDefault(); }
+}, true);
+document.getElementById('camBtn').addEventListener('click', () => { if (!needConsent()) camInput.click(); });
 ['dragover', 'dragenter'].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.add('drag'); }));
 ['dragleave', 'drop'].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.remove('drag'); }));
 dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
@@ -144,6 +165,7 @@ fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.
 camInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
 async function handleFile(file, { skipCompress = false } = {}) {
+  if (needConsent()) return;
   next1.disabled = true;
   state.blobUrl = null;
   if (!skipCompress && COMPRESSIBLE_TYPES.includes(file.type)) {
@@ -302,10 +324,12 @@ payBtn.addEventListener('click', async () => {
         shopSlug,
         serviceId: state.service ? state.service.id : undefined,
         couponCode: state.coupon ? state.coupon.code : undefined,
+        consent: consentChk.checked,
       }),
     });
     createData = await res.json();
     if (!res.ok) throw new Error(createData.error || 'Could not create order');
+    rememberDeleteToken(createData.code, createData.deleteToken);
   } catch (err) {
     alert(err.message);
     payBtn.disabled = false;
@@ -377,6 +401,18 @@ function openRazorpayModal({ code, amount, razorpayOrderId, razorpayKeyId }) {
 }
 
 // --- Ticket display ---
+// The delete token lets this phone (and only this phone) delete its own upload
+// from the status page. Kept per order code; the newest 20 are remembered.
+function rememberDeleteToken(code, token) {
+  if (!code || !token) return;
+  try {
+    const m = JSON.parse(localStorage.getItem('df_del') || '{}');
+    delete m[code]; m[code] = token;
+    const keys = Object.keys(m);
+    keys.slice(0, Math.max(0, keys.length - 20)).forEach(k => delete m[k]);
+    localStorage.setItem('df_del', JSON.stringify(m));
+  } catch { /* storage unavailable — deletion then needs the payment ID */ }
+}
 function rememberOrder(job) {
   try {
     const list = JSON.parse(localStorage.getItem('df_recent') || '[]').filter(r => r.code !== job.code);

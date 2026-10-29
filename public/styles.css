@@ -120,3 +120,8 @@ select{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:6
 .coupon-row input{flex:1;padding:11px 12px;border:2px solid var(--rule);border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:15px;text-transform:uppercase;letter-spacing:.05em;}
 .coupon-row .ghost{flex:0 0 90px;margin-top:0;}
 #couponMsg.ok{color:#2E6B4F;font-weight:600;} #couponMsg.err{color:var(--error);font-weight:600;}
+.consent{margin:12px 0 4px;padding:12px 14px;border:1px solid var(--rule);border-radius:10px;background:var(--navy-tint);}
+.consent.need{border-color:var(--error);background:var(--error-tint);}
+.consent .chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;}
+.consent .chk input{width:22px;height:22px;flex:0 0 22px;margin-top:1px;}
+.consent a{color:var(--navy);font-weight:600;}

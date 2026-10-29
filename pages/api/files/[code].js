@@ -3,7 +3,7 @@
 // or logged link stops working almost immediately and the file itself never
 // has a public address.
 import { Readable } from 'stream';
-import { getJob } from '@/lib/db';
+import { getJob, logFileAccess } from '@/lib/db';
 import { privateEnabled, readPrivate, verifyFileLink, isBlobUrl } from '@/lib/privateBlob';
 
 // Big scans take a while to stream to the shop; raise the function time limit.
@@ -16,11 +16,18 @@ export default async function handler(req, res) {
   if (!verifyFileLink(code, e, s)) return res.status(403).json({ error: 'Link expired or invalid' });
 
   const job = await getJob(code);
-  if (!job || !job.blob_url) return res.status(404).json({ error: 'File not found' });
+  if (!job || !job.blob_url) {
+    if (job) await logFileAccess({ code, shopId: job.shop_id, actor: 'agent', outcome: 'not_found' });
+    return res.status(404).json({ error: 'File not found' });
+  }
 
-  // Access log (who opened which file, when). A table for this comes later;
-  // for now it is in the function logs.
-  console.log(`file-access code=${code} shop=${job.shop_id || '-'} ip=${req.headers['x-forwarded-for'] || '-'}`);
+  // Access log (who opened which file, when). Only signed, unexpired links
+  // reach this point, so unauthenticated traffic cannot fill the table.
+  await logFileAccess({
+    code, shopId: job.shop_id, actor: 'agent', outcome: 'opened',
+    ip: String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || null,
+    userAgent: req.headers['user-agent'],
+  });
 
   if (privateEnabled()) {
     const f = await readPrivate(job.blob_url);

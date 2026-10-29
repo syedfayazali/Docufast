@@ -1,4 +1,4 @@
-import { getJob, publicView, getJobStatusExtras } from '@/lib/db';
+import { getJob, publicView, getJobStatusExtras, getJobHistory } from '@/lib/db';
 
 // Customer-facing status. `stage` is the one word the UI keys off:
 //   unpaid | waiting (paid, shop's computer offline) | queued | printed | problem | expired
@@ -20,6 +20,10 @@ export default async function handler(req, res) {
   else if (job.status === 'paid' && extras.shopOnline === false) stage = 'waiting';
   else stage = 'queued';
 
+  // Customer-safe history: status + time only (no actor names or notes).
+  let history = [];
+  try { history = (await getJobHistory(code)).map(h => ({ status: h.status, at: h.created_at })); } catch { /* optional */ }
+
   res.setHeader('Cache-Control', 'no-store');
-  return res.status(200).json({ job: view, stage, ...extras });
+  return res.status(200).json({ job: view, stage, history, fileDeleted: !!job.deleted_at, ...extras });
 }

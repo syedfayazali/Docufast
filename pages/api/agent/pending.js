@@ -67,11 +67,17 @@ export default async function handler(req, res) {
 
     // Rescue jobs that were paid but never reached this shop (see db.js).
     await claimUnassignedJobs(shopId).catch(() => {});
-    // Rescue payments that Razorpay captured but we never heard about.
-    await reconcilePayments(shopId);
-    // Remove printed files whose reprint window has passed (the daily cron
-    // alone would leave customer documents sitting for up to a day).
-    purgePrinted(shopId);
+    // LEAN_POLL=1 makes this route cheap: payment reconcile and the printed-file
+    // purge then run only from the cron job (/api/cron/cleanup). Leave it unset
+    // until the cron runs often enough (see README note in .env.example), because
+    // the daily cron alone leaves printed files up to a day.
+    if (process.env.LEAN_POLL !== '1') {
+      // Rescue payments that Razorpay captured but we never heard about.
+      await reconcilePayments(shopId);
+      // Remove printed files whose reprint window has passed (the daily cron
+      // alone would leave customer documents sitting for up to a day).
+      purgePrinted(shopId);
+    }
   }
 
   const jobs = await listPendingPrintJobs(shopId);

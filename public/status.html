@@ -25,6 +25,11 @@
 .lookup{display:flex;gap:8px;margin-top:6px;}
 .lookup input{flex:1;padding:12px;border:2px solid var(--rule);border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:18px;text-transform:uppercase;letter-spacing:.06em;}
 .lookup button{padding:0 18px;border:none;border-radius:10px;background:var(--gold);font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;}
+.hist{margin:6px 0 0;padding:0;list-style:none;font-size:12px;color:var(--slate);}
+.hist li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--rule);}
+.del-box{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule);}
+.del-box button{width:100%;padding:12px;border-radius:10px;border:2px solid var(--error);background:#fff;color:var(--error);font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;}
+.del-box .note{margin-top:6px;}
 .recent{margin-top:24px;}
 .recent a{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--rule);text-decoration:none;color:var(--navy-deep);font-size:14px;}
 .recent a b{font-family:'IBM Plex Mono',monospace;color:var(--navy);}
@@ -55,9 +60,14 @@
     <div class="sub-center" id="fileLine"></div>
     <div id="banner"></div>
     <ul class="timeline" id="timeline"></ul>
+    <details id="histWrap" style="display:none;margin-top:6px;"><summary style="font-size:13px;color:var(--slate);cursor:pointer;">Order history</summary><ul class="hist" id="hist"></ul></details>
     <a class="ghost" id="receiptLink" href="#" style="display:none;text-align:center;text-decoration:none;">View payment receipt</a>
     <button class="ghost" id="shareBtn" type="button">Copy link to this order</button>
     <a href="/" class="ghost" style="display:block;text-align:center;text-decoration:none;">Print something else</a>
+    <div class="del-box" id="delBox" style="display:none;">
+      <button id="delBtn" type="button">Delete my file now</button>
+      <div class="note" id="delNote">Removes your uploaded document from our storage. The order record (code, pages, amount) stays for accounts.</div>
+    </div>
   </div>
 </div>
 <script>
@@ -141,8 +151,48 @@ function render(data) {
     note('warn', 'Please upload your document again.');
   }
 
+  renderHistory(data.history || []);
+  renderDelete(data);
+
   if (stage === 'printed' || stage === 'expired' || stage === 'refunded') { if (timer) clearInterval(timer); }
 }
+
+const HIST_LABEL = { pending_payment: 'Order created', paid: 'Payment received', printed: 'Printed', print_failed: 'Print problem', retry: 'Print retried', reprint: 'Sent to print again', refunded: 'Refunded', expired: 'Expired — file removed', file_deleted: 'File deleted at your request' };
+function renderHistory(list) {
+  $('histWrap').style.display = list.length ? 'block' : 'none';
+  const ul = $('hist'); ul.innerHTML = '';
+  list.forEach(h => {
+    const li = document.createElement('li');
+    const a = document.createElement('span'); a.textContent = HIST_LABEL[h.status] || h.status;
+    const b = document.createElement('span'); b.textContent = new Date(h.at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    li.append(a, b); ul.appendChild(li);
+  });
+}
+
+// DPDP: the customer can delete their own file. Not offered while a paid order
+// is still waiting to print (the shop must cancel/refund that one first).
+function myToken() { try { return (JSON.parse(localStorage.getItem('df_del') || '{}'))[code] || ''; } catch { return ''; } }
+function renderDelete(data) {
+  const deletable = ['unpaid', 'printed', 'refunded', 'expired'].includes(data.stage) && !data.fileDeleted;
+  $('delBox').style.display = deletable ? 'block' : 'none';
+  if (data.fileDeleted) { $('delBox').style.display = 'block'; $('delBtn').style.display = 'none'; $('delNote').textContent = 'Your file has been deleted from our storage.'; }
+}
+$('delBtn').addEventListener('click', async () => {
+  const token = myToken();
+  let paymentId = '';
+  if (!token) {
+    paymentId = (prompt('To confirm it is your order, enter the full Razorpay payment ID (starts with pay_). It is in your payment SMS or email.') || '').trim();
+    if (!paymentId) return;
+  } else if (!confirm('Delete your uploaded file now? This cannot be undone.')) return;
+  $('delBtn').disabled = true;
+  try {
+    const res = await fetch('/api/jobs/' + encodeURIComponent(code) + '/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, paymentId }) });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) { $('delNote').textContent = j.error || 'Could not delete right now.'; $('delBtn').disabled = false; return; }
+    $('delNote').textContent = 'Done. Your file has been deleted.'; $('delBtn').style.display = 'none';
+    load();
+  } catch { $('delNote').textContent = 'Network problem. Please try again.'; $('delBtn').disabled = false; }
+});
 
 async function load() {
   try {

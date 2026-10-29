@@ -563,7 +563,7 @@ async function saveSvc() {
 
 async function loadCoupons() {
   try {
-    const res = await fetch('/api/owner/coupons', { headers: { 'x-owner-key': getKey() } });
+    const res = await fetch('/api/owner/coupons', { credentials: 'same-origin' });
     if (!res.ok) return;
     const { coupons } = await res.json();
     const grid = document.getElementById('couponList'); grid.innerHTML = '';
@@ -580,7 +580,7 @@ async function loadCoupons() {
       const btn = document.createElement('button'); btn.className = 'link-btn'; btn.style.marginTop = '10px';
       btn.textContent = c.active ? 'Turn off' : 'Turn on';
       btn.addEventListener('click', async () => {
-        await fetch('/api/owner/coupons', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() }, body: JSON.stringify({ code: c.code, active: !c.active }) });
+        await fetch('/api/owner/coupons', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: c.code, active: !c.active }) });
         loadCoupons();
       });
       card.append(h, info, btn); grid.appendChild(card);
@@ -609,7 +609,7 @@ async function saveCoupon() {
     validUntil: document.getElementById('cpExp').value ? document.getElementById('cpExp').value + 'T23:59:59+05:30' : null,
     note: document.getElementById('cpNote').value,
   };
-  const res = await fetch('/api/owner/coupons', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() }, body: JSON.stringify(body) });
+  const res = await fetch('/api/owner/coupons', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { msg.textContent = data.error || 'Could not create the code.'; return; }
   closeCoupon(); loadCoupons();
