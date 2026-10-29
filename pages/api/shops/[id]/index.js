@@ -1,12 +1,20 @@
 import { isOwner, isLegacyAgentKey } from '@/lib/auth';
-import { toggleShop, resetShopMachine, rotateShopKey, setStaffPin, setShopPrices } from '@/lib/db';
+import { toggleShop, resetShopMachine, rotateShopKey, setStaffPin, setShopPrices, setShopRetention } from '@/lib/db';
 import { validatePrices } from '@/lib/pricing';
 
 export default async function handler(req, res) {
   if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' });
   if (!isOwner(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { id } = req.query;
-  const { active, resetMachine, rotateKey, newStaffPin, prices } = req.body || {};
+  const { active, resetMachine, rotateKey, newStaffPin, prices, retentionMinutes } = req.body || {};
+
+  if (retentionMinutes !== undefined) {
+    const m = retentionMinutes === null ? null : Number(retentionMinutes);
+    if (m !== null && (!Number.isInteger(m) || m < 5 || m > 1440)) return res.status(400).json({ error: 'Keep files between 5 minutes and 24 hours' });
+    const r = await setShopRetention(id, m);
+    if (!r) return res.status(404).json({ error: 'Shop not found' });
+    return res.status(200).json({ ok: true, retentionMinutes: r.retention_minutes });
+  }
 
   if (prices) {
     let clean;

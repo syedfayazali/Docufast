@@ -695,7 +695,8 @@ function renderShops(shops, printers) {
       <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Staff PIN</button>
-        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();openPrices('${s.id}')">Prices</button></td>`;
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();openPrices('${s.id}')">Prices</button>
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();setRetention('${s.id}',${s.retention_minutes == null ? 'null' : s.retention_minutes})">Keep files: ${s.retention_minutes == null ? '30m' : s.retention_minutes + 'm'}</button></td>`;
     tr.dataset.shopName = s.name;
     body.appendChild(tr);
   });
@@ -731,6 +732,16 @@ async function savePrices() {
   if (!res.ok) { msg.textContent = data.error || 'Could not save prices.'; return; }
   shopPrices[priceShopId] = data.prices;
   closePrices();
+  loadDashboard();
+}
+
+async function setRetention(id, current) {
+  const v = prompt('How many minutes to keep printed files for reprint, then delete them? (5 to 1440, blank = default 30)', current == null ? '' : current);
+  if (v === null) return;
+  const body = { retentionMinutes: v.trim() === '' ? null : Number(v) };
+  const res = await fetch('/api/shops/' + encodeURIComponent(id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(data.error || 'Could not save.'); return; }
   loadDashboard();
 }
 

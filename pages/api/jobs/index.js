@@ -7,12 +7,14 @@ import { readBytes } from '@/lib/privateBlob';
 // Vercel edge runtime issues with native modules
 
 export const config = { api: { bodyParser: { sizeLimit: '1mb' } } };
+import { maskAadhaar } from '@/lib/mask';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { filename, blobUrl, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, consent, accountCode } = req.body || {};
+    const { filename: rawFilename, blobUrl, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, consent, accountCode } = req.body || {};
+    const filename = maskAadhaar(rawFilename);
     if (!filename || !blobUrl || !pages || !copies) {
       return res.status(400).json({ error: 'Missing filename, blobUrl, pages, or copies' });
     }
