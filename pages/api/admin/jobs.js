@@ -7,7 +7,6 @@ export default async function handler(req, res) {
 
   // Shop dashboard: authenticate with shop's own API key
   const shopKey = req.headers['x-shop-key'];
-  const ownerKey = req.headers['x-owner-key'];
 
   let shopId = null;
   let shopName = null;
