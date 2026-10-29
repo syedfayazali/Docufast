@@ -404,9 +404,23 @@ function renderJobs(jobs, shops) {
       <span style="color:#5B6478;">${j.shopId ? (shopMap[j.shopId] || j.shopId) : '—'}</span>
       <span>₹${((j.amount || 0) / 100).toFixed(2)}</span>
       <span>${j.colorMode === 'color' ? 'Colour' : 'B&W'} ${j.duplex ? '·D' : ''}</span>
-      <span style="color:${statusColor};font-weight:600;">${j.printError ? 'Failed' : j.status}</span>`;
+      <span style="color:${statusColor};font-weight:600;">${j.printError ? 'Failed' : j.status}
+        ${(j.status === 'paid' || j.status === 'printed') ? `<button class="link-btn" style="margin-left:6px;" onclick="refundJob('${j.code}', ${j.amount || 0})">Refund</button>` : ''}</span>`;
     body.appendChild(div);
   });
+}
+
+async function refundJob(code, amount) {
+  if (!confirm('Refund ₹' + (amount / 100).toFixed(2) + ' for order ' + code + ' to the customer?\n\nThis cannot be undone and the file is deleted.')) return;
+  const res = await fetch('/api/owner/refund', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-owner-key': getKey() },
+    body: JSON.stringify({ code }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(data.error || 'Refund failed.'); return; }
+  alert('Refunded. The customer will see it in 5–7 working days.');
+  loadDashboard();
 }
 
 function openAddShop() {

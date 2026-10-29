@@ -199,6 +199,14 @@ async function handleFile(file) {
       body: JSON.stringify({ filename: file.name, blobUrl: state.blobUrl }),
     });
     const data = await res.json();
+    if (data.problem) {
+      // Would fail at the printer after being paid for — stop here and say why.
+      setStatus(data.problem, 'err');
+      state.blobUrl = null;
+      next1.disabled = true;
+      next1.textContent = 'Choose a different file';
+      return;
+    }
     if (data.pages && data.pages > 0) detected = data.pages;
   } catch { /* fall through to manual entry */ }
 

@@ -1,5 +1,5 @@
 import { isOwner, isLegacyAgentKey } from '@/lib/auth';
-import { listRecentJobs, publicView } from '@/lib/db';
+import { listRecentJobs, publicView, getShopToday } from '@/lib/db';
 import { authStaff } from '@/lib/staff';
 
 export default async function handler(req, res) {
@@ -29,5 +29,6 @@ export default async function handler(req, res) {
   const jobs = (await listRecentJobs({ shopId, limit: 100 })).map(publicView);
   const revenue = jobs.filter(j => j.status === 'printed').reduce((s, j) => s + j.amount, 0);
 
-  return res.status(200).json({ jobs, revenueToday: revenue, shopName, shopSlug });
+  const today = shopId ? await getShopToday(shopId).catch(() => null) : null;
+  return res.status(200).json({ jobs, revenueToday: revenue, shopName, shopSlug, today });
 }

@@ -85,6 +85,29 @@ function countDocPages(buffer) {
   return count > 1 ? count : null; // null if no breaks found (heuristic unreliable)
 }
 
+// Catches files that would be paid for and then fail at the printer: wrong
+// type disguised by its extension, corrupt files, and password-protected PDFs
+// (SumatraPDF cannot open those). Returns a customer-readable reason or null.
+function fileProblem(ext, buffer) {
+  if (!buffer || buffer.length < 8) return 'This file looks empty or damaged. Please choose it again.';
+  const head = buffer.slice(0, 8);
+  if (ext === 'pdf') {
+    if (buffer.slice(0, 1024).toString('latin1').indexOf('%PDF-') === -1) return 'This is not a valid PDF file. Please choose a different file.';
+    // /Encrypt in the trailer = password protected / restricted.
+    const tail = buffer.slice(Math.max(0, buffer.length - 4096)).toString('latin1');
+    if (/\/Encrypt\s+\d+\s+\d+\s+R/.test(tail) || /\/Encrypt\s*<</.test(tail)) {
+      return 'This PDF is password-protected, so it cannot be printed. Remove the password (open it, then Print → Save as PDF) and upload again.';
+    }
+  } else if (ext === 'jpg' || ext === 'jpeg') {
+    if (!(head[0] === 0xFF && head[1] === 0xD8)) return 'This does not look like a real JPG photo. Please choose a different file.';
+  } else if (ext === 'png') {
+    if (!(head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4E && head[3] === 0x47)) return 'This does not look like a real PNG image. Please choose a different file.';
+  } else if (ext === 'docx') {
+    if (!(head[0] === 0x50 && head[1] === 0x4B)) return 'This is not a valid Word (.docx) file. Please save it again from Word and upload.';
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -92,6 +115,9 @@ export default async function handler(req, res) {
     const { filename } = req.body || {};
     const buffer = await bufferFromRequest(req);
     const ext = (filename || '').toLowerCase().split('.').pop();
+
+    const problem = fileProblem(ext, buffer);
+    if (problem) return res.status(200).json({ pages: null, problem, filename });
 
     let pages = null;
     let method = 'unknown';

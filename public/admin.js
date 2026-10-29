@@ -48,11 +48,21 @@ async function refresh() {
     if (!res.ok) return;
     const data = await res.json();
 
-    // KPIs
-    document.getElementById('kpiJobs').textContent = data.jobs.length;
-    document.getElementById('kpiPrinted').textContent = data.jobs.filter(j => j.status === 'printed').length;
-    document.getElementById('kpiPending').textContent = data.jobs.filter(j => j.status === 'paid' || j.status === 'pending_payment').length;
-    document.getElementById('kpiRevenue').textContent = '₹' + (data.revenueToday / 100).toFixed(2);
+    // Today's totals (shop-scoped views get exact India-time numbers from the server)
+    const t = data.today;
+    document.getElementById('kpiJobs').textContent = t ? t.jobs : data.jobs.length;
+    document.getElementById('kpiPages').textContent = t ? t.pages : '—';
+    document.getElementById('kpiRevenue').textContent = '₹' + (((t ? t.money : data.revenueToday) || 0) / 100).toFixed(2);
+    document.getElementById('kpiPending').textContent = data.jobs.filter(j => j.status === 'paid' && !j.printError).length;
+
+    const badge = document.getElementById('printerBadge');
+    if (t) {
+      const on = t.printersOnline > 0;
+      badge.className = 'printer-badge ' + (on ? 'on' : 'off');
+      badge.lastElementChild.textContent = t.printersTotal === 0 ? 'No printer' : on ? 'Printer online' : 'Printer offline';
+    }
+
+    notifyNewPaid(data.jobs);
 
     // Shop name
     if (data.shopName) {
@@ -99,34 +109,109 @@ async function refresh() {
       document.getElementById('shopLinkCard').style.display = 'block';
     }
 
-    // Jobs table
-    const rows = document.getElementById('jobRows');
-    rows.innerHTML = '';
-    if (!data.jobs.length) {
-      rows.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--slate);padding:24px;">No jobs yet — share your QR code with customers.</td></tr>';
-      return;
-    }
-
-    data.jobs.forEach(job => {
-      const canRetry = job.status === 'paid' && job.printError;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="code-cell">${job.code}</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${job.filename}">${job.filename}</td>
-        <td>${job.pages} × ${job.copies}</td>
-        <td>₹${(job.amount / 100).toFixed(2)}</td>
-        <td style="color:var(--slate);">${job.colorMode === 'color' ? '🟡 Colour' : '⚫ B&W'}${job.duplex ? ' · Duplex' : ''}</td>
-        <td><span class="pill ${statusClass(job)}">${job.printError ? 'Print failed' : job.status.replace('_', ' ')}</span></td>
-        <td>${canRetry ? `<button class="retry-btn" data-code="${job.code}">Retry</button>` : ''}</td>`;
-      rows.appendChild(tr);
-    });
-
-    rows.querySelectorAll('.retry-btn').forEach(btn =>
-      btn.addEventListener('click', () => retryPrint(btn.dataset.code))
-    );
+    renderBoard(data.jobs);
   } catch (err) {
     console.error('Refresh error:', err);
   }
+}
+
+// ---- queue board ----
+const seenPaid = new Set();
+let firstLoad = true;
+let soundOn = true;
+try { soundOn = localStorage.getItem('df_sound') !== 'off'; } catch {}
+const soundBtn = document.getElementById('soundBtn');
+function paintSoundBtn() { soundBtn.textContent = soundOn ? '🔔 Sound on' : '🔕 Sound off'; }
+paintSoundBtn();
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn; paintSoundBtn();
+  try { localStorage.setItem('df_sound', soundOn ? 'on' : 'off'); } catch {}
+  if (soundOn) beep();
+});
+
+let audioCtx = null;
+function beep() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1175].forEach((f, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = f; o.type = 'sine';
+      o.connect(g); g.connect(audioCtx.destination);
+      const t0 = audioCtx.currentTime + i * 0.18;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+      o.start(t0); o.stop(t0 + 0.18);
+    });
+  } catch { /* audio unavailable — the flash still shows */ }
+}
+
+// A job is "new" the first time we see it paid after the page has loaded.
+function notifyNewPaid(jobs) {
+  const fresh = [];
+  jobs.forEach(j => {
+    if (j.status === 'paid' && !seenPaid.has(j.code)) { seenPaid.add(j.code); fresh.push(j.code); }
+  });
+  if (firstLoad) { firstLoad = false; return; }
+  if (!fresh.length) return;
+  const b = document.getElementById('newBanner');
+  b.textContent = '🔔 New paid order' + (fresh.length > 1 ? 's' : '') + ': ' + fresh.join(', ');
+  b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+  newCodes = new Set(fresh);
+  if (soundOn) beep();
+  const old = document.title; document.title = '🔔 New order — DocuFast';
+  setTimeout(() => { document.title = old; b.classList.remove('show'); }, 8000);
+}
+let newCodes = new Set();
+
+function jobCard(job, kind) {
+  const div = document.createElement('div');
+  div.className = 'jcard' + (newCodes.has(job.code) ? ' new' : '');
+  const code = document.createElement('div'); code.className = 'jcode'; code.textContent = job.code;
+  const file = document.createElement('div'); file.className = 'jfile'; file.textContent = job.filename; file.title = job.filename;
+  const meta = document.createElement('div'); meta.className = 'jmeta';
+  meta.textContent = `${job.pages} pg × ${job.copies} · ${job.colorMode === 'color' ? 'Colour' : 'B&W'}${job.duplex ? ' · Double-sided' : ''} · ₹${(job.amount / 100).toFixed(2)}`;
+  div.append(code, file, meta);
+  if (kind === 'failed') {
+    const err = document.createElement('div'); err.className = 'jerr'; err.textContent = job.printError || 'Print failed';
+    div.appendChild(err);
+  }
+  if (kind === 'failed' || kind === 'printed') {
+    const btn = document.createElement('button'); btn.className = 'retry-btn';
+    btn.textContent = kind === 'failed' ? 'Retry print' : 'Reprint';
+    btn.addEventListener('click', () => kind === 'failed' ? retryPrint(job.code) : reprintJob(job.code));
+    div.appendChild(btn);
+  }
+  return div;
+}
+
+function renderBoard(jobs) {
+  const cols = {
+    queue: jobs.filter(j => j.status === 'paid' && !j.printError).reverse(),
+    failed: jobs.filter(j => j.status === 'paid' && j.printError),
+    printed: jobs.filter(j => j.status === 'printed').slice(0, 12),
+  };
+  const ids = { queue: ['colQueue', 'cntQueue'], failed: ['colFailed', 'cntFailed'], printed: ['colPrinted', 'cntPrinted'] };
+  Object.entries(cols).forEach(([k, list]) => {
+    const body = document.getElementById(ids[k][0]); body.innerHTML = '';
+    document.getElementById(ids[k][1]).textContent = list.length;
+    if (!list.length) {
+      const e = document.createElement('div'); e.className = 'empty-col';
+      e.textContent = k === 'queue' ? 'Nothing waiting' : k === 'failed' ? 'All good' : 'Nothing printed yet';
+      body.appendChild(e);
+    }
+    list.forEach(j => body.appendChild(jobCard(j, k)));
+  });
+  newCodes = new Set();
+}
+
+async function reprintJob(code) {
+  if (!confirm('Print order ' + code + ' again? (Only works for 30 minutes after printing.)')) return;
+  const res = await fetch(`/api/admin/jobs/${code}/retry?reprint=1`, { method: 'POST', headers: authHeaders() });
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    alert(d?.error || 'Reprint failed.');
+    return;
+  }
+  refresh();
 }
 
 async function retryPrint(code) {

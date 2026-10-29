@@ -15,6 +15,7 @@ export default async function handler(req, res) {
   if (job.status === 'pending_payment') stage = 'unpaid';
   else if (job.status === 'printed') stage = 'printed';
   else if (job.status === 'expired') stage = 'expired';
+  else if (job.status === 'refunded') stage = 'refunded';
   else if (job.status === 'paid' && job.print_error && (job.print_attempts || 0) >= 3) stage = 'problem';
   else if (job.status === 'paid' && extras.shopOnline === false) stage = 'waiting';
   else stage = 'queued';

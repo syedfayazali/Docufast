@@ -128,12 +128,15 @@ function render(data) {
   } else if (stage === 'problem') {
     tl.append(step('done', '✓', 'Paid', ''), step('bad', '!', 'Printing hit a problem', ''), step('', '3', 'Ready to collect', ''));
     note('err', `Your payment is safe, but the printer could not finish. Please show code ${job.code} at ${where || 'the counter'} and the staff will reprint it.`);
+  } else if (stage === 'refunded') {
+    tl.append(step('done', '✓', 'Paid', ''), step('done', '✓', 'Refunded', 'Your money is on its way back to the original payment method.'));
+    note('ok', 'This order was refunded. Banks usually take 5–7 working days to show it.');
   } else {
     tl.append(step('bad', '!', 'Order expired', 'The file was removed from our system.'));
     note('warn', 'Please upload your document again.');
   }
 
-  if (stage === 'printed' || stage === 'expired') { if (timer) clearInterval(timer); }
+  if (stage === 'printed' || stage === 'expired' || stage === 'refunded') { if (timer) clearInterval(timer); }
 }
 
 async function load() {
