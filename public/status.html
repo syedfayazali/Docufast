@@ -55,6 +55,7 @@
     <div class="sub-center" id="fileLine"></div>
     <div id="banner"></div>
     <ul class="timeline" id="timeline"></ul>
+    <a class="ghost" id="receiptLink" href="#" style="display:none;text-align:center;text-decoration:none;">View payment receipt</a>
     <button class="ghost" id="shareBtn" type="button">Copy link to this order</button>
     <a href="/" class="ghost" style="display:block;text-align:center;text-decoration:none;">Print something else</a>
   </div>
@@ -108,6 +109,10 @@ function render(data) {
   const banner = $('banner'); banner.innerHTML = '';
   const note = (cls, text) => { const b = document.createElement('div'); b.className = 'banner ' + cls; b.textContent = text; banner.appendChild(b); };
   const where = [data.shopName, data.shopAddress, data.shopCity].filter(Boolean).join(', ');
+
+  const rl = $('receiptLink');
+  rl.style.display = stage === 'unpaid' || stage === 'expired' ? 'none' : 'block';
+  rl.href = '/receipt.html?code=' + encodeURIComponent(job.code);
 
   if (stage === 'unpaid') {
     tl.append(step('now', '1', 'Waiting for payment', 'Your order is created but payment has not completed.'),

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment receipt — DocuFast India</title>
+<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.rc{max-width:520px;margin:20px auto;padding:0 20px 40px;}
+.rc .paper{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:24px;}
+.rc h2{font-size:20px;} .rc .muted{color:var(--slate);font-size:12px;}
+.rc .line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--rule);font-size:14px;}
+.rc .line span:last-child{text-align:right;font-weight:600;}
+.rc .tot{font-size:18px;border-bottom:none;border-top:2px solid var(--navy);margin-top:6px;padding-top:12px;}
+.rc .tot span:last-child{font-family:'IBM Plex Mono',monospace;color:var(--navy);}
+.rc .disc{font-size:11px;color:var(--slate);margin-top:16px;}
+.rc .acts{display:flex;gap:10px;margin-top:16px;}
+.rc .acts button,.rc .acts a{flex:1;text-align:center;text-decoration:none;}
+@media print{.brand-band,.acts{display:none!important;}body{background:#fff;}.rc .paper{border:none;}}
+</style>
+</head>
+<body>
+<div class="brand-band"><div class="wrap" style="padding:0 20px;"><a href="/"><img src="/logo-tagline.png" alt="DocuFast India" style="height:56px;display:block;"></a></div></div>
+<div class="rc">
+  <div class="paper" id="paper" style="display:none;">
+    <h2>Payment receipt</h2>
+    <div class="muted" id="shopLine"></div>
+    <div style="height:10px"></div>
+    <div id="lines"></div>
+    <div class="disc">This is a payment receipt for printing services. It is not a tax invoice.</div>
+  </div>
+  <div class="note" id="msg">Loading…</div>
+  <div class="acts" id="acts" style="display:none;">
+    <button class="primary" style="margin-top:0;" onclick="window.print()">Print / save as PDF</button>
+    <a class="ghost" id="back" style="margin-top:0;" href="/">Done</a>
+  </div>
+</div>
+<script>
+const code = (new URLSearchParams(location.search).get('code') || '').trim().toUpperCase();
+const money = p => '₹' + (p / 100).toFixed(2);
+function line(k, v, cls) {
+  const d = document.createElement('div'); d.className = 'line' + (cls ? ' ' + cls : '');
+  const a = document.createElement('span'); a.textContent = k;
+  const b = document.createElement('span'); b.textContent = v;
+  d.append(a, b); return d;
+}
+(async () => {
+  if (!code) { document.getElementById('msg').textContent = 'No order code given.'; return; }
+  const res = await fetch('/api/jobs/' + encodeURIComponent(code) + '/receipt');
+  if (!res.ok) { document.getElementById('msg').textContent = (await res.json().catch(() => ({}))).error || 'Receipt not available.'; return; }
+  const r = (await res.json()).receipt;
+  document.getElementById('shopLine').textContent = [r.shopName, r.shopAddress].filter(Boolean).join(' · ');
+  const L = document.getElementById('lines');
+  L.append(
+    line('Order code', r.code),
+    line('Date', new Date(r.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })),
+    line('Document', r.filename),
+    line('Printing', `${r.pages} page${r.pages > 1 ? 's' : ''} × ${r.copies} · ${r.colorMode === 'color' ? 'Colour' : 'B&W'}${r.duplex ? ' · Double-sided' : ''}`),
+    line('Printing charge', money(r.printCharge)),
+  );
+  if (r.serviceName) L.append(line('Service', r.serviceName), line('Service fee', money(r.serviceFee)));
+  L.append(line('Total paid', money(r.total), 'tot'));
+  if (r.status === 'refunded') L.append(line('Refunded', money(r.refundedAmount)));
+  if (r.paymentRef) L.append(line('Payment ref', r.paymentRef));
+  document.getElementById('paper').style.display = 'block';
+  document.getElementById('msg').style.display = 'none';
+  document.getElementById('acts').style.display = 'flex';
+})();
+</script>
+</body>
+</html>
