@@ -1,6 +1,7 @@
 import { getJob, markPaid, publicView } from '@/lib/db';
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_MOCK_PAYMENTS !== '1') return res.status(403).json({ error: 'Test payments are disabled' });
   const job = await getJob(req.query.code);
   if (!job) return res.status(404).json({ error: 'Job not found' });
   if (job.payment_provider !== 'mock') return res.status(403).json({ error: 'Use Razorpay verify endpoint for real payments' });
