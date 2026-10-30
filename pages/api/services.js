@@ -6,8 +6,13 @@ export default async function handler(req, res) {
   try {
     const rows = await listServices({ onlyActive: true });
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({ services: rows.map(r => ({ id: r.id, name: r.name, fee: r.fee, slots: r.slots })) });
+    const pick = r => ({ id: r.id, name: r.name, fee: r.fee, slots: r.slots });
+    // 'tool-*' rows are the built-in print tools (passport photos, ID / passport copy): only their fee matters.
+    return res.status(200).json({
+      services: rows.filter(r => !r.id.startsWith('tool-')).map(pick),
+      tools: rows.filter(r => r.id.startsWith('tool-')).map(pick),
+    });
   } catch {
-    return res.status(200).json({ services: [] }); // the page must work without services
+    return res.status(200).json({ services: [], tools: null }); // the page must work without services
   }
 }

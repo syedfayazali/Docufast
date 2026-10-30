@@ -481,7 +481,7 @@ const tools = initTools({
   onError: msg => setStatus(msg, 'err'),
   onBusy: msg => { if (msg) { next1.disabled = true; next1.textContent = msg; setStatus(msg); } },
 });
-fetch('/api/services').then(r => r.json()).then(d => tools.setServices(d.services || [])).catch(() => {});
+fetch('/api/services').then(r => r.json()).then(d => { tools.setServices(d.services || []); tools.setToolServices(d.tools); }).catch(() => {});
 
 
 // --- Coupons ---

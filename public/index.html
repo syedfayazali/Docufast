@@ -51,9 +51,9 @@
       <div class="modes" id="modes" role="tablist">
         <button type="button" class="mode active" data-mode="file"><i class="ic" data-ic="file"></i> A file</button>
         <button type="button" class="mode" data-mode="photos"><i class="ic" data-ic="image"></i> Photos to PDF</button>
-        <button type="button" class="mode" data-mode="passport"><i class="ic" data-ic="user"></i> Passport photos</button>
-        <button type="button" class="mode" data-mode="sheet" data-preset="idcard"><i class="ic" data-ic="idcard"></i> ID card copy</button>
-        <button type="button" class="mode" data-mode="sheet" data-preset="passport"><i class="ic" data-ic="book"></i> Passport copy</button>
+        <button type="button" class="mode" data-mode="passport" data-tool="tool-passport-photo"><i class="ic" data-ic="user"></i> Passport photos</button>
+        <button type="button" class="mode" data-mode="sheet" data-preset="idcard" data-tool="tool-idcard"><i class="ic" data-ic="idcard"></i> ID card copy</button>
+        <button type="button" class="mode" data-mode="sheet" data-preset="passport" data-tool="tool-passport-copy"><i class="ic" data-ic="book"></i> Passport copy</button>
       </div>
 
       <div id="panelFile">
@@ -80,6 +80,7 @@
       <div id="panelPassport" style="display:none;">
         <div class="note" style="margin-top:0;">Pick one clear face photo. We put copies of it on a single A4 sheet at 35 × 45 mm, ready to cut.</div>
         <div id="passportPreview"></div>
+        <div class="note" id="passportFee" style="display:none;"></div>
         <input type="file" id="passportInput" accept="image/*" style="display:none">
         <div class="nav-row" style="gap:8px;">
           <button class="ghost" id="passportPick" type="button" style="margin-top:12px;">Choose photo</button>
@@ -87,6 +88,7 @@
         </div>
         <div class="field"><label for="passportCount">Photos on the sheet</label>
           <select id="passportCount"><option value="6">6</option><option value="8" selected>8</option><option value="12">12</option></select></div>
+        <div class="sheet-prev"><canvas id="passportSheetPrev" width="360" height="509"></canvas><span>Preview of the printed A4 page</span></div>
         <button class="primary" id="passportMake" type="button" disabled>Make photo sheet</button>
       </div>
 
@@ -94,7 +96,9 @@
         <h3 id="sheetTitle" style="font-size:17px;"></h3>
         <div class="note" id="sheetHint" style="margin-top:2px;"></div>
         <div class="note">Drag each picture so only the document shows inside the frame. Pinch or use the slider to zoom.</div>
+        <div class="note" id="sheetFee" style="display:none;"></div>
         <div id="sheetSlots"></div>
+        <div class="sheet-prev"><canvas id="sheetPrev" width="360" height="509"></canvas><span>Preview of the printed A4 page</span></div>
         <label class="chk"><input type="checkbox" id="sheetCut" checked> Print a thin cut line around each side</label>
         <button class="primary" id="sheetMake" type="button" disabled>Add both sides first</button>
       </div>

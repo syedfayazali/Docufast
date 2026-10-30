@@ -74,29 +74,36 @@ export async function buildPdf(items) {
 }
 
 // ---- passport photo sheet ------------------------------------------------
-export async function passportSheet(file, rotate, count) {
-  const W = 2480, H = 3508;                 // A4 @ 300dpi
-  const pw = 413, ph = 531;                 // 35 x 45 mm @ 300dpi
+// Draws the passport-photo page onto `c` (any width; layout is in A4@300dpi units).
+// With no photo it draws empty frames, so the customer sees the layout first.
+function paintPassport(c, src, count) {
+  const W = 2480, H = 3508, pw = 413, ph = 531;   // A4 and 35 x 45 mm @ 300dpi
   const cols = Math.floor((W - 160) / (pw + 20));
-  const src = await toCanvas(file, rotate, false, 2000);
-  // centre-crop the source to the 35:45 ratio
-  const ratio = pw / ph;
-  let sw = src.width, sh = src.height;
-  if (sw / sh > ratio) sw = Math.round(sh * ratio); else sh = Math.round(sw / ratio);
-  const sx = Math.round((src.width - sw) / 2), sy = Math.round((src.height - sh) / 2);
-
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
   const ctx = c.getContext('2d');
+  const k = c.width / W;
+  c.height = Math.round(H * k);
+  ctx.setTransform(k, 0, 0, k, 0, 0);
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  let sx = 0, sy = 0, sw = 0, sh = 0;
+  if (src) {
+    const ratio = pw / ph; sw = src.width; sh = src.height;   // centre-crop to 35:45
+    if (sw / sh > ratio) sw = Math.round(sh * ratio); else sh = Math.round(sw / ratio);
+    sx = Math.round((src.width - sw) / 2); sy = Math.round((src.height - sh) / 2);
+  }
   const rows = Math.ceil(count / cols);
-  const gridW = cols * pw + (cols - 1) * 20, gridH = rows * ph + (rows - 1) * 20;
-  const ox = Math.round((W - gridW) / 2), oy = 140;
+  const ox = Math.round((W - (cols * pw + (cols - 1) * 20)) / 2), oy = 140;
+  void rows;
   for (let i = 0; i < count; i++) {
     const x = ox + (i % cols) * (pw + 20), y = oy + Math.floor(i / cols) * (ph + 20);
-    ctx.drawImage(src, sx, sy, sw, sh, x, y, pw, ph);
+    if (src) ctx.drawImage(src, sx, sy, sw, sh, x, y, pw, ph);
+    else { ctx.fillStyle = '#eef1f6'; ctx.fillRect(x, y, pw, ph); }
     ctx.strokeStyle = '#bbb'; ctx.lineWidth = 2; ctx.strokeRect(x, y, pw, ph); // cut guide
   }
-  void gridH;
+}
+export async function passportSheet(file, rotate, count) {
+  const src = await toCanvas(file, rotate, false, 2000);
+  const c = document.createElement('canvas'); c.width = 2480;
+  paintPassport(c, src, count);
   const blob = await canvasToJpeg(c, 0.92);
   return new File([blob], 'passport-photos.jpg', { type: 'image/jpeg' });
 }
@@ -127,22 +134,35 @@ function drawInFrame(ctx, src, st, x, y, w, h) {
 }
 const minZoomFor = (src, w, h) => Math.min(w / src.width, h / src.height) / Math.max(w / src.width, h / src.height);
 
-export async function copySheet(presetId, slots, cutLine = true) {
-  const P = SHEET_PRESETS[presetId];
+// Draws the A4 page for an ID-card / passport copy onto `c` (any width). Empty
+// sides show a grey placeholder so the preview works before photos are added.
+function paintSheet(c, P, slots, cutLine) {
   const W = 2480, H = 3508;
   const fw = Math.round(P.w * MM), fh = Math.round(P.h * MM), gap = Math.round(6 * MM), top = Math.round(18 * MM);
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const k = c.width / W;
+  c.height = Math.round(H * k);
   const ctx = c.getContext('2d');
+  ctx.setTransform(k, 0, 0, k, 0, 0);
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
   const pos = P.layout === 'side'
     ? [[Math.round((W - (2 * fw + gap)) / 2), top], [Math.round((W - (2 * fw + gap)) / 2) + fw + gap, top]]
     : [[Math.round((W - fw) / 2), top], [Math.round((W - fw) / 2), top + fh + gap]];
   for (let i = 0; i < 2; i++) {
-    if (!slots[i]) continue;
     const [x, y] = pos[i];
-    drawInFrame(ctx, slots[i].canvas, slots[i], x, y, fw, fh);
+    if (slots[i] && slots[i].canvas) drawInFrame(ctx, slots[i].canvas, slots[i], x, y, fw, fh);
+    else {
+      ctx.fillStyle = '#eef1f6'; ctx.fillRect(x, y, fw, fh);
+      ctx.fillStyle = '#8a93a6'; ctx.font = '600 64px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(P.labels[i], x + fw / 2, y + fh / 2);
+    }
     if (cutLine) { ctx.strokeStyle = '#b8b8b8'; ctx.lineWidth = 2; ctx.setLineDash([14, 10]); ctx.strokeRect(x - 6, y - 6, fw + 12, fh + 12); ctx.setLineDash([]); }
   }
+}
+
+export async function copySheet(presetId, slots, cutLine = true) {
+  const P = SHEET_PRESETS[presetId];
+  const c = document.createElement('canvas'); c.width = 2480;
+  paintSheet(c, P, slots, cutLine);
   const blob = await canvasToJpeg(c, 0.92);
   // Wrap the sheet in an A4 PDF so the shop's printer receives real A4 at 100%
   // (the cards then come out at true size). Falls back to the plain image.
@@ -188,12 +208,13 @@ function buildFitter(preset, label, onChange) {
     empty.style.display = st.canvas ? 'none' : 'flex';
     rot.disabled = zoom.disabled = !st.canvas;
     pick.textContent = st.canvas ? 'Change' : 'Add';
+    onChange();
   }
   async function load() {
     st.canvas = await toCanvas(st.file, st.rotate, false, 2200);
     const mz = minZoomFor(st.canvas, PW, PH);
     zoom.min = String(Math.max(0.2, mz)); st.zoom = 1; st.cx = 0.5; st.cy = 0.5; zoom.value = '1';
-    paint(); onChange();
+    paint();
   }
   pick.addEventListener('click', () => input.click());
   input.addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; st.file = f; st.rotate = 0; try { await load(); } catch (err) { alert(err.message); } });
@@ -248,10 +269,17 @@ export function initTools(opts) {
   // ----- mode switching -----
   const panels = { file: $('panelFile'), photos: $('panelPhotos'), passport: $('panelPassport'), service: $('panelService'), sheet: $('panelSheet') };
   let currentPreset = null;
+  // Fees for the built-in print tools, set by the owner (null until /api/services answers).
+  let toolSvc = null;
+  const toolIdOf = b => b && b.dataset.tool;
+  const toolService = id => (toolSvc && toolSvc[id]) || null;
+  function setFee(id, sv) { const n = $(id); n.textContent = feeNote(sv); n.style.display = sv ? '' : 'none'; }
+  const feeNote = sv => !sv ? '' : (sv.fee ? `Service fee ₹${(sv.fee / 100).toFixed(sv.fee % 100 ? 2 : 0)} + printing` : 'Printing charges only');
   function show(mode) {
     Object.entries(panels).forEach(([k, p]) => { p.style.display = k === mode ? 'block' : 'none'; });
     // The tool panels have their own button; the shared Continue returns once a file is ready.
     $('next1').style.display = mode === 'file' ? '' : 'none';
+    if (mode === 'passport') setFee('passportFee', toolService('tool-passport-photo'));
     document.querySelectorAll('#modes .mode').forEach(b => b.classList.toggle('active', b.dataset.mode === mode && (mode !== 'service' || b.dataset.service === currentService?.id) && (mode !== 'sheet' || b.dataset.preset === currentPreset)));
   }
   let currentService = null;
@@ -304,7 +332,20 @@ export function initTools(opts) {
     if (passportFile) box.appendChild(thumbFor(passportFile, passportRotate));
     $('passportRotate').disabled = !passportFile;
     $('passportMake').disabled = !passportFile;
+    paintPassportPreview();
   }
+  let passportSrc = null, passportSrcKey = '';
+  async function paintPassportPreview() {
+    const cv = $('passportSheetPrev');
+    const count = parseInt($('passportCount').value, 10) || 8;
+    const key = passportFile ? passportFile.name + passportFile.size + ':' + passportRotate : '';
+    if (key !== passportSrcKey) {
+      passportSrcKey = key;
+      passportSrc = passportFile ? await toCanvas(passportFile, passportRotate, false, 700).catch(() => null) : null;
+    }
+    cv.width = 360; paintPassport(cv, passportSrc, count);
+  }
+  $('passportCount').addEventListener('change', paintPassportPreview);
   $('passportPick').addEventListener('click', () => $('passportInput').click());
   $('passportInput').addEventListener('change', e => { passportFile = e.target.files[0] || null; passportRotate = 0; e.target.value = ''; renderPassport(); });
   $('passportRotate').addEventListener('click', () => { passportRotate = (passportRotate + 1) % 4; renderPassport(); });
@@ -312,7 +353,7 @@ export function initTools(opts) {
     try {
       opts.onBusy('Making your photo sheet…');
       const file = await passportSheet(passportFile, passportRotate, parseInt($('passportCount').value, 10) || 8);
-      opts.onBusy(null); opts.onFile(file, { forceColour: true });
+      opts.onBusy(null); opts.onFile(file, { forceColour: true, service: toolService('tool-passport-photo') });
     } catch (err) { opts.onBusy(null); opts.onError(err.message); }
   });
   renderPassport();
@@ -325,7 +366,11 @@ export function initTools(opts) {
     $('sheetTitle').textContent = P.name;
     $('sheetHint').textContent = P.hint;
     const list = $('sheetSlots'); list.innerHTML = '';
+    setFee('sheetFee', toolService(toolIdOf(document.querySelector(`#modes .mode[data-preset="${currentPreset}"]`))));
+    fitters = [];
     const refresh = () => {
+      const cv = $('sheetPrev'); cv.width = 360;
+      paintSheet(cv, P, fitters.map(f => f.st), $('sheetCut').checked);
       const missing = fitters.filter(f => !f.ready()).length;
       $('sheetMake').disabled = missing > 0;
       $('sheetMake').textContent = missing ? (missing === 2 ? 'Add both sides first' : 'Add the other side') : 'Make my print sheet';
@@ -334,11 +379,13 @@ export function initTools(opts) {
     fitters.forEach(f => list.appendChild(f.el));
     refresh();
   }
+  $('sheetCut').addEventListener('change', () => { if (currentPreset) renderSheetPreview(); });
+  function renderSheetPreview() { const cv = $('sheetPrev'); cv.width = 360; paintSheet(cv, SHEET_PRESETS[currentPreset], fitters.map(f => f.st), $('sheetCut').checked); }
   $('sheetMake').addEventListener('click', async () => {
     try {
       opts.onBusy('Making your print sheet…');
       const r = await copySheet(currentPreset, fitters.map(f => f.st), $('sheetCut').checked);
-      opts.onBusy(null); opts.onFile(r.file, { exact: r.exact });
+      opts.onBusy(null); opts.onFile(r.file, { exact: r.exact, service: toolService(toolIdOf(document.querySelector(`#modes .mode[data-preset="${currentPreset}"]`))) });
     } catch (err) { opts.onBusy(null); opts.onError(err.message); }
   });
 
@@ -377,6 +424,11 @@ export function initTools(opts) {
 
   // Called by app.js once /api/services has loaded.
   return {
+    setToolServices(list) {
+      if (!Array.isArray(list)) return;            // lookup failed: keep tools visible, no fee
+      toolSvc = Object.fromEntries(list.map(t => [t.id, t]));
+      document.querySelectorAll('#modes .mode[data-tool]').forEach(b => { b.style.display = toolSvc[b.dataset.tool] ? '' : 'none'; });
+    },
     setServices(services) {
       const bar = $('modes');
       bar.querySelectorAll('.mode[data-service]').forEach(b => b.remove());
