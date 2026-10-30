@@ -1,4 +1,4 @@
-import { createJob, newDeleteToken, lookupAccount, markPaid, getJob, publicView } from '@/lib/db';
+import { createJob, createAccountJob, newDeleteToken, lookupAccount, getJob, publicView, rateLimit, clientIp } from '@/lib/db';
 import { generateCode } from '@/lib/pricing';
 import { quoteOrder } from '@/lib/quote';
 import { createOrder, isConfigured } from '@/lib/razorpay';
@@ -11,6 +11,10 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    // Each order reads the uploaded file and opens a payment order, so cap how fast one address can create them.
+    if (!(await rateLimit('jobs:' + clientIp(req), 20, 600))) {
+      return res.status(429).json({ error: 'Too many orders from this connection. Please wait a few minutes.' });
+    }
     const { filename: rawFilename, blobUrl, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, consent, accountCode, exactSize } = req.body || {};
     const filename = maskAadhaar(rawFilename);
     if (!filename || !blobUrl || !pages || !copies) {
@@ -88,8 +92,8 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
     const acc = await lookupAccount(accountCode);
     if (!acc) return res.status(400).json({ error: 'That business account code is not valid.' });
     if (amount > acc.available) return res.status(402).json({ error: 'This order is over the account credit limit. Please pay online or contact the shop.' });
-    await createJob({ ...baseJob, paymentProvider: 'account', accountId: acc.id });
-    await markPaid(code, 'account:' + acc.id);
+    const made = await createAccountJob(baseJob, acc.id);
+    if (made.over) return res.status(402).json({ error: 'This order is over the account credit limit. Please pay online or contact the shop.' });
     const job = await getJob(code);
     return res.status(201).json({ code, amount, deleteToken: deleteToken.token, accountBilled: true, accountName: acc.name, job: publicView(job) });
   }
