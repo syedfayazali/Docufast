@@ -3,7 +3,7 @@ import { generateCode } from '@/lib/pricing';
 import { quoteOrder } from '@/lib/quote';
 import { createOrder, isConfigured } from '@/lib/razorpay';
 import { readBytes } from '@/lib/privateBlob';
-import { countPdfPages, countDocxPages, countDocPages, fileProblem } from '@/lib/pagecount';
+import { countPdfPages, countDocxPages, fileProblem } from '@/lib/pagecount';
 export const config = { api: { bodyParser: { sizeLimit: '1mb' } } };
 import { maskAadhaar } from '@/lib/mask';
 
@@ -56,10 +56,13 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
     pageCount = n;
   } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif'].includes(ext)) {
     pageCount = 1;
-  } else if (ext === 'docx' || ext === 'doc') {
-    // Word page counts are only estimates, so bill the higher of ours and the customer's.
-    const n = ext === 'docx' ? countDocxPages(buffer) : countDocPages(buffer);
-    pageCount = Math.max(claimed, n || 1);
+  } else if (ext === 'docx') {
+    // Word records its own page count inside the file. Without it we cannot bill correctly.
+    const n = countDocxPages(buffer);
+    if (!n) return res.status(400).json({ error: 'We could not read the page count of this Word file. Please save it as a PDF and upload that instead.' });
+    pageCount = n;
+  } else {
+    return res.status(400).json({ error: 'This file type is not supported. Please upload a PDF, a Word (.docx) file or a photo.' });
   }
 
   const copyCount = Math.min(500, Math.max(1, parseInt(copies, 10) || 1));

@@ -11,7 +11,7 @@ import { readBytes } from '@/lib/privateBlob';
 //   JPG/JPEG/PNG/GIF/WebP/BMP/TIFF — always 1 (images are single-page)
 //   Other — returns null (user must enter manually)
 
-import { countPdfPages, countDocxPages, countDocPages, fileProblem } from '@/lib/pagecount';
+import { countPdfPages, countDocxPages, fileProblem } from '@/lib/pagecount';
 
 export const config = { api: { bodyParser: { sizeLimit: '1mb' } } };
 // sizeLimit is small on purpose now — this endpoint no longer accepts raw
@@ -58,9 +58,6 @@ export default async function handler(req, res) {
     } else if (ext === 'docx') {
       pages = countDocxPages(buffer);
       method = 'docx-section-count';
-    } else if (ext === 'doc') {
-      pages = countDocPages(buffer);
-      method = 'doc-pagebreak-count';
     } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif'].includes(ext)) {
       pages = 1;
       method = 'image-single-page';

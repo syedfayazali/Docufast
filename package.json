@@ -10,11 +10,11 @@
   "dependencies": {
     "@vercel/blob": "^0.27.0",
     "blob2": "npm:@vercel/blob@^2.8.2",
-    "next": "^14.2.5",
+    "next": "^16.4.3",
     "pdf-parse": "^1.1.1",
     "pg": "^8.13.1",
     "razorpay": "^2.9.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }
