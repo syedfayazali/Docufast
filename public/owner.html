@@ -746,7 +746,7 @@ function renderShops(shops, printers) {
       <td><span class="pill ${s.active ? 'active' : 'offline'}">${s.active ? 'Active' : 'Paused'}</span></td>
       <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button>
-        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Staff PIN</button>
+        <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Set staff PIN</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();openPrices('${s.id}')">Prices</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();setRetention('${s.id}',${s.retention_minutes == null ? 'null' : s.retention_minutes})">Keep files: ${s.retention_minutes == null ? '30m' : s.retention_minutes + 'm'}</button></td>`;
     tr.dataset.shopName = s.name;
@@ -799,11 +799,14 @@ async function setRetention(id, current) {
 
 async function newStaffPin(id) {
   const name = shopNames[id] || 'this shop';
-  if (!confirm('Create a new staff PIN for ' + name + '? Any old PIN stops working.')) return;
+  const typed = prompt('Staff PIN for ' + name + '\n\nType a 6-digit PIN of your choice. It stays the same until you change it.\nLeave empty to have one generated. The old PIN stops working.');
+  if (typed === null) return;
+  const chosen = typed.trim();
+  if (chosen && !/^\d{6}$/.test(chosen)) { alert('PIN must be exactly 6 digits.'); return; }
   const res = await fetch('/api/shops/' + encodeURIComponent(id), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ newStaffPin: true }),
+    body: JSON.stringify({ staffPin: chosen }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { alert(data.error || 'Could not create a PIN.'); return; }

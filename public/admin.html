@@ -25,7 +25,7 @@
     </div>
     <div class="field">
       <label for="shopPin">PIN</label>
-      <input type="password" id="shopPin" inputmode="numeric" autocomplete="current-password" placeholder="6-digit PIN from DocuFast India">
+      <input type="password" id="shopPin" inputmode="numeric" maxlength="6" pattern="[0-9]*" autocomplete="current-password" placeholder="6-digit PIN from DocuFast India">
     </div>
     <button class="load-btn" onclick="loadDashboard()"><i class="ic" data-ic="key"></i> Open dashboard</button>
   </div>
