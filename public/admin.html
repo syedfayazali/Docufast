@@ -35,10 +35,10 @@
   <div id="content">
     <div class="shop-name-banner">
       <span id="shopName">Your shop</span>
-      <span style="display:flex;gap:8px;align-items:center;"><span class="printer-badge" id="printerBadge"><i></i><span>Printer</span></span><span class="badge" id="shopBadge">Active</span></span>
+      <span style="display:flex;gap:8px;align-items:center;"><button class="link-btn" type="button" onclick="location.reload()">Switch shop</button><span class="printer-badge" id="printerBadge"><i></i><span>Printer</span></span><span class="badge" id="shopBadge">Active</span></span>
     </div>
 
-    <div class="card" id="shopLinkCard" style="display:none; padding:18px 20px;">
+    <details class="card" id="shopLinkCard" style="display:none; padding:0;"><summary style="cursor:pointer;padding:12px 18px;font-size:13px;font-weight:600;color:var(--navy-deep);">Your customer link &amp; QR code</summary><div style="padding:0 20px 18px;">
       <div style="font-size:13px;color:var(--navy-deep);font-weight:600;margin-bottom:12px;">
         Your customer link &amp; QR code <span style="font-weight:400;color:var(--slate);">— unique to your shop</span>
       </div>
@@ -63,7 +63,7 @@
           </p>
         </div>
       </div>
-    </div>
+    </div></details>
 
     <div class="newjob-banner" id="newBanner"><i class="ic" data-ic="bell"></i> New paid order!</div>
 
@@ -84,8 +84,8 @@
       <div class="col"><h4><span>Printed</span><b id="cntPrinted">0</b></h4><div id="colPrinted"></div></div>
     </div>
 
-    <p style="margin-top:16px;font-size:13px;color:var(--slate);">
-      Auto-refreshes every 5 seconds. 
+    <p class="shop-note">
+      Updates live as orders arrive.
       <a class="nav-link" href="/" style="margin-left:8px;">Customer upload page</a>
     </p>
   </div>

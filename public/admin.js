@@ -35,6 +35,7 @@ async function loadDashboard() {
 
   document.getElementById('loader').style.display = 'none';
   document.getElementById('content').style.display = 'block';
+  document.body.classList.add('board-app');   // fixed shell: only the columns scroll
 
   // Live updates: the server pings this page when an order changes. We only
   // poll (every 10 s) while the live connection is down.
@@ -81,7 +82,7 @@ async function refresh() {
       // straight to their queue instead of the unrouted shared link.
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(link)}`;
       const qrImg = document.getElementById('shopQrImg');
-      qrImg.src = qrUrl;
+      if (qrImg.dataset.u !== qrUrl) { qrImg.dataset.u = qrUrl; qrImg.src = qrUrl; }   // set once, not on every refresh
 
       const downloadBtn = document.getElementById('downloadQrBtn');
       downloadBtn.href = qrUrl;
@@ -188,7 +189,11 @@ function jobCard(job, kind) {
   return div;
 }
 
+let boardSig = '';
 function renderBoard(jobs) {
+  const sig = JSON.stringify(jobs.map(j => [j.code, j.status, j.printError || '', j.printedAt || '', j.attempts || 0]));
+  if (sig === boardSig) return;   // nothing changed: don't rebuild or flash the cards
+  boardSig = sig;
   const cols = {
     queue: jobs.filter(j => j.status === 'paid' && !j.printError).reverse(),
     failed: jobs.filter(j => j.status === 'paid' && j.printError),
