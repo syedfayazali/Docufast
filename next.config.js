@@ -12,12 +12,18 @@ module.exports = {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
   async rewrites() {
-    return [
+    return {
+      // On the software subdomain the home page is the software landing page.
+      beforeFiles: [
+        { source: '/', has: [{ type: 'host', value: 'software.docufastindia.com' }], destination: '/software.html' },
+      ],
+      afterFiles: [
       { source: '/', destination: '/index.html' },
       { source: '/admin', destination: '/admin.html' },
       { source: '/signage', destination: '/signage.html' },
       { source: '/owner', destination: '/owner.html' },
       { source: '/software', destination: '/software.html' },
-    ];
+      ],
+    };
   },
 };
