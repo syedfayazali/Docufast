@@ -44,7 +44,7 @@
       <button data-pane="shops"><i class="ic" data-ic="store"></i> Shops &amp; printers</button>
       <button data-pane="orders"><i class="ic" data-ic="list"></i> Orders</button>
       <button data-pane="services"><i class="ic" data-ic="tag"></i> Services &amp; codes</button>
-      <button data-pane="billing"><i class="ic" data-ic="briefcase"></i> Billing &amp; partners</button>
+      <button data-pane="billing"><i class="ic" data-ic="briefcase"></i> Billing &amp; partners <b id="leadBadge" class="lead-badge" style="display:none;"></b></button>
     </nav>
     <main class="main" id="mainPane"><section class="pane on" data-pane="overview">
 
@@ -80,6 +80,8 @@
     <div id="couponList" class="pilot-grid"></div>
 
     </section><section class="pane" data-pane="billing">
+    <div class="section-title" style="margin-top:24px;">Software trial requests <span id="leadNote">Shop owners who asked for a trial on /software. Call them, then update the status.</span></div>
+    <div id="leadList" class="pilot-grid"></div>
     <div class="section-title" style="margin-top:24px;">Business accounts &mdash; monthly billing
       <button class="add-shop-btn" onclick="newAccount()"><i class="ic" data-ic="plus"></i> New account</button>
     </div>
@@ -392,6 +394,7 @@ async function loadDashboard(opts) {
     if (silent && dashLoaded && !changed) return;   // nothing new: leave the screen alone
     dashSig = sig;
     if (!silent || !dashLoaded) { loadServices(); loadCoupons(); loadAccounts(); loadPartners(); }
+    loadLeads();
     loadReport();
     renderKPIs(stats);
     renderShops(stats.shops, stats.printers);
@@ -509,6 +512,38 @@ async function saveSvc() {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { msg.textContent = data.error || 'Could not save.'; return; }
   closeSvc(); loadServices();
+}
+
+const LEAD_STATUS = ['new', 'contacted', 'trial', 'paid', 'lost'];
+async function loadLeads() {
+  try {
+    const res = await fetch('/api/owner/leads', { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const { leads } = await res.json();
+    const fresh = leads.filter(l => l.status === 'new').length;
+    const badge = document.getElementById('leadBadge'); badge.textContent = fresh; badge.style.display = fresh ? 'inline-flex' : 'none';
+    const grid = document.getElementById('leadList'); grid.innerHTML = '';
+    if (!leads.length) { grid.innerHTML = '<div style="color:#8A91A3;font-size:13px;">No requests yet. Share your /software page to get the first one.</div>'; return; }
+    leads.forEach(l => {
+      const card = document.createElement('div'); card.className = 'pilot';
+      const h = document.createElement('h5');
+      const nm = document.createElement('span'); nm.textContent = l.shop_name;
+      const badge2 = document.createElement('span'); badge2.className = (l.status === 'paid' || l.status === 'trial') ? 'go' : 'no'; badge2.textContent = l.status.toUpperCase();
+      h.append(nm, badge2);
+      const info = document.createElement('div'); info.style.cssText = 'font-size:13px;color:#5B6478;line-height:1.6;';
+      info.textContent = `${l.owner_name} · ${l.phone}${l.email ? ' · ' + l.email : ''}\n${l.city || '—'} · ${l.printers} printer${l.printers > 1 ? 's' : ''} · ${l.plan} plan · ${new Date(l.created_at).toLocaleDateString('en-IN')}${l.note ? '\n“' + l.note + '”' : ''}`;
+      info.style.whiteSpace = 'pre-line';
+      const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;';
+      const call = document.createElement('a'); call.className = 'link-btn'; call.href = 'tel:+91' + l.phone; call.textContent = 'Call';
+      const sel = document.createElement('select'); sel.style.cssText = 'padding:7px 8px;border:1px solid #E6E8EE;border-radius:8px;font-size:13px;';
+      LEAD_STATUS.forEach(st => { const o = document.createElement('option'); o.value = st; o.textContent = st; if (st === l.status) o.selected = true; sel.appendChild(o); });
+      sel.addEventListener('change', async () => {
+        await fetch('/api/owner/leads', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: l.id, status: sel.value }) });
+        loadLeads();
+      });
+      row.append(call, sel); card.append(h, info, row); grid.appendChild(card);
+    });
+  } catch { /* leads are optional */ }
 }
 
 async function loadCoupons() {
