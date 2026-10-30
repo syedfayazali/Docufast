@@ -1,6 +1,7 @@
 import { isOwner, isLegacyAgentKey } from '@/lib/auth';
 import { listRecentJobs, publicView, getShopToday } from '@/lib/db';
 import { authStaff } from '@/lib/staff';
+import { browserPush, shopChannel, ownerChannel } from '@/lib/wake';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -11,6 +12,7 @@ export default async function handler(req, res) {
   let shopId = null;
   let shopName = null;
   let shopSlug = null;
+  let shopApiKey = null;
 
   const hasStaffCreds = (req.headers['x-staff-slug'] && req.headers['x-staff-pin']) || shopKey;
   if (hasStaffCreds) {
@@ -20,6 +22,7 @@ export default async function handler(req, res) {
     shopId = auth.shop.id;
     shopName = auth.shop.name;
     shopSlug = auth.shop.slug;
+    shopApiKey = auth.shop.api_key;
   } else if (!isOwner(req)) {
     // Neither staff login nor owner key — unauthorized
     return res.status(401).json({ error: 'Unauthorized' });
@@ -29,5 +32,6 @@ export default async function handler(req, res) {
   const revenue = jobs.filter(j => j.status === 'printed').reduce((s, j) => s + j.amount, 0);
 
   const today = shopId ? await getShopToday(shopId).catch(() => null) : null;
-  return res.status(200).json({ jobs, revenueToday: revenue, shopName, shopSlug, today });
+  const push = browserPush(shopApiKey ? shopChannel(shopApiKey) : ownerChannel());
+  return res.status(200).json({ jobs, revenueToday: revenue, shopName, shopSlug, today, push });
 }

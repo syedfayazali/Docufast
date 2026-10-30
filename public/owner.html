@@ -239,6 +239,7 @@
   </form>
 </div>
 
+<script src="/push.js"></script>
 <script src="/ui.js"></script>
 <script>
 // ---- Sign-in ----
@@ -370,6 +371,8 @@ async function loadDashboard() {
   }
 
   const stats = await statsRes.json();
+  ownerPush = stats.push || ownerPush;
+  startOwnerLive();
   const { jobs } = await jobsRes.json();
 
   loadReport();
@@ -902,7 +905,12 @@ async function submitShop() {
 }
 
 checkSession();
-setInterval(() => { if (signedIn && document.getElementById('content').style.display !== 'none') loadDashboard(); }, 30000);
+// Live: refresh when the server pings; poll (30 s) only while push is down.
+let ownerLive = null, ownerPush = null;
+function startOwnerLive() {
+  if (ownerLive || !signedIn) return;
+  ownerLive = window.DFPush.live(ownerPush, () => { if (signedIn && document.getElementById('content').style.display !== 'none') loadDashboard(); }, 30000);
+}
 </script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+import { browserPush, jobChannel } from '@/lib/wake';
 import { getJob, publicView, getJobStatusExtras, getJobHistory } from '@/lib/db';
 
 // Customer-facing status. `stage` is the one word the UI keys off:
@@ -25,5 +26,5 @@ export default async function handler(req, res) {
   try { history = (await getJobHistory(code)).map(h => ({ status: h.status, at: h.created_at })); } catch { /* optional */ }
 
   res.setHeader('Cache-Control', 'no-store');
-  return res.status(200).json({ job: view, stage, history, fileDeleted: !!job.deleted_at, ...extras });
+  return res.status(200).json({ job: view, stage, history, fileDeleted: !!job.deleted_at, push: browserPush(jobChannel(code)), ...extras });
 }

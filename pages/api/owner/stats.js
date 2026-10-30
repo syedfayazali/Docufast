@@ -1,4 +1,5 @@
 import { isOwner, isLegacyAgentKey } from '@/lib/auth';
+import { browserPush, ownerChannel } from '@/lib/wake';
 import { getOwnerStats, listPrinters, ensureSchema } from '@/lib/db';
 
 export default async function handler(req, res) {
@@ -7,5 +8,5 @@ export default async function handler(req, res) {
 
   await ensureSchema();
   const [stats, printers] = await Promise.all([getOwnerStats(), listPrinters()]);
-  return res.status(200).json({ ...stats, printers });
+  return res.status(200).json({ ...stats, printers, push: browserPush(ownerChannel()) });
 }

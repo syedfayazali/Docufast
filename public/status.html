@@ -74,7 +74,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const code = (new URLSearchParams(location.search).get('code') || '').trim().toUpperCase();
-let timer = null;
+let timer = null, lastPush = null;
 
 function recent() { try { return JSON.parse(localStorage.getItem('df_recent') || '[]'); } catch { return []; } }
 function showRecent() {
@@ -200,7 +200,9 @@ async function load() {
     const res = await fetch('/api/jobs/' + encodeURIComponent(code));
     if (res.status === 404) { $('statusCard').style.display = 'none'; $('lookupCard').style.display = 'block'; $('lookupErr').textContent = 'No order found with that code. Check it and try again.'; $('lookupErr').style.display = 'block'; if (timer) clearInterval(timer); return; }
     if (!res.ok) return;
-    render(await res.json());
+    const data = await res.json();
+    lastPush = data.push || lastPush;
+    render(data);
   } catch { /* offline blip — next tick retries */ }
 }
 
@@ -210,8 +212,9 @@ $('shareBtn').addEventListener('click', async () => {
 });
 
 showRecent();
-if (code) { load(); timer = setInterval(load, 4000); }
+if (code) { load().then(() => { window.DFPush.live(lastPush, load, 5000, ['update']); }); }
 </script>
+<script src="/push.js"></script>
 <script src="/ui.js"></script>
 <script src="/i18n.js"></script>
 </body>

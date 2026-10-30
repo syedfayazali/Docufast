@@ -442,19 +442,22 @@ function showTicket(job) {
   }
 }
 
-// --- Poll until the agent prints the job ---
+// --- Follow the job until it is printed: live ping, polling only if push is down ---
 function pollUntilPrinted(code) {
-  const interval = setInterval(async () => {
+  let live = null;
+  const check = async () => {
     try {
       const res = await fetch(`/api/jobs/${code}`);
       const data = await res.json();
       if (!res.ok) return;
       showTicket(data.job);
+      if (!live && window.DFPush) live = window.DFPush.live(data.push, check, 5000, ['update']);
       if (data.job.status === 'printed' || (data.job.status === 'paid' && data.job.printError)) {
-        clearInterval(interval);
+        if (live) live.close();
       }
-    } catch { /* network hiccup — retry next tick */ }
-  }, 3000);
+    } catch { /* network hiccup — next ping or poll retries */ }
+  };
+  check();
 }
 
 

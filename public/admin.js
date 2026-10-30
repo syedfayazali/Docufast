@@ -6,6 +6,7 @@ const pinInput = document.getElementById('shopPin');
 try { codeInput.value = localStorage.getItem('df_shop_code') || ''; } catch {}
 [codeInput, pinInput].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') loadDashboard(); }));
 
+let liveConn = null, lastPush = null;
 let refreshTimer = null;
 
 // Staff sign in with shop code + PIN (the PIN is kept for this tab only, never the agent key).
@@ -35,9 +36,10 @@ async function loadDashboard() {
   document.getElementById('loader').style.display = 'none';
   document.getElementById('content').style.display = 'block';
 
-  // Auto-refresh every 5 seconds
-  if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(() => refresh(), 5000);
+  // Live updates: the server pings this page when an order changes. We only
+  // poll (every 10 s) while the live connection is down.
+  if (liveConn) liveConn.close();
+  liveConn = window.DFPush.live(lastPush, () => refresh(), 10000);
 }
 
 async function refresh() {
@@ -47,6 +49,7 @@ async function refresh() {
     });
     if (!res.ok) return;
     const data = await res.json();
+    lastPush = data.push || null;
 
     // Today's totals (shop-scoped views get exact India-time numbers from the server)
     const t = data.today;
