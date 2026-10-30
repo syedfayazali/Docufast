@@ -39,6 +39,14 @@
 
   <div id="loader">Loading…</div>
   <div id="content" style="display:none;">
+    <nav class="side" id="sideNav" aria-label="Sections">
+      <button data-pane="overview" class="on"><i class="ic" data-ic="chart"></i> Overview</button>
+      <button data-pane="shops"><i class="ic" data-ic="store"></i> Shops &amp; printers</button>
+      <button data-pane="orders"><i class="ic" data-ic="list"></i> Orders</button>
+      <button data-pane="services"><i class="ic" data-ic="tag"></i> Services &amp; codes</button>
+      <button data-pane="billing"><i class="ic" data-ic="briefcase"></i> Billing &amp; partners</button>
+    </nav>
+    <main class="main" id="mainPane"><section class="pane on" data-pane="overview">
 
     <div class="kpi-grid">
       <div class="kpi"><div class="lbl">Revenue today</div><div class="num" id="kpiTodayRev">₹0</div><div class="sub" id="kpiTodayJobs">0 jobs</div></div>
@@ -60,6 +68,7 @@
       <button class="link-btn" onclick="exportCsv()"><i class="ic" data-ic="download"></i> Download</button>
     </div>
 
+    </section><section class="pane" data-pane="services">
     <div class="section-title" style="margin-top:24px;">Services &amp; document checklists
       <span style="font-size:12px;color:#5B6478;font-weight:400;">Switched-off services are hidden from customers. Review each list, set your fee, then switch it on.</span>
     </div>
@@ -70,6 +79,7 @@
     </div>
     <div id="couponList" class="pilot-grid"></div>
 
+    </section><section class="pane" data-pane="billing">
     <div class="section-title" style="margin-top:24px;">Business accounts &mdash; monthly billing
       <button class="add-shop-btn" onclick="newAccount()"><i class="ic" data-ic="plus"></i> New account</button>
     </div>
@@ -80,6 +90,7 @@
     </div>
     <div id="partnerList" class="pilot-grid"></div>
 
+    </section><section class="pane" data-pane="shops">
     <div class="section-title" style="margin-top:24px;">Pilot readiness — is a shop ready to go live?</div>
     <div id="pilotGrid" class="pilot-grid"></div>
 
@@ -106,6 +117,7 @@
     <div class="section-title" style="margin-top:24px;">Printer status — all shops</div>
     <div class="printer-grid" id="printerGrid"></div>
 
+    </section><section class="pane" data-pane="orders">
     <div class="section-title" style="margin-top:24px;">Recent jobs</div>
     <div class="recent-jobs">
       <div class="job-row hdr">
@@ -114,6 +126,7 @@
       <div id="jobsBody"></div>
     </div>
 
+    </section></main>
   </div>
 </div>
 
@@ -260,7 +273,7 @@ window.fetch = async (...args) => {
 
 function showLogin(message) {
   signedIn = false;
-  document.getElementById('content').style.display = 'none';
+  dashLoaded = false; dashSig = ''; setShell(false);
   document.getElementById('loader').style.display = 'none';
   document.getElementById('loginCard').style.display = 'block';
   document.getElementById('ownerBtns').style.display = 'none';
@@ -356,37 +369,38 @@ async function savePassword() {
   setTimeout(closePwModal, 1200);
 }
 
-async function loadDashboard() {
-  if (!signedIn) return;
-  document.getElementById('content').style.display = 'none';
-
-  const [statsRes, jobsRes] = await Promise.all([
-    fetch('/api/owner/stats'),
-    fetch('/api/owner/jobs'),
-  ]);
-
-  if (!statsRes.ok) {
-    if (statsRes.status !== 401) document.getElementById('loader').textContent = 'Failed to load — check console.';
-    return;
-  }
-
-  const stats = await statsRes.json();
-  ownerPush = stats.push || ownerPush;
-  startOwnerLive();
-  const { jobs } = await jobsRes.json();
-
-  loadReport();
-  loadServices();
-  loadCoupons();
-  loadAccounts();
-  loadPartners();
-  renderKPIs(stats);
-  renderShops(stats.shops, stats.printers);
-  renderPrinters(stats.printers);
-  renderJobs(jobs, stats.shops);
-
-  document.getElementById('loader').style.display = 'none';
-  document.getElementById('content').style.display = 'block';
+let dashBusy = false, dashSig = '', dashLoaded = false, dashAt = 0;
+function setShell(on) { document.body.classList.toggle('app', !!on); document.getElementById('content').style.display = on ? 'flex' : 'none'; }
+// opts.silent = live refresh: never hides the page, skips work when nothing changed.
+async function loadDashboard(opts) {
+  const silent = !!(opts && opts.silent);
+  if (!signedIn || dashBusy) return;
+  if (silent && Date.now() - dashAt < 3000) return;   // a burst of pings = one refresh
+  dashBusy = true; dashAt = Date.now();
+  try {
+    const [statsRes, jobsRes] = await Promise.all([fetch('/api/owner/stats'), fetch('/api/owner/jobs')]);
+    if (!statsRes.ok) {
+      if (statsRes.status !== 401 && !dashLoaded) document.getElementById('loader').textContent = 'Failed to load — check console.';
+      return;
+    }
+    const stats = await statsRes.json();
+    ownerPush = stats.push || ownerPush;
+    startOwnerLive();
+    const { jobs } = await jobsRes.json();
+    const sig = JSON.stringify([stats.shops, stats.printers, stats.today, jobs]);
+    const changed = sig !== dashSig;
+    if (silent && dashLoaded && !changed) return;   // nothing new: leave the screen alone
+    dashSig = sig;
+    if (!silent || !dashLoaded) { loadServices(); loadCoupons(); loadAccounts(); loadPartners(); }
+    loadReport();
+    renderKPIs(stats);
+    renderShops(stats.shops, stats.printers);
+    renderPrinters(stats.printers);
+    renderJobs(jobs, stats.shops);
+    document.getElementById('loader').style.display = 'none';
+    dashLoaded = true;
+    setShell(true);
+  } finally { dashBusy = false; }
 }
 
 async function loadReport() {
@@ -904,12 +918,22 @@ async function submitShop() {
   document.getElementById('newApiKey').textContent = data.shop.api_key;
 }
 
+// Section tabs: the page itself never scrolls; each section scrolls inside its own panel.
+function showPane(name) {
+  document.querySelectorAll('#sideNav button').forEach(b => b.classList.toggle('on', b.dataset.pane === name));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === name));
+  const m = document.getElementById('mainPane'); if (m) m.scrollTop = 0;
+  try { sessionStorage.setItem('df_owner_pane', name); } catch {}
+}
+document.getElementById('sideNav').addEventListener('click', e => { const b = e.target.closest('button[data-pane]'); if (b) showPane(b.dataset.pane); });
+try { const sp = sessionStorage.getItem('df_owner_pane'); if (sp && document.querySelector('.pane[data-pane="' + sp + '"]')) showPane(sp); } catch {}
+
 checkSession();
 // Live: refresh when the server pings; poll (30 s) only while push is down.
 let ownerLive = null, ownerPush = null;
 function startOwnerLive() {
   if (ownerLive || !signedIn) return;
-  ownerLive = window.DFPush.live(ownerPush, () => { if (signedIn && document.getElementById('content').style.display !== 'none') loadDashboard(); }, 30000);
+  ownerLive = window.DFPush.live(ownerPush, () => { if (signedIn && dashLoaded) loadDashboard({ silent: true }); }, 30000);
 }
 </script>
 </body>
