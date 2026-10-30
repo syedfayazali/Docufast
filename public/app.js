@@ -88,7 +88,7 @@ async function compressImageIfNeeded(file) {
 }
 
 function payLabel() { return state.account ? 'Bill to ' + state.account.name + ' & print' : 'Pay & print'; }
-const state = { account: null, file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single', service: null, coupon: null };
+const state = { exact: false, account: null, file: null, blobUrl: null, pages: 1, copies: 1, colorMode: 'bw', duplex: 'single', service: null, coupon: null };
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
@@ -155,14 +155,14 @@ function needConsent() {
 dropzone.addEventListener('click', () => { if (!needConsent()) fileInput.click(); });
 // Tool panels (photos, passport, service) also need consent before any file is picked.
 document.addEventListener('click', e => {
-  if (e.target.closest('#photosAdd, #passportPick, #serviceSlots button') && needConsent()) { e.stopImmediatePropagation(); e.preventDefault(); }
+  if (e.target.closest('#photosAdd, #passportPick, #serviceSlots button, #sheetSlots .pick') && needConsent()) { e.stopImmediatePropagation(); e.preventDefault(); }
 }, true);
 document.getElementById('camBtn').addEventListener('click', () => { if (!needConsent()) camInput.click(); });
 ['dragover', 'dragenter'].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.add('drag'); }));
 ['dragleave', 'drop'].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.remove('drag'); }));
-dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
-fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
-camInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+dropzone.addEventListener('drop', e => { state.exact = false; if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { state.exact = false; if (e.target.files[0]) handleFile(e.target.files[0]); });
+camInput.addEventListener('change', e => { state.exact = false; if (e.target.files[0]) handleFile(e.target.files[0]); });
 
 async function handleFile(file, { skipCompress = false } = {}) {
   if (needConsent()) return;
@@ -318,6 +318,7 @@ payBtn.addEventListener('click', async () => {
         couponCode: state.coupon ? state.coupon.code : undefined,
         consent: consentChk.checked,
         accountCode: state.account ? state.account.code : undefined,
+        exactSize: state.exact ? true : undefined,
       }),
     });
     createData = await res.json();
@@ -470,6 +471,7 @@ function setColourMode(mode) {
 const tools = initTools({
   onFile: (file, meta) => {
     state.service = meta.service || null;
+    state.exact = !!meta.exact;
     if (meta.forceColour) setColourMode('color');
     filenameLabel.textContent = file.name;
     next1.style.display = '';

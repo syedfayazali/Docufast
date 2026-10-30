@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { filename: rawFilename, blobUrl, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, consent, accountCode } = req.body || {};
+    const { filename: rawFilename, blobUrl, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, consent, accountCode, exactSize } = req.body || {};
     const filename = maskAadhaar(rawFilename);
     if (!filename || !blobUrl || !pages || !copies) {
       return res.status(400).json({ error: 'Missing filename, blobUrl, pages, or copies' });
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Uploaded file could not be verified' });
     }
 
-    return createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, accountCode, consent: consent === true });
+    return createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, accountCode, exactSize: exactSize === true, consent: consent === true });
 
   } catch (err) {
     console.error('Unhandled error in /api/jobs:', err.message, err.stack);
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, accountCode, consent }) {
+async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copies, colorMode, duplex, shopSlug, serviceId, couponCode, accountCode, exactSize, consent }) {
   // Auto-detect page count from file bytes server-side — this is the
   // authoritative count used for billing, regardless of what the client sent.
   let pageCount = Math.max(1, parseInt(pages, 10) || 1);
@@ -78,7 +78,7 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
     amount, status: 'pending_payment',
     serviceId: service?.id, serviceName: service?.name, serviceFee: service ? service.fee : null,
     couponCode: q.coupon ? q.coupon.code : null, discount: q.discount || null,
-    consent: !!consent, deleteTokenHash: deleteToken.hash,
+    consent: !!consent, deleteTokenHash: deleteToken.hash, exactSize: !!exactSize,
   };
 
   // Business account: bill to the account instead of taking payment now.

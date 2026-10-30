@@ -99,6 +99,7 @@ export default async function handler(req, res) {
       amount: j.amount,
       colorMode: j.color_mode,
       duplex: j.duplex,
+      exactSize: !!j.exact_size,
       attempt: (j.print_attempts || 0) + 1,
     })),
   });

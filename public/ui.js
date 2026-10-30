@@ -8,6 +8,8 @@
     file: '<path d="M14 3.5H8A2.5 2.5 0 0 0 5.5 6v12A2.5 2.5 0 0 0 8 20.5h8a2.5 2.5 0 0 0 2.5-2.5V8z"/><path d="M14 3.5V8h4.5"/>',
     image: '<rect x="4" y="5" width="16" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.5-4.2 3.3 3 2.7-2.3 4.5 3.5"/>',
     user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
+    idcard: '<rect x="3.5" y="6" width="17" height="12" rx="2.5"/><circle cx="8.6" cy="11" r="1.7"/><path d="M6 15.5c.4-1.5 1.5-2.2 2.6-2.2s2.2.7 2.6 2.2M14 10h4M14 13h3"/>',
+    book: '<path d="M6.5 4.5h10A1.5 1.5 0 0 1 18 6v12.5a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V6a1.5 1.5 0 0 1 1.5-1.5z"/><circle cx="11.5" cy="10" r="2.2"/><path d="M8.5 15.5h6"/>',
     camera: '<path d="M4 8.5A2 2 0 0 1 6 6.5h2l1.3-2h5.4l1.3 2h2a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.3"/>',
     check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
     printer: '<path d="M7 9V4.5h10V9"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14.5h10V20H7z"/>',

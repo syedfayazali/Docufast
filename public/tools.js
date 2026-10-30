@@ -5,6 +5,9 @@
 // Three tools, all feeding one callback:
 //   * Photos -> PDF        several photos / PDFs merged into one PDF, reorderable
 //   * Passport photos      one photo repeated onto a single A4 sheet (35x45 mm)
+//   * ID card copy        front + back photos, each fitted to real card size
+//                          (85.6 x 54 mm) and printed side by side on one A4
+//   * Passport copy       two passport pages (125 x 88 mm) stacked on one A4
 //   * Service checklist    a fixed list of required documents (Aadhaar, PAN…)
 //                          merged in order into one PDF for the shop
 const PDF_LIB_URL = 'https://esm.sh/pdf-lib@1.17.1';
@@ -98,6 +101,135 @@ export async function passportSheet(file, rotate, count) {
   return new File([blob], 'passport-photos.jpg', { type: 'image/jpeg' });
 }
 
+
+// ---- ID card / passport copy sheets ---------------------------------------
+// Each document photo is fitted to its real printed size. The customer drags
+// and zooms inside a frame of that exact shape, so a card photographed on a
+// table is cropped to just the card. Output is one A4 image at 300 dpi.
+const MM = 300 / 25.4;
+export const SHEET_PRESETS = {
+  idcard:   { name: 'ID card copy', w: 85.6, h: 54, layout: 'side',  labels: ['Front', 'Back'],
+              hint: 'Works for Aadhaar, PAN, Voter ID and driving licence. Front and back are printed side by side at real card size on one A4 sheet.', file: 'id-card-copy.jpg' },
+  passport: { name: 'Passport copy', w: 125, h: 88, layout: 'stack', labels: ['Photo page', 'Address page'],
+              hint: 'Both passport pages are printed at real size, one above the other, on one A4 sheet.', file: 'passport-copy.jpg' },
+};
+
+// Draws one document into a frame (x,y,w,h in px), honouring the customer's pan/zoom.
+function drawInFrame(ctx, src, st, x, y, w, h) {
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h);
+  const cover = Math.max(w / src.width, h / src.height);
+  const sc = cover * st.zoom;
+  const dw = src.width * sc, dh = src.height * sc;
+  ctx.drawImage(src, x + w / 2 - st.cx * dw, y + h / 2 - st.cy * dh, dw, dh);
+  ctx.restore();
+}
+const minZoomFor = (src, w, h) => Math.min(w / src.width, h / src.height) / Math.max(w / src.width, h / src.height);
+
+export async function copySheet(presetId, slots, cutLine = true) {
+  const P = SHEET_PRESETS[presetId];
+  const W = 2480, H = 3508;
+  const fw = Math.round(P.w * MM), fh = Math.round(P.h * MM), gap = Math.round(6 * MM), top = Math.round(18 * MM);
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  const pos = P.layout === 'side'
+    ? [[Math.round((W - (2 * fw + gap)) / 2), top], [Math.round((W - (2 * fw + gap)) / 2) + fw + gap, top]]
+    : [[Math.round((W - fw) / 2), top], [Math.round((W - fw) / 2), top + fh + gap]];
+  for (let i = 0; i < 2; i++) {
+    if (!slots[i]) continue;
+    const [x, y] = pos[i];
+    drawInFrame(ctx, slots[i].canvas, slots[i], x, y, fw, fh);
+    if (cutLine) { ctx.strokeStyle = '#b8b8b8'; ctx.lineWidth = 2; ctx.setLineDash([14, 10]); ctx.strokeRect(x - 6, y - 6, fw + 12, fh + 12); ctx.setLineDash([]); }
+  }
+  const blob = await canvasToJpeg(c, 0.92);
+  // Wrap the sheet in an A4 PDF so the shop's printer receives real A4 at 100%
+  // (the cards then come out at true size). Falls back to the plain image.
+  try {
+    const { PDFDocument } = await pdfLib();
+    const pdf = await PDFDocument.create();
+    const img = await pdf.embedJpg(await blob.arrayBuffer());
+    const page = pdf.addPage([A4.w, A4.h]);
+    page.drawImage(img, { x: 0, y: 0, width: A4.w, height: A4.h });
+    return { file: new File([await pdf.save()], P.file.replace(/\.jpg$/, '.pdf'), { type: 'application/pdf' }), exact: true };
+  } catch {
+    return { file: new File([blob], P.file, { type: 'image/jpeg' }), exact: false };
+  }
+}
+
+// One slot = a pan/zoom fitting box for one side of the document.
+function buildFitter(preset, label, onChange) {
+  const st = { file: null, rotate: 0, canvas: null, zoom: 1, cx: 0.5, cy: 0.5 };
+  const wrap = el('div', 'fit');
+  const head = el('div', 'fit-head'); head.appendChild(el('b', '', label));
+  const ctl = el('div', 'fit-ctl');
+  const pick = el('button', 'tbtn wide pick', 'Add'); pick.type = 'button';
+  const rot = el('button', 'tbtn', '⟳'); rot.type = 'button'; rot.title = 'Rotate'; rot.disabled = true;
+  ctl.append(pick, rot); head.appendChild(ctl);
+  const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.style.display = 'none';
+  const box = el('div', 'fit-box');
+  box.style.aspectRatio = `${preset.w} / ${preset.h}`;
+  const cv = document.createElement('canvas');
+  const PW = 640, PH = Math.round(PW * preset.h / preset.w);
+  cv.width = PW; cv.height = PH; box.appendChild(cv);
+  const empty = el('div', 'fit-empty', 'Tap Add and choose a photo');
+  box.appendChild(empty);
+  const zoomRow = el('label', 'fit-zoom'); zoomRow.append(el('span', '', 'Zoom'));
+  const zoom = document.createElement('input'); zoom.type = 'range'; zoom.min = '0.3'; zoom.max = '4'; zoom.step = '0.01'; zoom.value = '1'; zoom.disabled = true;
+  zoomRow.appendChild(zoom);
+  wrap.append(head, input, box, zoomRow);
+
+  const clamp = () => { st.cx = Math.min(1, Math.max(0, st.cx)); st.cy = Math.min(1, Math.max(0, st.cy)); };
+  function paint() {
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PW, PH);
+    if (st.canvas) drawInFrame(ctx, st.canvas, st, 0, 0, PW, PH);
+    empty.style.display = st.canvas ? 'none' : 'flex';
+    rot.disabled = zoom.disabled = !st.canvas;
+    pick.textContent = st.canvas ? 'Change' : 'Add';
+  }
+  async function load() {
+    st.canvas = await toCanvas(st.file, st.rotate, false, 2200);
+    const mz = minZoomFor(st.canvas, PW, PH);
+    zoom.min = String(Math.max(0.2, mz)); st.zoom = 1; st.cx = 0.5; st.cy = 0.5; zoom.value = '1';
+    paint(); onChange();
+  }
+  pick.addEventListener('click', () => input.click());
+  input.addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; st.file = f; st.rotate = 0; try { await load(); } catch (err) { alert(err.message); } });
+  rot.addEventListener('click', async () => { st.rotate = (st.rotate + 1) % 4; await load(); });
+  zoom.addEventListener('input', () => { st.zoom = parseFloat(zoom.value); paint(); });
+
+  // drag to move; two fingers or the mouse wheel to zoom
+  const ptrs = new Map(); let lastDist = 0;
+  const toNorm = (dx, dy) => {
+    const cover = Math.max(PW / st.canvas.width, PH / st.canvas.height) * st.zoom;
+    const k = box.getBoundingClientRect().width / PW;
+    return [dx / k / (st.canvas.width * cover), dy / k / (st.canvas.height * cover)];
+  };
+  box.style.touchAction = 'none';
+  box.addEventListener('pointerdown', e => { if (!st.canvas) return; box.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); lastDist = 0; });
+  box.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId) || !st.canvas) return;
+    const prev = ptrs.get(e.pointerId); const cur = { x: e.clientX, y: e.clientY };
+    if (ptrs.size === 1) {
+      const [nx, ny] = toNorm(cur.x - prev.x, cur.y - prev.y);
+      st.cx -= nx; st.cy -= ny; clamp();
+    } else if (ptrs.size === 2) {
+      ptrs.set(e.pointerId, cur);
+      const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (lastDist) { st.zoom = Math.min(4, Math.max(parseFloat(zoom.min), st.zoom * d / lastDist)); zoom.value = String(st.zoom); }
+      lastDist = d;
+    }
+    ptrs.set(e.pointerId, cur); paint();
+  });
+  const up = e => { ptrs.delete(e.pointerId); lastDist = 0; };
+  box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+  box.addEventListener('wheel', e => { if (!st.canvas) return; e.preventDefault(); st.zoom = Math.min(4, Math.max(parseFloat(zoom.min), st.zoom * (e.deltaY < 0 ? 1.06 : 0.94))); zoom.value = String(st.zoom); paint(); }, { passive: false });
+  paint();
+  return { el: wrap, st, ready: () => !!st.canvas, pickBtn: pick };
+}
+
 // ---- UI ------------------------------------------------------------------
 function thumbFor(file, rotate) {
   const box = el('div', 'tthumb');
@@ -114,16 +246,19 @@ export function initTools(opts) {
   const $ = id => document.getElementById(id);
 
   // ----- mode switching -----
-  const panels = { file: $('panelFile'), photos: $('panelPhotos'), passport: $('panelPassport'), service: $('panelService') };
+  const panels = { file: $('panelFile'), photos: $('panelPhotos'), passport: $('panelPassport'), service: $('panelService'), sheet: $('panelSheet') };
+  let currentPreset = null;
   function show(mode) {
     Object.entries(panels).forEach(([k, p]) => { p.style.display = k === mode ? 'block' : 'none'; });
     // The tool panels have their own button; the shared Continue returns once a file is ready.
     $('next1').style.display = mode === 'file' ? '' : 'none';
-    document.querySelectorAll('#modes .mode').forEach(b => b.classList.toggle('active', b.dataset.mode === mode && (mode !== 'service' || b.dataset.service === currentService?.id)));
+    document.querySelectorAll('#modes .mode').forEach(b => b.classList.toggle('active', b.dataset.mode === mode && (mode !== 'service' || b.dataset.service === currentService?.id) && (mode !== 'sheet' || b.dataset.preset === currentPreset)));
   }
   let currentService = null;
   document.querySelectorAll('#modes .mode[data-mode]').forEach(b => b.addEventListener('click', () => {
-    currentService = null; opts.onService(null); show(b.dataset.mode);
+    currentService = null; opts.onService(null);
+    if (b.dataset.mode === 'sheet') { currentPreset = b.dataset.preset; renderSheet(); }
+    show(b.dataset.mode);
   }));
 
   // ----- Photos -> PDF -----
@@ -181,6 +316,31 @@ export function initTools(opts) {
     } catch (err) { opts.onBusy(null); opts.onError(err.message); }
   });
   renderPassport();
+
+
+  // ----- ID card / passport copy -----
+  let fitters = [];
+  function renderSheet() {
+    const P = SHEET_PRESETS[currentPreset];
+    $('sheetTitle').textContent = P.name;
+    $('sheetHint').textContent = P.hint;
+    const list = $('sheetSlots'); list.innerHTML = '';
+    const refresh = () => {
+      const missing = fitters.filter(f => !f.ready()).length;
+      $('sheetMake').disabled = missing > 0;
+      $('sheetMake').textContent = missing ? (missing === 2 ? 'Add both sides first' : 'Add the other side') : 'Make my print sheet';
+    };
+    fitters = P.labels.map(l => buildFitter(P, l, refresh));
+    fitters.forEach(f => list.appendChild(f.el));
+    refresh();
+  }
+  $('sheetMake').addEventListener('click', async () => {
+    try {
+      opts.onBusy('Making your print sheet…');
+      const r = await copySheet(currentPreset, fitters.map(f => f.st), $('sheetCut').checked);
+      opts.onBusy(null); opts.onFile(r.file, { exact: r.exact });
+    } catch (err) { opts.onBusy(null); opts.onError(err.message); }
+  });
 
   // ----- Service checklist -----
   let slotFiles = [];
