@@ -6,6 +6,7 @@ module.exports = {
       { source: '/admin', destination: '/admin.html' },
       { source: '/signage', destination: '/signage.html' },
       { source: '/owner', destination: '/owner.html' },
+      { source: '/software', destination: '/software.html' },
     ];
   },
 };
