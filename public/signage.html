@@ -3,72 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DocuFast India — scan to print</title>
-<link rel="icon" type="image/png" href="/logo-icon.png">
+<title>DocuFast India — Scan to Print poster</title>
+<link rel="icon" type="image/png" href="/brand-icon.png">
 <link rel="stylesheet" href="/styles.css">
 <style>
-  .signage-wrap{max-width:420px;margin:0 auto;padding:40px 20px;text-align:center;}
-  .signage-wrap h1{font-size:32px;margin-bottom:8px;}
-  .signage-wrap .sub{color:var(--slate);font-size:15px;margin-bottom:24px;}
-  .shop-badge{display:none;background:var(--navy-tint,#eef1f8);color:var(--navy);font-weight:700;font-size:13px;padding:6px 14px;border-radius:20px;margin-bottom:16px;}
-  .qr-box{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:20px;display:inline-block;}
-  .qr-box img{width:280px;height:280px;display:block;}
-  .url-text{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--slate);margin-top:18px;word-break:break-all;}
-  .steps{text-align:left;margin-top:28px;font-size:14px;}
-  .steps li{margin-bottom:6px;}
-  .err{color:var(--error,#c0392b);font-size:13px;margin-top:12px;display:none;}
-  @media print{button.ghost{display:none;}}
+  @page { size: A4 portrait; margin: 0; }
+  :root { --pn: #0B2160; --pa: #FFB30F; --pb: #E8F0FF; }
+  html, body { margin: 0; background: #E9ECF3; }
+  .stage { padding: 20px 0 40px; display: flex; flex-direction: column; align-items: center; }
+  .scaler { transform-origin: top left; }
+  .poster {
+    position: relative; width: 794px; height: 1123px; overflow: hidden; background: #FBFCFF; color: var(--pn);
+    box-shadow: 0 6px 30px rgba(11,33,96,.18); font-family: inherit;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .blob { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, #DCE8FF 0%, #EEF4FF 70%, transparent 100%); }
+  .logo { position: absolute; top: 34px; left: 0; right: 0; text-align: center; }
+  .logo img { height: 92px; width: auto; }
+  .badge {
+    position: absolute; top: 148px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+    background: var(--pn); color: #fff; border-radius: 999px; padding: 12px 30px 12px 18px;
+    display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 20px; letter-spacing: .02em; text-transform: uppercase;
+  }
+  .badge svg { width: 26px; height: 26px; flex: 0 0 auto; }
+  h1 { position: absolute; top: 218px; left: 0; right: 0; margin: 0; text-align: center; font-size: 86px; line-height: 1; font-weight: 900; letter-spacing: -.02em; color: var(--pn); }
+  h1 b { color: var(--pa); }
+  .spark { position: absolute; top: 232px; width: 70px; height: 70px; }
+  .spark.l { left: 62px; } .spark.r { right: 62px; transform: scaleX(-1); }
+  .sub { position: absolute; top: 328px; left: 120px; right: 120px; text-align: center; font-size: 24px; line-height: 1.3; font-weight: 600; }
+  .qr { position: absolute; top: 396px; left: 50%; transform: translateX(-50%); width: 336px; height: 336px; background: #fff; border-radius: 22px; border: 4px solid var(--pa); box-shadow: 0 0 0 4px #fff, 0 10px 30px rgba(11,33,96,.15); display: flex; align-items: center; justify-content: center; }
+  .qr svg { width: 292px; height: 292px; display: block; }
+  .phone { position: absolute; left: 22px; top: 452px; width: 170px; }
+  .printer { position: absolute; right: 18px; top: 480px; width: 172px; }
+  .url { position: absolute; top: 752px; left: 50%; transform: translateX(-50%); max-width: 700px; width: max-content; text-align: center; background: var(--pb); border-radius: 18px; padding: 10px 24px; font-weight: 700; font-size: 17px; word-break: break-all; line-height: 1.3; }
+  .how { position: absolute; left: 24px; right: 24px; top: 846px; height: 178px; background: var(--pn); border-radius: 30px; display: grid; grid-template-columns: repeat(4, 1fr); padding: 34px 6px 10px; color: #fff; }
+  .how-tag { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); background: var(--pa); color: var(--pn); font-weight: 900; font-size: 30px; padding: 8px 38px; border-radius: 999px; white-space: nowrap; }
+  .st { padding: 0 8px; text-align: center; border-left: 1px solid rgba(255,255,255,.22); display: flex; flex-direction: column; align-items: center; }
+  .st:nth-child(2) { border-left: 0; }
+  .st .top { display: flex; align-items: center; gap: 8px; height: 56px; }
+  .num { width: 38px; height: 38px; border-radius: 50%; background: var(--pa); color: var(--pn); font-weight: 900; font-size: 21px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .st svg { width: 52px; height: 52px; }
+  .st p { margin: 6px 0 0; font-size: 15px; line-height: 1.28; font-weight: 600; }
+  .st em { font-style: normal; color: var(--pa); }
+  .foot { position: absolute; left: 0; right: 0; bottom: 0; height: 100px; background: #fff; }
+  .foot-t { position: absolute; left: 0; right: 0; top: 12px; display: flex; justify-content: center; align-items: center; gap: 18px; font-weight: 700; font-size: 20px; }
+  .foot-t i { width: 7px; height: 7px; border-radius: 50%; background: var(--pa); display: block; }
+  .foot-t u { width: 120px; height: 2px; background: var(--pn); display: block; }
+  .wave { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 50px; }
+  .tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; padding: 0 16px; }
+  .tools button { margin: 0; }
+  .err { color: #b3261e; font-size: 14px; display: none; text-align: center; margin-bottom: 10px; }
+  @media print {
+    html, body { background: #fff; }
+    .stage { padding: 0; display: block; }
+    .scaler { transform: none !important; height: auto !important; }
+    .poster { box-shadow: none; }
+    .tools, .err { display: none !important; }
+  }
 </style>
 </head>
 <body>
-<div class="signage-wrap">
-  <img src="/brand.png" alt="DocuFast India" style="height:64px;width:auto;display:block;margin:0 auto 10px;">
-  <div class="shop-badge" id="shopBadge"></div>
-  <h1>Scan to print</h1>
-  <div class="sub">Upload from your phone, pay, and we print it for you right here.</div>
-  <div class="qr-box"><img id="qrImg" alt="QR code" src=""></div>
-  <div class="url-text" id="urlText">Loading…</div>
+<div class="stage">
+  <div class="tools"><button class="ghost" id="printBtn" type="button" style="width:auto;padding:10px 22px;">Print this poster</button></div>
   <div class="err" id="errText"></div>
-  <ol class="steps">
-    <li>Scan the code with your phone camera</li>
-    <li>Upload your file and choose print options</li>
-    <li>Pay with UPI or card via Razorpay</li>
-    <li>Collect your printout from the counter</li>
-  </ol>
-  <button class="ghost" onclick="window.print()" style="margin-top:20px;">Print this poster</button>
+  <div class="scaler" id="scaler">
+  <div class="poster" id="poster">
+    <div class="blob" style="left:-120px;top:420px;width:520px;height:520px;"></div>
+    <div class="blob" style="right:-140px;top:430px;width:520px;height:520px;"></div>
+
+    <div class="logo"><img src="/brand.png" alt="DocuFast India"></div>
+
+    <div class="badge" id="shopBadge">
+      <svg viewBox="0 0 24 24"><path fill="#FFB30F" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#0B2160"/></svg>
+      <span id="shopText">Scan to print</span>
+    </div>
+
+    <svg class="spark l" viewBox="0 0 70 70" fill="none" stroke="#FFB30F" stroke-width="7" stroke-linecap="round"><path d="M6 22 L34 14"/><path d="M4 40 H36"/><path d="M12 60 L36 46"/></svg>
+    <svg class="spark r" viewBox="0 0 70 70" fill="none" stroke="#FFB30F" stroke-width="7" stroke-linecap="round"><path d="M6 22 L34 14"/><path d="M4 40 H36"/><path d="M12 60 L36 46"/></svg>
+    <h1>Scan to <b>Print</b></h1>
+    <div class="sub">Upload from your phone, pay, and we print it for you right here.</div>
+
+    <!-- phone -->
+    <svg class="phone" viewBox="0 0 190 280" fill="none">
+      <g transform="rotate(-6 95 140)">
+        <rect x="22" y="14" width="146" height="252" rx="26" fill="#1B3FA0" stroke="#0B2160" stroke-width="8"/>
+        <rect x="34" y="30" width="122" height="220" rx="14" fill="#fff"/>
+        <rect x="76" y="20" width="38" height="6" rx="3" fill="#0B2160"/>
+        <path d="M60 62h44l22 22v70H60z" fill="#F4F7FF" stroke="#9BB0DC" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M72 96h40M72 112h40M72 128h26" stroke="#9BB0DC" stroke-width="5" stroke-linecap="round"/>
+        <path d="M52 196a22 22 0 0 1 8-36 28 28 0 0 1 52 6 20 20 0 0 1 4 40z" fill="#2F7BF0"/>
+        <path d="M92 204v-26m0 0-11 11m11-11 11 11" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <path d="M176 188c20-4 30 -22 22-40" stroke="#FFB30F" stroke-width="9" stroke-linecap="round" fill="none" transform="translate(-6 24)"/>
+      <path d="M170 120l-6-22M182 128l18-14M186 146l24-4" stroke="#FFB30F" stroke-width="6" stroke-linecap="round" transform="translate(-8 -70)" opacity="0"/>
+    </svg>
+
+    <!-- papers + printer -->
+    <svg class="printer" viewBox="0 0 210 260" fill="none">
+      <g stroke="#9BB0DC" stroke-width="4" stroke-linejoin="round" fill="#fff">
+        <path d="M10 40 80 20 104 150 34 172z" fill="#F1F5FF"/>
+        <path d="M40 40h66l34 34v118H40z"/>
+      </g>
+      <path d="M62 88h56M62 108h66M62 128h66M62 148h40" stroke="#9BB0DC" stroke-width="5" stroke-linecap="round"/>
+      <rect x="62" y="164" width="140" height="84" rx="14" fill="#1B3FA0" stroke="#0B2160" stroke-width="6"/>
+      <rect x="82" y="150" width="100" height="22" rx="6" fill="#fff" stroke="#0B2160" stroke-width="5"/>
+      <rect x="86" y="206" width="92" height="30" rx="6" fill="#fff" stroke="#0B2160" stroke-width="4"/>
+      <rect x="102" y="216" width="60" height="9" rx="4" fill="#2F7BF0"/>
+      <path d="M198 30v-22M214 40l16-14" stroke="#FFB30F" stroke-width="6" stroke-linecap="round" opacity="0"/>
+    </svg>
+
+    <div class="qr"><div id="qrBox"></div></div>
+    <div class="url" id="urlText">Loading…</div>
+
+    <div class="how">
+      <div class="how-tag">How to Use</div>
+      <div class="st"><div class="top"><span class="num">1</span>
+        <svg viewBox="0 0 52 52" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h8l3-5h18l3 5h8v24H6z"/><circle cx="26" cy="29" r="8"/></svg></div>
+        <p>Scan the code with your <em>phone camera</em></p></div>
+      <div class="st"><div class="top"><span class="num">2</span>
+        <svg viewBox="0 0 52 52" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 38a10 10 0 0 1-1-20 14 14 0 0 1 27 3 8.5 8.5 0 0 1-1 17"/><path d="M26 44V26m0 0-7 7m7-7 7 7"/></svg></div>
+        <p>Upload your file and choose <em>print options</em></p></div>
+      <div class="st"><div class="top"><span class="num">3</span>
+        <svg viewBox="0 0 52 52" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12" width="38" height="26" rx="4"/><path d="M4 21h38M10 30h10"/><circle cx="40" cy="38" r="9" fill="#FFB30F" stroke="#0B2160" stroke-width="2"/><text x="40" y="43" font-size="13" font-weight="800" fill="#0B2160" text-anchor="middle" stroke="none">₹</text></svg></div>
+        <p>Pay with <em>UPI</em> or <em>card</em> via Razorpay</p></div>
+      <div class="st"><div class="top"><span class="num">4</span>
+        <svg viewBox="0 0 52 52" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 20V7h24v13"/><rect x="6" y="20" width="40" height="18" rx="4"/><rect x="14" y="31" width="24" height="14" rx="2" fill="#0B2160"/></svg></div>
+        <p>Collect your <em>printout</em> from the counter</p></div>
+    </div>
+
+    <div class="foot">
+      <div class="foot-t"><u></u><span>Fast</span><i></i><span>Simple</span><i></i><span>Reliable</span><u></u></div>
+    </div>
+    <svg class="wave" viewBox="0 0 794 50" preserveAspectRatio="none">
+      <path d="M0 28 C 220 -6 560 -6 794 24 V50 H0z" fill="#FFB30F"/>
+      <path d="M0 38 C 240 10 560 10 794 36 V50 H0z" fill="#0B2160"/>
+    </svg>
+  </div>
+  </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
-(async()=>{
-  // A shop opens this page as /signage.html?shop=<their-slug> so the QR code
-  // (and the link it encodes) is unique to them — jobs scanned from it carry
-  // that shop's id, instead of falling back to the shared, unrouted link.
+(async () => {
+  const $ = id => document.getElementById(id);
+  // Opened as /signage.html?shop=<slug>: the QR and the printed link are that
+  // shop's own, so jobs scanned from it are routed to that shop.
   const shopSlug = new URLSearchParams(location.search).get('shop');
 
-  const res = await fetch('/api/config');
-  const { baseUrl } = await res.json();
+  // Scale the A4-sized poster to the screen; printing always uses 100%.
+  function fit() {
+    const k = Math.min(1, (innerWidth - 24) / 794), sc = $('scaler');
+    sc.style.transform = `scale(${k})`; sc.style.height = (1123 * k) + 'px'; sc.style.width = (794 * k) + 'px';
+  }
+  fit(); addEventListener('resize', fit);
+  $('printBtn').onclick = () => window.print();
 
-  let targetUrl = baseUrl;
+  let base = location.origin;
+  try {
+    const cfg = await (await fetch('/api/config')).json();
+    // Prefer the real public address over a preview / vercel.app one.
+    if (cfg.baseUrl && /vercel\.app$/.test(location.hostname)) base = cfg.baseUrl;
+  } catch { /* use the address this page was opened from */ }
+  base = base.replace(/\/$/, '');
 
+  let url = base + '/';
   if (shopSlug) {
-    targetUrl = `${baseUrl}/?shop=${encodeURIComponent(shopSlug)}`;
+    url = `${base}/?shop=${encodeURIComponent(shopSlug)}`;
     try {
-      const shopRes = await fetch(`/api/shops/by-slug/${encodeURIComponent(shopSlug)}`);
-      if (shopRes.ok) {
-        const shop = await shopRes.json();
-        const badge = document.getElementById('shopBadge');
-        badge.textContent = shop.name + (shop.city ? ` · ${shop.city}` : '');
-        badge.style.display = 'inline-block';
+      const r = await fetch(`/api/shops/by-slug/${encodeURIComponent(shopSlug)}`);
+      if (r.ok) {
+        const s = await r.json();
+        $('shopText').textContent = s.name + (s.city ? ` · ${s.city}` : '');
       } else {
-        document.getElementById('errText').textContent = 'Shop not found — this QR code may not route to a shop.';
-        document.getElementById('errText').style.display = 'block';
+        $('errText').textContent = 'Shop not found — this QR code will not route to a shop.'; $('errText').style.display = 'block';
+        $('shopText').textContent = 'DocuFast India';
       }
-    } catch {
-      // Non-fatal — the QR/link below still works even if the name lookup fails.
-    }
+    } catch { $('shopText').textContent = 'DocuFast India'; }
+  } else {
+    $('shopText').textContent = 'DocuFast India';
   }
 
-  document.getElementById('urlText').textContent = targetUrl;
-  document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(targetUrl)}`;
+  $('urlText').textContent = url;
+  // QR is drawn here in the browser: the shop link is not sent to any QR website.
+  try {
+    const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+    $('qrBox').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+  } catch {
+    $('errText').textContent = 'Could not draw the QR code. Check your internet connection and reload.'; $('errText').style.display = 'block';
+  }
 })();
 </script>
 </body>
