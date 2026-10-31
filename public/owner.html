@@ -87,6 +87,9 @@
     </div>
     <div id="accList" class="pilot-grid"></div>
 
+    <div class="section-title" style="margin-top:24px;">Shop subscriptions &mdash; plans your shops pay you</div>
+    <div id="subList" class="pilot-grid"></div>
+
     <div class="section-title" style="margin-top:24px;">Partner shops &mdash; share &amp; payouts
       <a class="link-btn" href="/api/owner/partners?format=csv"><i class="ic" data-ic="download"></i> Download CSV</a>
     </div>
@@ -393,7 +396,7 @@ async function loadDashboard(opts) {
     const changed = sig !== dashSig;
     if (silent && dashLoaded && !changed) return;   // nothing new: leave the screen alone
     dashSig = sig;
-    if (!silent || !dashLoaded) { loadServices(); loadCoupons(); loadAccounts(); loadPartners(); }
+    if (!silent || !dashLoaded) { loadServices(); loadCoupons(); loadAccounts(); loadPartners(); loadSubs(); }
     loadLeads();
     loadReport();
     renderKPIs(stats);
@@ -672,6 +675,36 @@ async function loadAccounts() {
     });
   } catch { /* optional section */ }
 }
+async function loadSubs() {
+  try {
+    const res = await fetch('/api/owner/subscriptions', { credentials: 'same-origin' }); if (!res.ok) return;
+    const d = await res.json();
+    const grid = document.getElementById('subList'); grid.innerHTML = '';
+    const label = { free: 'No plan (unlimited)', trial: 'Free trial', active: 'Paid', grace: 'Renew now', expired: 'Paused' };
+    d.shops.forEach(s => {
+      const card = document.createElement('div'); card.className = 'pilot';
+      const h = document.createElement('h5'); const nm = document.createElement('span'); nm.textContent = s.name;
+      const b = document.createElement('span'); b.className = s.state === 'expired' || s.state === 'grace' ? 'no' : 'go'; b.textContent = label[s.state]; h.append(nm, b);
+      const info = document.createElement('div'); info.style.cssText = 'font-size:13px;color:#5B6478;line-height:1.6;';
+      const until = s.until ? new Date(s.until).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+      info.textContent = s.state === 'free' ? 'Own shop or not on a plan. Never limited.' :
+        `${s.plan.toUpperCase()} · ${s.state === 'trial' ? 'trial' : 'paid'} until ${until} (${s.daysLeft >= 0 ? s.daysLeft + ' days left' : 'ended ' + (-s.daysLeft) + ' days ago'})`;
+      const pay = (s.payments || [])[0]; if (pay) info.textContent += ` · last payment ${rs(pay.amount)}`;
+      const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;';
+      const mk = (t, fn) => { const x = document.createElement('button'); x.className = 'link-btn'; x.textContent = t; x.addEventListener('click', fn); row.appendChild(x); };
+      const planNames = d.plans.map(p => p.id).join(' or ');
+      const price = id => (d.plans.find(p => p.id === id) || { price: 0 }).price;
+      mk('Start trial', () => askForm('Free trial — ' + s.name, [{ key: 'plan', label: 'Plan (' + planNames + ')', value: s.plan || 'starter' }, { key: 'days', label: 'Trial days', value: d.trialDays, inputmode: 'numeric' }], 'Start', async v => {
+        const r = await jsonPost('/api/owner/subscriptions', 'POST', { shopId: s.id, action: 'trial', ...v }); if (!r.ok) return r.data.error; loadSubs(); return null; }));
+      mk('Record payment', () => askForm('Payment received — ' + s.name, [{ key: 'plan', label: 'Plan (' + planNames + ')', value: s.plan || 'starter' }, { key: 'months', label: 'Months paid (12 months = pay ' + d.yearlyMonthsPaid + ')', value: 1, inputmode: 'numeric' }, { key: 'amount', label: 'Amount received (₹)', value: price(s.plan || 'starter'), inputmode: 'decimal' }, { key: 'note', label: 'Note (UPI ref…)' }], 'Save', async v => {
+        const r = await jsonPost('/api/owner/subscriptions', 'POST', { shopId: s.id, action: 'payment', ...v }); if (!r.ok) return r.data.error; loadSubs(); return null; },
+        'Adds the months after the current end date. Amount is only recorded, nothing is charged here.'));
+      if (s.state !== 'free') mk('Remove plan', () => { if (confirm('Remove the plan from ' + s.name + '? It will never be limited.')) jsonPost('/api/owner/subscriptions', 'POST', { shopId: s.id, action: 'clear' }).then(loadSubs); });
+      card.append(h, info, row); grid.appendChild(card);
+    });
+  } catch { /* optional section */ }
+}
+
 async function loadPartners() {
   try {
     const res = await fetch('/api/owner/partners', { credentials: 'same-origin' }); if (!res.ok) return;

@@ -3,6 +3,7 @@ import { generateCode } from '@/lib/pricing';
 import { quoteOrder } from '@/lib/quote';
 import { createOrder, isConfigured } from '@/lib/razorpay';
 import { readBytes } from '@/lib/privateBlob';
+import { getPlan } from '@/lib/plans';
 import { countPdfPages, countDocxPages, fileProblem } from '@/lib/pagecount';
 export const config = { api: { bodyParser: { sizeLimit: '1mb' } } };
 import { maskAadhaar } from '@/lib/mask';
@@ -92,6 +93,8 @@ async function createJobAndRespond({ res, filename, blobUrl, buffer, pages, copi
 
   // Business account: bill to the account instead of taking payment now.
   if (accountCode) {
+    const pl = getPlan(q.shop?.plan);
+    if (pl && !pl.accounts) return res.status(400).json({ error: 'Business accounts are not available at this shop.' });
     const acc = await lookupAccount(accountCode);
     if (!acc) return res.status(400).json({ error: 'That business account code is not valid.' });
     if (amount > acc.available) return res.status(402).json({ error: 'This order is over the account credit limit. Please pay online or contact the shop.' });

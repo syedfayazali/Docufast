@@ -8,7 +8,8 @@ import { isOwner, isLegacyAgentKey } from '@/lib/auth';
 // pending.js). The FIRST computer to call in with a given shop key claims
 // it; any OTHER computer using the same key gets rejected with 409 instead
 // of silently running alongside the original and racing it for jobs.
-import { getShopByApiKey, registerPrinter, heartbeatPrinter, checkAndBindMachine, recordAgentInfo } from '@/lib/db';
+import { getShopByApiKey, registerPrinter, heartbeatPrinter, checkAndBindMachine, recordAgentInfo, printerSlotFree } from '@/lib/db';
+import { getPlan } from '@/lib/plans';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -19,13 +20,14 @@ export default async function handler(req, res) {
   const { printerName, printerId } = req.body || {};
 
   // Support both old AGENT_KEY (single-shop) and per-shop api_key
-  let shopId = null;
+  let shopId = null, shopPlan = null;
   if (isLegacyAgentKey(agentKey)) {
     // Legacy single-shop mode — no shopId, so no machine-binding to check.
   } else {
     const shop = await getShopByApiKey(agentKey);
     if (!shop) return res.status(401).json({ error: 'Invalid agent key' });
     shopId = shop.id;
+    shopPlan = getPlan(shop.plan);
 
     const bind = await checkAndBindMachine(shopId, machineId, machineName);
     if (!bind.ok) {
@@ -37,6 +39,9 @@ export default async function handler(req, res) {
   }
 
   if (shopId && printerName) {
+    if (shopPlan && !(await printerSlotFree(shopId, printerId, printerName, shopPlan.maxPrinters))) {
+      return res.status(403).json({ error: 'printer_limit', message: `Your ${shopPlan.name} plan covers ${shopPlan.maxPrinters} printer${shopPlan.maxPrinters > 1 ? 's' : ''}. Upgrade to add more.` });
+    }
     const printer = await registerPrinter({ shopId, printerId, name: printerName });
     await recordAgentInfo(printer.id, { push: req.headers['x-push-state'], version: req.headers['x-agent-version'], reason: req.headers['x-push-reason'] }).catch(() => {});
     return res.status(200).json({ ok: true, printerId: printer.id, shopId });
