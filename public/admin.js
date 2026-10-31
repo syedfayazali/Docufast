@@ -32,6 +32,7 @@ async function loadDashboard() {
   }
 
   await refresh();
+  loadPlan();
 
   document.getElementById('loader').style.display = 'none';
   document.getElementById('content').style.display = 'block';
@@ -41,6 +42,53 @@ async function loadDashboard() {
   // poll (every 10 s) while the live connection is down.
   if (liveConn) liveConn.close();
   liveConn = window.DFPush.live(lastPush, () => refresh(), 10000);
+}
+
+// ---- Plan & renewal ----
+let planData = null;
+const rsn = n => '₹' + n.toLocaleString('en-IN');
+async function loadPlan() {
+  const card = document.getElementById('planCard');
+  try {
+    const res = await fetch('/api/admin/plan', { headers: authHeaders() });
+    if (!res.ok) return;
+    planData = await res.json();
+    const b = planData.billing;
+    if (b.state === 'free') { card.style.display = 'none'; return; }   // own shop: no plan
+    const label = { trial: 'Free trial', active: 'Plan active', grace: 'Plan ended — renew now', expired: 'Plan paused — renew to take orders' }[b.state];
+    const until = new Date(b.until).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    document.getElementById('planTitle').textContent = `${label} · ${b.plan.toUpperCase()}`;
+    document.getElementById('planInfo').textContent = b.daysLeft >= 0 ? `Until ${until} (${b.daysLeft} days left)` : `Ended ${until}`;
+    const pick = document.getElementById('planPick');
+    pick.innerHTML = planData.plans.map(p => `<option value="${p.id}"${p.id === b.plan ? ' selected' : ''}>${p.name}</option>`).join('');
+    const paint = () => {
+      const p = planData.plans.find(x => x.id === pick.value);
+      document.getElementById('payMonthly').textContent = `Pay ${rsn(p.monthly)} · 1 month`;
+      document.getElementById('payYearly').textContent = `Pay ${rsn(p.yearly)} · 12 months (2 free)`;
+    };
+    pick.onchange = paint; paint();
+    document.getElementById('payMonthly').onclick = () => payPlan('monthly');
+    document.getElementById('payYearly').onclick = () => payPlan('yearly');
+    card.style.display = 'block';
+  } catch { /* plan card is optional */ }
+}
+async function payPlan(term) {
+  const msg = document.getElementById('planMsg'); msg.textContent = '';
+  const res = await fetch('/api/admin/plan', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: document.getElementById('planPick').value, term }) });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.textContent = d.error || 'Could not start payment.'; return; }
+  if (!window.Razorpay) { msg.textContent = 'Payment window could not load. Check your internet and try again.'; return; }
+  new window.Razorpay({
+    key: d.razorpayKeyId, amount: d.amount, currency: 'INR', name: 'DocuFast India', description: d.description, order_id: d.razorpayOrderId,
+    handler: async response => {
+      msg.textContent = 'Confirming payment…';
+      const v = await fetch('/api/admin/plan-verify', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(response) });
+      const vd = await v.json().catch(() => ({}));
+      msg.textContent = v.ok ? 'Thank you! Your plan is renewed.' : (vd.error || 'We received your payment but could not confirm it yet. It will show up shortly; contact us if not.');
+      loadPlan();
+    },
+    theme: { color: '#0B2160' },
+  }).open();
 }
 
 async function refresh() {
