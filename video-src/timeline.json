@@ -1,0 +1,495 @@
+{
+ "bpm": 120,
+ "duration": 48,
+ "scenes": [
+  [
+   0,
+   4
+  ],
+  [
+   4,
+   8
+  ],
+  [
+   8,
+   12
+  ],
+  [
+   12,
+   20
+  ],
+  [
+   20,
+   28
+  ],
+  [
+   28,
+   36
+  ],
+  [
+   36,
+   40
+  ],
+  [
+   40,
+   48
+  ]
+ ],
+ "voice": {
+  "name": "af_heart",
+  "speed": 1.1
+ },
+ "vo": [
+  {
+   "id": "q1",
+   "at": 0.12,
+   "text": "Queues."
+  },
+  {
+   "id": "q2",
+   "at": 1.12,
+   "text": "WhatsApp files."
+  },
+  {
+   "id": "q3",
+   "at": 2.12,
+   "text": "Pen drives."
+  },
+  {
+   "id": "w1",
+   "at": 4.25,
+   "text": "What if your customers did all of it, themselves?"
+  },
+  {
+   "id": "d1",
+   "at": 8.3,
+   "text": "This is DocuFast."
+  },
+  {
+   "id": "s1",
+   "at": 10.0,
+   "text": "Scan.",
+   "speed": 1.3
+  },
+  {
+   "id": "s2",
+   "at": 10.5,
+   "text": "Upload.",
+   "speed": 1.3
+  },
+  {
+   "id": "s3",
+   "at": 11.0,
+   "text": "Pay.",
+   "speed": 1.3
+  },
+  {
+   "id": "s4",
+   "at": 11.5,
+   "text": "Print.",
+   "speed": 1.3
+  },
+  {
+   "id": "c1",
+   "at": 12.25,
+   "text": "Your customer scans your QR,"
+  },
+  {
+   "id": "c2",
+   "at": 14.25,
+   "text": "uploads any file,"
+  },
+  {
+   "id": "c3",
+   "at": 16.25,
+   "text": "sees the exact price,"
+  },
+  {
+   "id": "c4",
+   "at": 18.25,
+   "text": "and pays by UPI."
+  },
+  {
+   "id": "c5",
+   "at": 19.55,
+   "text": "No cash. No change."
+  },
+  {
+   "id": "b1",
+   "at": 21.0,
+   "text": "The moment they pay, the order lands on your live board."
+  },
+  {
+   "id": "b2",
+   "at": 24.6,
+   "text": "And your printer starts printing, all by itself."
+  },
+  {
+   "id": "b3",
+   "at": 27.15,
+   "text": "Nothing to forward."
+  },
+  {
+   "id": "e1",
+   "at": 28.2,
+   "text": "You set your own prices."
+  },
+  {
+   "id": "e2",
+   "at": 30.9,
+   "text": "See every rupee collected."
+  },
+  {
+   "id": "e3",
+   "at": 33.4,
+   "text": "And customer files are deleted after printing."
+  },
+  {
+   "id": "l1",
+   "at": 36.25,
+   "text": "In English, Telugu and Hindi."
+  },
+  {
+   "id": "f1",
+   "at": 40.35,
+   "text": "Make your print shop smarter."
+  },
+  {
+   "id": "f2",
+   "at": 42.9,
+   "text": "Try DocuFast free, for fourteen days."
+  }
+ ],
+ "sfx": [
+  {
+   "t": 0.0,
+   "k": "impact",
+   "g": 0.7
+  },
+  {
+   "t": 1.0,
+   "k": "impact",
+   "g": 0.75
+  },
+  {
+   "t": 2.0,
+   "k": "impact",
+   "g": 0.8
+  },
+  {
+   "t": 0.0,
+   "k": "tick"
+  },
+  {
+   "t": 1.0,
+   "k": "tick"
+  },
+  {
+   "t": 2.0,
+   "k": "tick"
+  },
+  {
+   "t": 3.55,
+   "k": "whoosh",
+   "d": 0.7,
+   "g": 0.9
+  },
+  {
+   "t": 4.0,
+   "k": "hit",
+   "g": 0.6
+  },
+  {
+   "t": 4.7,
+   "k": "whoosh",
+   "d": 0.6,
+   "up": false,
+   "g": 0.5
+  },
+  {
+   "t": 5.5,
+   "k": "riser",
+   "d": 2.5,
+   "g": 0.8
+  },
+  {
+   "t": 8.0,
+   "k": "boom",
+   "g": 1.0
+  },
+  {
+   "t": 8.0,
+   "k": "shimmer",
+   "g": 0.7
+  },
+  {
+   "t": 10.0,
+   "k": "pop"
+  },
+  {
+   "t": 10.5,
+   "k": "pop"
+  },
+  {
+   "t": 11.0,
+   "k": "pop"
+  },
+  {
+   "t": 11.5,
+   "k": "pop",
+   "g": 1.1
+  },
+  {
+   "t": 11.6,
+   "k": "whoosh",
+   "d": 0.5,
+   "g": 0.8
+  },
+  {
+   "t": 12.0,
+   "k": "hit",
+   "g": 0.5
+  },
+  {
+   "t": 12.7,
+   "k": "beep"
+  },
+  {
+   "t": 13.2,
+   "k": "shutter"
+  },
+  {
+   "t": 13.6,
+   "k": "whoosh",
+   "d": 0.35,
+   "g": 0.4
+  },
+  {
+   "t": 14.45,
+   "k": "pop"
+  },
+  {
+   "t": 16.0,
+   "k": "whoosh",
+   "d": 0.35,
+   "g": 0.4
+  },
+  {
+   "t": 16.5,
+   "k": "tick"
+  },
+  {
+   "t": 16.75,
+   "k": "tick"
+  },
+  {
+   "t": 17.0,
+   "k": "tick"
+  },
+  {
+   "t": 17.25,
+   "k": "tick"
+  },
+  {
+   "t": 17.5,
+   "k": "tick"
+  },
+  {
+   "t": 18.0,
+   "k": "whoosh",
+   "d": 0.4,
+   "g": 0.5
+  },
+  {
+   "t": 19.15,
+   "k": "ding",
+   "g": 0.9
+  },
+  {
+   "t": 19.7,
+   "k": "whoosh",
+   "d": 0.5,
+   "g": 0.7
+  },
+  {
+   "t": 20.35,
+   "k": "ping",
+   "g": 0.9
+  },
+  {
+   "t": 21.2,
+   "k": "whoosh",
+   "d": 0.4,
+   "g": 0.5
+  },
+  {
+   "t": 22.6,
+   "k": "pop"
+  },
+  {
+   "t": 24.4,
+   "k": "printer",
+   "d": 2.6,
+   "g": 0.8
+  },
+  {
+   "t": 27.1,
+   "k": "stamp",
+   "g": 0.9
+  },
+  {
+   "t": 27.1,
+   "k": "ding",
+   "g": 0.5
+  },
+  {
+   "t": 27.7,
+   "k": "whoosh",
+   "d": 0.5,
+   "g": 0.8
+  },
+  {
+   "t": 28.2,
+   "k": "pop"
+  },
+  {
+   "t": 28.0,
+   "k": "hit",
+   "g": 0.5
+  },
+  {
+   "t": 30.65,
+   "k": "whoosh",
+   "d": 0.4,
+   "g": 0.5
+  },
+  {
+   "t": 30.9,
+   "k": "pop"
+  },
+  {
+   "t": 33.15,
+   "k": "whoosh",
+   "d": 0.4,
+   "g": 0.5
+  },
+  {
+   "t": 33.4,
+   "k": "pop"
+  },
+  {
+   "t": 35.6,
+   "k": "whoosh",
+   "d": 0.45,
+   "g": 0.8
+  },
+  {
+   "t": 36.2,
+   "k": "impact",
+   "g": 0.8
+  },
+  {
+   "t": 37.2,
+   "k": "impact",
+   "g": 0.85
+  },
+  {
+   "t": 38.2,
+   "k": "impact",
+   "g": 0.9
+  },
+  {
+   "t": 39.55,
+   "k": "riser",
+   "d": 0.5,
+   "g": 0.6
+  },
+  {
+   "t": 39.6,
+   "k": "whoosh",
+   "d": 0.4,
+   "g": 0.9
+  },
+  {
+   "t": 40.0,
+   "k": "boom",
+   "g": 0.8
+  },
+  {
+   "t": 40.0,
+   "k": "shimmer",
+   "g": 0.6
+  },
+  {
+   "t": 42.9,
+   "k": "pop"
+  },
+  {
+   "t": 44.2,
+   "k": "pop"
+  },
+  {
+   "t": 46.6,
+   "k": "riser",
+   "d": 0.8,
+   "g": 0.6
+  },
+  {
+   "t": 47.1,
+   "k": "stinger",
+   "g": 1.0
+  }
+ ],
+ "layers": [
+  {
+   "from": 0,
+   "to": 4,
+   "kick": 0.35,
+   "pad": 0.5,
+   "hat": 0,
+   "clap": 0,
+   "bass": 0,
+   "arp": 0
+  },
+  {
+   "from": 4,
+   "to": 8,
+   "kick": 0.6,
+   "pad": 0.7,
+   "hat": 0.6,
+   "clap": 0,
+   "bass": 0,
+   "arp": 0.5
+  },
+  {
+   "from": 8,
+   "to": 36,
+   "kick": 1.0,
+   "pad": 0.8,
+   "hat": 1.0,
+   "clap": 1.0,
+   "bass": 1.0,
+   "arp": 1.0
+  },
+  {
+   "from": 36,
+   "to": 40,
+   "kick": 1.0,
+   "pad": 0.5,
+   "hat": 0.8,
+   "clap": 0.0,
+   "bass": 1.0,
+   "arp": 0.0
+  },
+  {
+   "from": 40,
+   "to": 47,
+   "kick": 1.0,
+   "pad": 0.9,
+   "hat": 1.0,
+   "clap": 1.0,
+   "bass": 1.0,
+   "arp": 1.0
+  }
+ ]
+}
