@@ -109,6 +109,14 @@ async function loadPlan() {
     document.getElementById('payMonthly').onclick = () => payPlan('monthly');
     document.getElementById('payYearly').onclick = () => payPlan('yearly');
     card.style.display = 'block';
+    const bar = document.getElementById('planBar');
+    const soon = b.state === 'trial' || b.state === 'active' ? b.daysLeft <= 5 : true;
+    bar.className = 'planbar' + (b.state === 'expired' ? ' bad' : '');
+    bar.textContent = b.state === 'expired' ? 'Your plan has ended, so new customer orders are paused. Tap to renew.' :
+      b.state === 'grace' ? 'Your plan has ended. Tap to renew so customer orders do not stop.' :
+      `Your ${b.state === 'trial' ? 'trial' : 'plan'} ends in ${b.daysLeft} day${b.daysLeft === 1 ? '' : 's'}. Tap to renew.`;
+    bar.style.display = soon ? 'block' : 'none';
+    bar.onclick = () => document.querySelector('#viewTabs [data-view=settings]').click();
   } catch { /* plan card is optional */ }
 }
 async function payPlan(term) {
@@ -357,3 +365,12 @@ function clearError() {
 }
 
 
+
+// Orders / Plan & settings tabs
+document.getElementById('viewTabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-view]'); if (!b) return;
+  document.querySelectorAll('#viewTabs button').forEach(x => x.classList.toggle('on', x === b));
+  const settings = b.dataset.view === 'settings';
+  document.getElementById('viewOrders').style.display = settings ? 'none' : 'flex';
+  document.getElementById('viewSettings').style.display = settings ? 'block' : 'none';
+});

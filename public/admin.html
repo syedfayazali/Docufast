@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/console.css">
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>.sin{display:block;width:100%;margin-top:3px;padding:8px 10px;border:1px solid var(--rule);border-radius:8px;font-size:13px;box-sizing:border-box;}</style>
+<style>.sin[type=date]{width:auto;display:inline-block}.planbar{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:#FFF4D6;color:#6B4A00;font-size:13px;font-weight:600;cursor:pointer;flex:0 0 auto}.planbar.bad{background:#FDE8E4;color:#8A2A1B}.tabs{display:flex;gap:6px;margin-top:12px;flex:0 0 auto;}.tabs button{border:1px solid var(--rule);background:#fff;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--slate);cursor:pointer;}.tabs button.on{background:var(--navy);border-color:var(--navy);color:#fff;}</style>
 </head>
 <body>
 
@@ -40,7 +41,72 @@
       <span style="display:flex;gap:8px;align-items:center;"><button class="link-btn" type="button" onclick="location.reload()">Switch shop</button><span class="printer-badge" id="printerBadge"><i></i><span>Printer</span></span><span class="badge" id="shopBadge">Active</span></span>
     </div>
 
-    <details class="card" id="shopLinkCard" style="display:none; padding:0;"><summary style="cursor:pointer;padding:12px 18px;font-size:13px;font-weight:600;color:var(--navy-deep);">Your customer link &amp; QR code</summary><div style="padding:0 20px 18px;">
+    <div class="tabs" id="viewTabs">
+      <button type="button" class="on" data-view="orders">Orders</button>
+      <button type="button" data-view="settings">Plan &amp; settings</button>
+    </div>
+
+    <div class="planbar" id="planBar" role="button" tabindex="0"></div>
+
+    <div id="viewOrders">
+    <div class="newjob-banner" id="newBanner"><i class="ic" data-ic="bell"></i> New paid order!</div>
+
+    <div class="today-row">
+      <div class="kpi"><div class="num" id="kpiJobs">0</div><div class="lbl">Orders today</div></div>
+      <div class="kpi"><div class="num" id="kpiPages">0</div><div class="lbl">Pages printed today</div></div>
+      <div class="kpi"><div class="num" id="kpiRevenue">₹0</div><div class="lbl">Collected today</div></div>
+      <div class="kpi"><div class="num" id="kpiPending">0</div><div class="lbl">Waiting to print</div></div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+      <button class="snd-btn" id="soundBtn" type="button"><i class="ic" data-ic="bell"></i> Sound on</button>
+    </div>
+
+    <div class="board">
+      <div class="col"><h4><span>To print</span><b id="cntQueue">0</b></h4><div id="colQueue"></div></div>
+      <div class="col"><h4><span>Needs attention</span><b id="cntFailed">0</b></h4><div id="colFailed"></div></div>
+      <div class="col"><h4><span>Printed</span><b id="cntPrinted">0</b></h4><div id="colPrinted"></div></div>
+    </div>
+
+    <p class="shop-note">
+      Updates live as orders arrive.
+      <a class="nav-link" href="/" style="margin-left:8px;">Customer upload page</a>
+    </p>
+    </div>
+
+    <div id="viewSettings" style="display:none;">
+    <div class="card" id="planCard" style="display:none;padding:14px 18px;margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div><div style="font-weight:700;color:var(--navy-deep);" id="planTitle"></div><div style="font-size:13px;color:var(--slate);margin-top:2px;" id="planInfo"></div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="planPick" style="padding:8px 10px;border:1px solid var(--rule);border-radius:8px;font-size:13px;"></select>
+          <button class="retry-btn" id="payMonthly" type="button"></button>
+          <button class="retry-btn" id="payYearly" type="button"></button>
+        </div>
+      </div>
+      <div class="msg" id="planMsg" style="font-size:12px;margin-top:8px;"></div>
+    </div>
+
+    <div class="card" id="settingsCard" style="padding:0;margin-top:12px;"><div style="padding:14px 20px 0;font-size:14px;font-weight:700;color:var(--navy-deep);">Shop settings</div>
+      <div style="padding:4px 20px 18px;">
+        <div style="font-size:13px;font-weight:600;margin:6px 0;">Your prices (₹ per page)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+          <label style="font-size:12px;color:var(--slate);">Black &amp; white<input id="sBw" inputmode="decimal" class="sin"></label>
+          <label style="font-size:12px;color:var(--slate);">Colour<input id="sColor" inputmode="decimal" class="sin"></label>
+          <label style="font-size:12px;color:var(--slate);">B&amp;W double-sided<input id="sDuplexBw" inputmode="decimal" class="sin" placeholder="same"></label>
+          <label style="font-size:12px;color:var(--slate);">Colour double-sided<input id="sDuplexColor" inputmode="decimal" class="sin" placeholder="same"></label>
+        </div>
+        <button class="retry-btn" id="savePrices" type="button" style="margin-top:10px;">Save prices</button>
+        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Keep printed files for reprint</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="sRetention" inputmode="numeric" class="sin" style="max-width:110px;" placeholder="30"> <span style="font-size:12px;color:var(--slate);">minutes (5 to 1440), then the file is deleted</span> <button class="retry-btn" id="saveRetention" type="button">Save</button></div>
+        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Change your staff PIN</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="sNewPin" type="password" inputmode="numeric" maxlength="6" class="sin" style="max-width:130px;" placeholder="New 6-digit PIN"> <button class="retry-btn" id="savePin" type="button">Change PIN</button></div>
+        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Download your orders (Excel / CSV)</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="expFrom" type="date" class="sin"> <input id="expTo" type="date" class="sin"> <button class="retry-btn" id="expBtn" type="button">Download</button></div>
+        <div class="msg" id="setMsg" style="font-size:12px;margin-top:10px;"></div>
+      </div></div>
+
+    <details class="card" id="shopLinkCard" style="display:none; padding:0;margin-top:12px;" open><summary style="cursor:pointer;padding:12px 18px;font-size:13px;font-weight:600;color:var(--navy-deep);">Your customer link &amp; QR code</summary><div style="padding:0 20px 18px;">
       <div style="font-size:13px;color:var(--navy-deep);font-weight:600;margin-bottom:12px;">
         Your customer link &amp; QR code <span style="font-weight:400;color:var(--slate);">— unique to your shop</span>
       </div>
@@ -67,60 +133,7 @@
       </div>
     </div></details>
 
-    <div class="card" id="planCard" style="display:none;padding:14px 18px;margin-top:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div><div style="font-weight:700;color:var(--navy-deep);" id="planTitle"></div><div style="font-size:13px;color:var(--slate);margin-top:2px;" id="planInfo"></div></div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <select id="planPick" style="padding:8px 10px;border:1px solid var(--rule);border-radius:8px;font-size:13px;"></select>
-          <button class="retry-btn" id="payMonthly" type="button"></button>
-          <button class="retry-btn" id="payYearly" type="button"></button>
-        </div>
-      </div>
-      <div class="msg" id="planMsg" style="font-size:12px;margin-top:8px;"></div>
     </div>
-
-    <details class="card" id="settingsCard" style="padding:0;margin-top:12px;"><summary style="cursor:pointer;padding:12px 18px;font-size:13px;font-weight:600;color:var(--navy-deep);">Shop settings &mdash; prices, reprint time, PIN, orders export</summary>
-      <div style="padding:4px 20px 18px;">
-        <div style="font-size:13px;font-weight:600;margin:6px 0;">Your prices (₹ per page)</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
-          <label style="font-size:12px;color:var(--slate);">Black &amp; white<input id="sBw" inputmode="decimal" class="sin"></label>
-          <label style="font-size:12px;color:var(--slate);">Colour<input id="sColor" inputmode="decimal" class="sin"></label>
-          <label style="font-size:12px;color:var(--slate);">B&amp;W double-sided<input id="sDuplexBw" inputmode="decimal" class="sin" placeholder="same"></label>
-          <label style="font-size:12px;color:var(--slate);">Colour double-sided<input id="sDuplexColor" inputmode="decimal" class="sin" placeholder="same"></label>
-        </div>
-        <button class="retry-btn" id="savePrices" type="button" style="margin-top:10px;">Save prices</button>
-        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Keep printed files for reprint</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="sRetention" inputmode="numeric" class="sin" style="max-width:110px;" placeholder="30"> <span style="font-size:12px;color:var(--slate);">minutes (5 to 1440), then the file is deleted</span> <button class="retry-btn" id="saveRetention" type="button">Save</button></div>
-        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Change your staff PIN</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="sNewPin" type="password" inputmode="numeric" maxlength="6" class="sin" style="max-width:130px;" placeholder="New 6-digit PIN"> <button class="retry-btn" id="savePin" type="button">Change PIN</button></div>
-        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Download your orders (Excel / CSV)</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="expFrom" type="date" class="sin"> <input id="expTo" type="date" class="sin"> <button class="retry-btn" id="expBtn" type="button">Download</button></div>
-        <div class="msg" id="setMsg" style="font-size:12px;margin-top:10px;"></div>
-      </div></details>
-
-    <div class="newjob-banner" id="newBanner"><i class="ic" data-ic="bell"></i> New paid order!</div>
-
-    <div class="today-row">
-      <div class="kpi"><div class="num" id="kpiJobs">0</div><div class="lbl">Orders today</div></div>
-      <div class="kpi"><div class="num" id="kpiPages">0</div><div class="lbl">Pages printed today</div></div>
-      <div class="kpi"><div class="num" id="kpiRevenue">₹0</div><div class="lbl">Collected today</div></div>
-      <div class="kpi"><div class="num" id="kpiPending">0</div><div class="lbl">Waiting to print</div></div>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-      <button class="snd-btn" id="soundBtn" type="button"><i class="ic" data-ic="bell"></i> Sound on</button>
-    </div>
-
-    <div class="board">
-      <div class="col"><h4><span>To print</span><b id="cntQueue">0</b></h4><div id="colQueue"></div></div>
-      <div class="col"><h4><span>Needs attention</span><b id="cntFailed">0</b></h4><div id="colFailed"></div></div>
-      <div class="col"><h4><span>Printed</span><b id="cntPrinted">0</b></h4><div id="colPrinted"></div></div>
-    </div>
-
-    <p class="shop-note">
-      Updates live as orders arrive.
-      <a class="nav-link" href="/" style="margin-left:8px;">Customer upload page</a>
-    </p>
   </div>
 </div>
 
