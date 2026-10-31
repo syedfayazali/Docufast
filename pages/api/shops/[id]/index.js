@@ -1,4 +1,4 @@
-import { isOwner, isLegacyAgentKey } from '@/lib/auth';
+import { isOwner, pinProblem } from '@/lib/auth';
 import { toggleShop, resetShopMachine, rotateShopKey, setStaffPin, setShopPrices, setShopRetention } from '@/lib/db';
 import { validatePrices } from '@/lib/pricing';
 
@@ -28,10 +28,8 @@ export default async function handler(req, res) {
     let chosen;
     if (staffPin !== undefined && staffPin !== '') {
       chosen = String(staffPin).trim();
-      if (!/^\d{6}$/.test(chosen)) return res.status(400).json({ error: 'PIN must be exactly 6 digits' });
-      if (/^(\d)\1{5}$/.test(chosen) || '0123456789012345'.includes(chosen) || '9876543210987654'.includes(chosen)) {
-        return res.status(400).json({ error: 'Too easy to guess. Avoid 123456 or 111111.' });
-      }
+      const bad = pinProblem(chosen);
+      if (bad) return res.status(400).json({ error: bad });
     }
     const r = await setStaffPin(id, chosen);
     if (!r) return res.status(404).json({ error: 'Shop not found' });

@@ -16,14 +16,15 @@
     plansEl.innerHTML = d.plans.map(function (p) {
       return '<div class="plan' + (p.featured ? ' featured' : '') + '">' + (p.featured ? '<span class="tag">Most popular</span>' : '') +
         '<h3>' + esc(p.name) + '</h3><p class="bl">' + esc(p.blurb) + '</p>' +
-        '<div class="price">₹' + p.price.toLocaleString('en-IN') + ' <small>/ month</small></div><ul>' +
+        '<div class="price">₹' + p.price.toLocaleString('en-IN') + ' <small>/ month</small></div>' +
+        '<p class="bl" style="margin:-4px 0 12px;"><b>or ₹' + p.yearly.toLocaleString('en-IN') + ' / year</b> — 2 months free</p><ul>' +
         p.features.map(function (f) { return '<li>' + CHECK + '<span>' + esc(f) + '</span></li>'; }).join('') +
         '</ul><a class="btn ' + (p.featured ? 'btn-navy' : 'btn-ghost') + '" href="#trial" data-pick="' + p.id + '">Start free trial</a></div>';
     }).join('');
     var want = new URLSearchParams(location.search).get('plan');
     pickEl.innerHTML = d.plans.map(function (p, i) {
       var on = want ? want === p.id : !!p.featured || (i === 0 && !d.plans.some(function (x) { return x.featured; }));
-      return '<label><input type="radio" name="plan" value="' + p.id + '"' + (on ? ' checked' : '') + '><span>' + esc(p.name) + '<small>₹' + p.price.toLocaleString('en-IN') + ' / month</small></span></label>';
+      return '<label><input type="radio" name="plan" value="' + p.id + '"' + (on ? ' checked' : '') + '><span>' + esc(p.name) + '<small>₹' + p.price.toLocaleString('en-IN') + ' / month or ₹' + p.yearly.toLocaleString('en-IN') + ' / year</small></span></label>';
     }).join('');
     paint();
     if (d.whatsapp) { $('#waLink').href = 'https://wa.me/' + d.whatsapp; $('#waLine').hidden = false; }

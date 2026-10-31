@@ -32,7 +32,7 @@ async function loadDashboard() {
   }
 
   await refresh();
-  loadPlan();
+  loadPlan(); loadSettings();
 
   document.getElementById('loader').style.display = 'none';
   document.getElementById('content').style.display = 'block';
@@ -43,6 +43,45 @@ async function loadDashboard() {
   if (liveConn) liveConn.close();
   liveConn = window.DFPush.live(lastPush, () => refresh(), 10000);
 }
+
+// ---- Shop settings (this shop only) ----
+const $s = id => document.getElementById(id);
+const toR = p => (p === null || p === undefined ? '' : String(p / 100));
+const toP = id => { const v = $s(id).value.trim(); return v === '' ? null : Math.round(parseFloat(v) * 100); };
+async function setCall(body) {
+  const msg = $s('setMsg'); msg.style.color = '';
+  const res = await fetch('/api/admin/settings', { method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await res.json().catch(() => ({}));
+  msg.style.color = res.ok ? '#2E6B4F' : '#C0412B';
+  msg.textContent = res.ok ? 'Saved.' : (d.error || 'Could not save.');
+  return res.ok;
+}
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/admin/settings', { headers: authHeaders() }); if (!res.ok) return;
+    const d = await res.json();
+    $s('sBw').value = toR(d.prices.bw); $s('sColor').value = toR(d.prices.color);
+    $s('sDuplexBw').value = toR(d.prices.duplexBw); $s('sDuplexColor').value = toR(d.prices.duplexColor);
+    $s('sRetention').value = d.retentionMinutes ?? '';
+  } catch { /* optional */ }
+}
+$s('savePrices').onclick = () => {
+  const prices = { bw: toP('sBw'), color: toP('sColor'), duplexBw: toP('sDuplexBw'), duplexColor: toP('sDuplexColor') };
+  if (prices.bw === null || prices.color === null || Number.isNaN(prices.bw) || Number.isNaN(prices.color)) { $s('setMsg').style.color = '#C0412B'; $s('setMsg').textContent = 'Black & white and colour prices are required.'; return; }
+  setCall({ prices });
+};
+$s('saveRetention').onclick = () => setCall({ retentionMinutes: $s('sRetention').value.trim() === '' ? null : Number($s('sRetention').value) });
+$s('savePin').onclick = async () => {
+  const pin = $s('sNewPin').value.trim();
+  if (await setCall({ newPin: pin })) { pinInput.value = pin; $s('sNewPin').value = ''; $s('setMsg').textContent = 'PIN changed. Use the new PIN next time you sign in.'; }
+};
+$s('expBtn').onclick = async () => {
+  const q = new URLSearchParams(); if ($s('expFrom').value) q.set('from', $s('expFrom').value); if ($s('expTo').value) q.set('to', $s('expTo').value);
+  const res = await fetch('/api/admin/export?' + q, { headers: authHeaders() });
+  if (!res.ok) { $s('setMsg').style.color = '#C0412B'; $s('setMsg').textContent = 'Download failed.'; return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(await res.blob()); a.download = 'orders.csv';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+};
 
 // ---- Plan & renewal ----
 let planData = null;

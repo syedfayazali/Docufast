@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/console.css">
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>.sin{display:block;width:100%;margin-top:3px;padding:8px 10px;border:1px solid var(--rule);border-radius:8px;font-size:13px;box-sizing:border-box;}</style>
 </head>
 <body>
 
@@ -77,6 +78,25 @@
       </div>
       <div class="msg" id="planMsg" style="font-size:12px;margin-top:8px;"></div>
     </div>
+
+    <details class="card" id="settingsCard" style="padding:0;margin-top:12px;"><summary style="cursor:pointer;padding:12px 18px;font-size:13px;font-weight:600;color:var(--navy-deep);">Shop settings &mdash; prices, reprint time, PIN, orders export</summary>
+      <div style="padding:4px 20px 18px;">
+        <div style="font-size:13px;font-weight:600;margin:6px 0;">Your prices (₹ per page)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+          <label style="font-size:12px;color:var(--slate);">Black &amp; white<input id="sBw" inputmode="decimal" class="sin"></label>
+          <label style="font-size:12px;color:var(--slate);">Colour<input id="sColor" inputmode="decimal" class="sin"></label>
+          <label style="font-size:12px;color:var(--slate);">B&amp;W double-sided<input id="sDuplexBw" inputmode="decimal" class="sin" placeholder="same"></label>
+          <label style="font-size:12px;color:var(--slate);">Colour double-sided<input id="sDuplexColor" inputmode="decimal" class="sin" placeholder="same"></label>
+        </div>
+        <button class="retry-btn" id="savePrices" type="button" style="margin-top:10px;">Save prices</button>
+        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Keep printed files for reprint</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="sRetention" inputmode="numeric" class="sin" style="max-width:110px;" placeholder="30"> <span style="font-size:12px;color:var(--slate);">minutes (5 to 1440), then the file is deleted</span> <button class="retry-btn" id="saveRetention" type="button">Save</button></div>
+        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Change your staff PIN</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="sNewPin" type="password" inputmode="numeric" maxlength="6" class="sin" style="max-width:130px;" placeholder="New 6-digit PIN"> <button class="retry-btn" id="savePin" type="button">Change PIN</button></div>
+        <div style="font-size:13px;font-weight:600;margin:18px 0 6px;">Download your orders (Excel / CSV)</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="expFrom" type="date" class="sin"> <input id="expTo" type="date" class="sin"> <button class="retry-btn" id="expBtn" type="button">Download</button></div>
+        <div class="msg" id="setMsg" style="font-size:12px;margin-top:10px;"></div>
+      </div></details>
 
     <div class="newjob-banner" id="newBanner"><i class="ic" data-ic="bell"></i> New paid order!</div>
 
