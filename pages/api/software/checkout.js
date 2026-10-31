@@ -1,5 +1,6 @@
 import { createPlanSignup, rateLimit, clientIp } from '@/lib/db';
 import { createOrder, isConfigured } from '@/lib/razorpay';
+import { newSubscription } from '@/lib/billing';
 import { getPlan, planAmount, termMonths } from '@/lib/plans';
 
 const clean = (v, max) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
@@ -23,11 +24,21 @@ export default async function handler(req, res) {
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'That email address does not look right.' });
 
   const amountPaise = planAmount(plan, term) * 100;
+  const desc = `${plan.name} plan — ${term === 'yearly' ? 'every year' : 'every month'}`;
+  const prefill = { name: ownerName, contact: phone, email };
   try {
+    // Preferred: a real recurring subscription (UPI AutoPay / card mandate). The first
+    // charge happens now and the plan renews itself each period until cancelled.
+    let subId = null;
+    try { subId = await newSubscription(plan, term, { shop: shopName, phone }); }
+    catch (e) { console.error('subscription create failed, falling back to one-time payment:', e?.error?.description || e.message); }
+    if (subId) {
+      await createPlanSignup({ orderId: subId, shopName, ownerName, phone, email, city, plan: plan.id, months: termMonths(term), amountPaise });
+      return res.status(201).json({ autopay: true, razorpayKeyId: process.env.RAZORPAY_KEY_ID, razorpaySubscriptionId: subId, amount: amountPaise, description: desc, prefill });
+    }
     const { orderId } = await createOrder({ amountPaise, receipt: 'buy-' + Date.now().toString(36) });
     await createPlanSignup({ orderId, shopName, ownerName, phone, email, city, plan: plan.id, months: termMonths(term), amountPaise });
-    return res.status(201).json({ razorpayKeyId: process.env.RAZORPAY_KEY_ID, razorpayOrderId: orderId, amount: amountPaise,
-      description: `${plan.name} plan — ${term === 'yearly' ? '12 months' : '1 month'}`, prefill: { name: ownerName, contact: phone, email } });
+    return res.status(201).json({ autopay: false, razorpayKeyId: process.env.RAZORPAY_KEY_ID, razorpayOrderId: orderId, amount: amountPaise, description: desc, prefill });
   } catch (e) {
     console.error('buy checkout failed:', e.message);
     return res.status(502).json({ error: 'Payment setup failed. Please try again.' });

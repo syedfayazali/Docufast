@@ -38,7 +38,7 @@
     window.__dfTerm = function () { return term; };
     var plansData = d.plans;
     function chosenPlan() { var r = pickEl.querySelector('input:checked'); return plansData.find(function (p) { return r && p.id === r.value; }) || plansData[0]; }
-    function buyLabel() { var p = chosenPlan(); $('#buyBtn').textContent = 'Pay ₹' + (term === 'yearly' ? p.yearly : p.price).toLocaleString('en-IN') + (term === 'yearly' ? ' / year' : ' / month') + ' and create my shop'; }
+    function buyLabel() { var p = chosenPlan(); $('#buyBtn').textContent = 'Subscribe ₹' + (term === 'yearly' ? p.yearly : p.price).toLocaleString('en-IN') + (term === 'yearly' ? ' / year' : ' / month') + ' with AutoPay'; }
     function setTerm(t) {
       term = t;
       $$('#termTog button').forEach(function (x) { x.classList.toggle('on', x.dataset.term === t); });
@@ -92,7 +92,8 @@
         if (!window.Razorpay) { msg.textContent = 'The payment window could not load. Check your internet and try again.'; reset(); return; }
         var o = x.j;
         new window.Razorpay({
-          key: o.razorpayKeyId, amount: o.amount, currency: 'INR', name: 'DocuFast India', description: o.description, order_id: o.razorpayOrderId, prefill: o.prefill,
+          key: o.razorpayKeyId, name: 'DocuFast India', description: o.description, prefill: o.prefill,
+          ...(o.autopay ? { subscription_id: o.razorpaySubscriptionId } : { amount: o.amount, currency: 'INR', order_id: o.razorpayOrderId }),
           theme: { color: '#0B2160' },
           modal: { ondismiss: reset },
           handler: function (resp) {

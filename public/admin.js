@@ -104,12 +104,17 @@ async function loadPlan() {
     pick.innerHTML = planData.plans.map(p => `<option value="${p.id}"${p.id === b.plan ? ' selected' : ''}>${p.name}</option>`).join('');
     const paint = () => {
       const p = planData.plans.find(x => x.id === pick.value);
-      document.getElementById('payMonthly').textContent = `Pay ${rsn(p.monthly)} · 1 month`;
-      document.getElementById('payYearly').textContent = `Pay ${rsn(p.yearly)} · 12 months (2 free)`;
+      const auto = planData.auto.on;
+      pick.disabled = auto;
+      document.getElementById('payMonthly').textContent = auto ? `Auto-renew is ON (${planData.auto.term})` : `Subscribe ${rsn(p.monthly)} / month · AutoPay`;
+      document.getElementById('payYearly').textContent = auto ? 'Stop auto-renew' : `Subscribe ${rsn(p.yearly)} / year · AutoPay (2 free)`;
+      document.getElementById('payMonthly').disabled = auto;
+      document.getElementById('payOnce').style.display = auto ? 'none' : '';
     };
     pick.onchange = paint; paint();
     document.getElementById('payMonthly').onclick = () => payPlan('monthly');
-    document.getElementById('payYearly').onclick = () => payPlan('yearly');
+    document.getElementById('payYearly').onclick = () => planData.auto.on ? stopAuto() : payPlan('yearly');
+    document.getElementById('payOnce').onclick = () => payPlan(prompt('Pay once for: type "monthly" or "yearly"', 'monthly') === 'yearly' ? 'yearly' : 'monthly', 'once');
     card.style.display = 'block';
     const bar = document.getElementById('planBar');
     const soon = b.state === 'trial' || b.state === 'active' ? b.daysLeft <= 5 : true;
@@ -121,19 +126,28 @@ async function loadPlan() {
     bar.onclick = () => document.querySelector('#viewTabs [data-view=settings]').click();
   } catch { /* plan card is optional */ }
 }
-async function payPlan(term) {
+async function stopAuto() {
+  if (!confirm('Stop auto-renew? Your plan keeps working until its end date, then it pauses unless you renew.')) return;
+  const msg = document.getElementById('planMsg');
+  const res = await fetch('/api/admin/plan', { method: 'DELETE', headers: authHeaders() });
+  const d = await res.json().catch(() => ({}));
+  msg.textContent = res.ok ? 'Auto-renew stopped.' : (d.error || 'Could not stop auto-renew.');
+  loadPlan();
+}
+async function payPlan(term, mode) {
   const msg = document.getElementById('planMsg'); msg.textContent = '';
-  const res = await fetch('/api/admin/plan', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: document.getElementById('planPick').value, term }) });
+  const res = await fetch('/api/admin/plan', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: document.getElementById('planPick').value, term, mode: mode || 'auto' }) });
   const d = await res.json().catch(() => ({}));
   if (!res.ok) { msg.textContent = d.error || 'Could not start payment.'; return; }
   if (!window.Razorpay) { msg.textContent = 'Payment window could not load. Check your internet and try again.'; return; }
   new window.Razorpay({
-    key: d.razorpayKeyId, amount: d.amount, currency: 'INR', name: 'DocuFast India', description: d.description, order_id: d.razorpayOrderId,
+    key: d.razorpayKeyId, name: 'DocuFast India', description: d.description,
+    ...(d.autopay ? { subscription_id: d.razorpaySubscriptionId } : { amount: d.amount, currency: 'INR', order_id: d.razorpayOrderId }),
     handler: async response => {
       msg.textContent = 'Confirming payment…';
       const v = await fetch('/api/admin/plan-verify', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(response) });
       const vd = await v.json().catch(() => ({}));
-      msg.textContent = v.ok ? 'Thank you! Your plan is renewed.' : (vd.error || 'We received your payment but could not confirm it yet. It will show up shortly; contact us if not.');
+      msg.textContent = v.ok ? (d.autopay ? 'Thank you! Auto-renew is on.' : 'Thank you! Your plan is renewed.') : (vd.error || 'We received your payment but could not confirm it yet. It will show up shortly; contact us if not.');
       loadPlan();
     },
     theme: { color: '#0B2160' },

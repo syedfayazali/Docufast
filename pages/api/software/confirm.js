@@ -1,5 +1,5 @@
 import { completeSignup, takeSignupCredentials } from '@/lib/db';
-import { verifySignature } from '@/lib/razorpay';
+import { verifySignature, verifySubscriptionSignature } from '@/lib/razorpay';
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -7,8 +7,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 // via the webhook), and the login details are shown ONCE.
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
-  if (!verifySignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature })) {
+  const b = req.body || {};
+  const razorpay_payment_id = b.razorpay_payment_id, razorpay_signature = b.razorpay_signature;
+  const razorpay_order_id = b.razorpay_subscription_id || b.razorpay_order_id;   // a subscription id works the same way
+  const ok = b.razorpay_subscription_id
+    ? verifySubscriptionSignature({ razorpay_payment_id, razorpay_subscription_id: b.razorpay_subscription_id, razorpay_signature })
+    : verifySignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+  if (!ok) {
     return res.status(400).json({ error: 'Payment signature verification failed' });
   }
   try {

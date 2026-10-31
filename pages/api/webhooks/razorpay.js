@@ -22,7 +22,7 @@
 export const config = { api: { bodyParser: false } };
 
 import { verifyWebhookSignature } from '@/lib/razorpay';
-import { getJobByRazorpayOrder, markPaid, finalizePlanOrder, completeSignup } from '@/lib/db';
+import { getJobByRazorpayOrder, markPaid, finalizePlanOrder, completeSignup, applySubscriptionCharge, setSubscriptionStatus } from '@/lib/db';
 
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -49,6 +49,24 @@ export default async function handler(req, res) {
     event = JSON.parse(rawBody.toString('utf8'));
   } catch {
     return res.status(400).json({ error: 'Invalid JSON' });
+  }
+
+  // Recurring AutoPay: every successful charge extends the shop's plan by one period.
+  // The first charge of a brand-new subscription finds no shop yet, so it is handed to the signup / plan-order flow.
+  if (event.event === 'subscription.charged') {
+    const subId = event.payload?.subscription?.entity?.id;
+    const pay = event.payload?.payment?.entity;
+    if (subId && pay?.id) {
+      const r = await applySubscriptionCharge(subId, pay.id, pay.amount);
+      if (!r.found && !(await finalizePlanOrder(subId, pay.id)).found) await completeSignup(subId, pay.id);
+    }
+    return res.status(200).json({ ok: true });
+  }
+  const SUB_STATUS = { 'subscription.halted': 'halted', 'subscription.cancelled': 'cancelled', 'subscription.completed': 'completed', 'subscription.paused': 'paused', 'subscription.resumed': 'active' };
+  if (SUB_STATUS[event.event]) {
+    const subId = event.payload?.subscription?.entity?.id;
+    if (subId) await setSubscriptionStatus(subId, SUB_STATUS[event.event]);
+    return res.status(200).json({ ok: true });
   }
 
   // payment.captured is the one that matters — it fires once Razorpay has
