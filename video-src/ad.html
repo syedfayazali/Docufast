@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DocuFast ad</title>
+<style>
+@font-face{font-family:'NotoTe';font-weight:800;src:url(/fonts/noto-sans-telugu-telugu-800-normal.woff2)}
+@font-face{font-family:'NotoHi';font-weight:800;src:url(/fonts/noto-sans-devanagari-devanagari-800-normal.woff2)}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000;overflow:hidden}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:'Inter Display','Inter',system-ui,sans-serif;color:#fff;background:#0B1B3F}
+.abs{position:absolute;transform-origin:50% 50%;will-change:transform,opacity}
+.scene{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;display:none}
+#fx{position:absolute;inset:0;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.28) 100%);pointer-events:none}
+#grain{position:absolute;inset:-60px;opacity:.07;mix-blend-mode:overlay;pointer-events:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>")}
+.bub{background:#1f9d6b;color:#fff;padding:18px 26px;border-radius:26px 26px 26px 6px;font-size:34px;font-weight:600;white-space:nowrap;box-shadow:0 14px 30px rgba(0,0,0,.3)}
+.pdfc{background:#fff;color:#0b1b3f;width:180px;height:230px;border-radius:14px;padding:16px;box-shadow:0 14px 30px rgba(0,0,0,.3);font-weight:700;font-size:24px;position:relative}
+.pdfc b{display:block;background:#e5484d;color:#fff;border-radius:8px;padding:4px 10px;width:max-content;font-size:20px;margin-bottom:12px}
+.pdfc i{display:block;height:10px;background:#dfe3ec;border-radius:5px;margin:10px 0}
+.imgc{width:240px;height:170px;border-radius:14px;background:linear-gradient(135deg,#7dd3fc,#3b82f6 55%,#16a34a);box-shadow:0 14px 30px rgba(0,0,0,.3)}
+.big{font-weight:900;line-height:1;letter-spacing:-.03em;white-space:nowrap}
+.ph-t{font-size:30px;font-weight:800;color:#0b1b3f}
+.chip{display:inline-flex;align-items:center;gap:10px;border-radius:100px;padding:10px 22px;font-weight:700;font-size:26px}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-weight:700}
+.kpi{background:#f6f7f9;border:1px solid #e6e8ee;border-radius:14px;padding:14px 18px}
+.kpi small{display:block;font-size:17px;color:#5e6678;font-weight:600}.kpi b{display:block;font-size:40px;font-weight:800;color:#0b1b3f;margin-top:4px;font-variant-numeric:tabular-nums}
+.col{background:#eef0f5;border-radius:16px;padding:14px}
+.col h6{margin:0 4px 12px;font-size:18px;font-weight:700;color:#5e6678;display:flex;justify-content:space-between}
+.jc{background:#fff;border:2px solid #e6e8ee;border-radius:14px;padding:14px 18px}
+.jc .code{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:30px;color:#0b1b3f;letter-spacing:.04em}.jc .m{font-size:17px;color:#5e6678;margin-top:4px}
+</style></head>
+<body>
+<div id="stage">
+  <div id="scenes"></div>
+  <div id="vig"></div><div id="grain"></div>
+  <div id="fx"></div>
+</div>
+<script src="/qr.js"></script>
+<script src="/ad.js"></script>
+</body></html>
