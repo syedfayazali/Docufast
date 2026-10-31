@@ -22,7 +22,7 @@
 export const config = { api: { bodyParser: false } };
 
 import { verifyWebhookSignature } from '@/lib/razorpay';
-import { getJobByRazorpayOrder, markPaid, finalizePlanOrder } from '@/lib/db';
+import { getJobByRazorpayOrder, markPaid, finalizePlanOrder, completeSignup } from '@/lib/db';
 
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -71,6 +71,8 @@ export default async function handler(req, res) {
         await markPaid(job.code, paymentId);
       } else if ((await finalizePlanOrder(orderId, paymentId)).found) {
         // A shop's plan payment: the shop's end date has been moved forward.
+      } else if ((await completeSignup(orderId, paymentId)).found) {
+        // A new shop bought a plan from the landing page: the shop has been created.
       } else {
         // Not necessarily an error — could be a job created by a different
         // integration, or the DB write for createJob raced with this

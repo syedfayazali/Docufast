@@ -267,3 +267,9 @@ html{scroll-behavior:smooth;scroll-padding-top:76px;}
 .termtog button.on{background:var(--navy,#0B2160);color:#fff;}
 .termtog button i{font-style:normal;font-size:11px;font-weight:700;background:var(--gold,#FFB30F);color:var(--navy-deep,#0B1B3F);border-radius:99px;padding:2px 7px;margin-left:6px;}
 .termtog+.plans{margin-top:18px;}
+
+.cred{display:grid;gap:8px;margin:12px 0;text-align:left;}
+.cred div{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#F4F6FB;border-radius:10px;padding:10px 12px;font-size:13px;}
+.cred b{font-family:'JetBrains Mono',monospace;font-size:14px;word-break:break-all;}
+.cred button{border:1px solid var(--rule,#E2E6EE);background:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;flex:0 0 auto;}
+.cred-steps{text-align:left;font-size:13px;line-height:1.6;padding-left:18px;margin:10px 0;}

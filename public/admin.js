@@ -63,6 +63,7 @@ async function loadSettings() {
     $s('sBw').value = toR(d.prices.bw); $s('sColor').value = toR(d.prices.color);
     $s('sDuplexBw').value = toR(d.prices.duplexBw); $s('sDuplexColor').value = toR(d.prices.duplexColor);
     $s('sRetention').value = d.retentionMinutes ?? '';
+    $s('sKey').dataset.k = d.agentKey || '';
   } catch { /* optional */ }
 }
 $s('savePrices').onclick = () => {
@@ -70,6 +71,7 @@ $s('savePrices').onclick = () => {
   if (prices.bw === null || prices.color === null || Number.isNaN(prices.bw) || Number.isNaN(prices.color)) { $s('setMsg').style.color = '#C0412B'; $s('setMsg').textContent = 'Black & white and colour prices are required.'; return; }
   setCall({ prices });
 };
+$s('showKey').onclick = () => { const k = $s('sKey'); const hidden = !k.value; k.value = hidden ? (k.dataset.k || '') : ''; $s('showKey').textContent = hidden ? 'Hide' : 'Show'; };
 $s('saveRetention').onclick = () => setCall({ retentionMinutes: $s('sRetention').value.trim() === '' ? null : Number($s('sRetention').value) });
 $s('savePin').onclick = async () => {
   const pin = $s('sNewPin').value.trim();

@@ -11,6 +11,7 @@
 <link rel="icon" type="image/png" href="/brand-icon.png">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/software.css">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>document.documentElement.className += ' js';</script>
 </head>
 <body class="sw">
@@ -263,8 +264,8 @@
     </div>
     <div class="formcard">
       <form id="trialForm" novalidate>
-        <h3>Tell us about your shop</h3>
-        <p class="hint">Takes about a minute.</p>
+        <h3>Get your shop on DocuFast</h3>
+        <p class="hint">Pay online and your shop is ready in a minute, or ask for a free trial and we will call you.</p>
         <div class="hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
         <div class="frow">
           <div class="fld"><label for="shopName">Shop name</label><input id="shopName" name="shopName" required maxlength="80" autocomplete="organization"></div>
@@ -279,10 +280,26 @@
           <div class="fld"><label for="email">Email <i>(optional)</i></label><input id="email" name="email" type="email" maxlength="120" autocomplete="email"></div>
         </div>
         <div class="fld"><label>Plan</label><div class="planpick" id="planPick"></div></div>
+        <div class="fld"><label>Billing</label><div class="planpick" id="termPick"><label><input type="radio" name="termRadio" value="monthly" checked><span>Monthly<small>pay each month</small></span></label><label><input type="radio" name="termRadio" value="yearly"><span>Yearly<small>2 months free</small></span></label></div></div>
         <div class="fld"><label for="note">Anything we should know? <i>(optional)</i></label><textarea id="note" name="note" maxlength="400"></textarea></div>
         <p class="msg err" id="formMsg" role="alert"></p>
-        <button class="btn btn-gold" id="submitBtn" type="submit" style="width:100%;">Request free trial</button>
+        <button class="btn btn-gold" id="buyBtn" type="button" style="width:100%;">Pay and create my shop</button>
+        <button class="btn btn-ghost" id="submitBtn" type="submit" style="width:100%;margin-top:10px;">Or request a free trial (we call you)</button>
+        <p class="hint" style="margin-top:10px;">Secure payment by Razorpay. Your shop code, PIN and printer key are shown right after payment.</p>
       </form>
+      <div class="done" id="paidBox" hidden>
+        <i class="ic" data-ic="check"></i>
+        <h3>Payment received. Your shop is ready!</h3>
+        <p class="hint">Save these now. The PIN and key are shown only once.</p>
+        <div class="cred" id="credList"></div>
+        <ol class="cred-steps">
+          <li>Install the DocuFast Agent on your shop PC: <a id="agentLink" href="https://github.com/syedfayazali/Docufast-Desktop/releases/latest" target="_blank" rel="noopener">download here</a>, then paste the printer key.</li>
+          <li>Open your <a id="adminLink" href="https://print.docufastindia.com/admin.html" target="_blank" rel="noopener">shop dashboard</a> and sign in with your shop code and PIN.</li>
+          <li>Print your counter poster: <a id="posterLink" href="#" target="_blank" rel="noopener">open poster</a>.</li>
+        </ol>
+        <p><button class="btn btn-ghost" id="credSave" type="button">Download these details</button></p>
+        <p class="hint">Need help? We will call you on <b id="paidNum"></b> to help with setup.</p>
+      </div>
       <div class="done" id="doneBox" hidden>
         <i class="ic" data-ic="check"></i>
         <h3>Thank you, we have your request</h3>

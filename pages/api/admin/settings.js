@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const s = await getShopSettings(id);
-    return res.status(200).json({ prices: normalizePrices(s.prices), retentionMinutes: s.retention_minutes });
+    return res.status(200).json({ prices: normalizePrices(s.prices), retentionMinutes: s.retention_minutes, agentKey: auth.shop.api_key });
   }
   if (req.method === 'PATCH') {
     const { prices, retentionMinutes, newPin } = req.body || {};

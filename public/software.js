@@ -23,7 +23,7 @@
           '<div class="price">₹' + price.toLocaleString('en-IN') + ' <small>/ ' + (yearly ? 'year' : 'month') + '</small></div>' +
           '<p class="bl" style="margin:-4px 0 12px;">' + (yearly ? '<b>2 months free</b> — just ₹' + Math.round(p.yearly / 12).toLocaleString('en-IN') + ' a month' : 'or <b>₹' + p.yearly.toLocaleString('en-IN') + ' / year</b> — 2 months free') + '</p><ul>' +
           p.features.map(function (f) { return '<li>' + CHECK + '<span>' + esc(f) + '</span></li>'; }).join('') +
-          '</ul><a class="btn ' + (p.featured ? 'btn-navy' : 'btn-ghost') + '" href="#trial" data-pick="' + p.id + '">Start free trial</a></div>';
+          '</ul><a class="btn ' + (p.featured ? 'btn-navy' : 'btn-ghost') + '" href="#trial" data-pick="' + p.id + '">Choose ' + esc(p.name) + '</a></div>';
       }).join('');
       paint(plansEl);
     }
@@ -32,19 +32,32 @@
       var b = e.target.closest('[data-term]'); if (!b) return;
       term = b.dataset.term;
       $$('#termTog button').forEach(function (x) { x.classList.toggle('on', x === b); });
-      renderPlans();
+      $$('#termPick input').forEach(function (x) { x.checked = x.value === term; });
+      renderPlans(); window.__dfBuyLabel && window.__dfBuyLabel();
     });
     window.__dfTerm = function () { return term; };
+    var plansData = d.plans;
+    function chosenPlan() { var r = pickEl.querySelector('input:checked'); return plansData.find(function (p) { return r && p.id === r.value; }) || plansData[0]; }
+    function buyLabel() { var p = chosenPlan(); $('#buyBtn').textContent = 'Pay ₹' + (term === 'yearly' ? p.yearly : p.price).toLocaleString('en-IN') + (term === 'yearly' ? ' / year' : ' / month') + ' and create my shop'; }
+    function setTerm(t) {
+      term = t;
+      $$('#termTog button').forEach(function (x) { x.classList.toggle('on', x.dataset.term === t); });
+      $$('#termPick input').forEach(function (x) { x.checked = x.value === t; });
+      renderPlans(); buyLabel();
+    }
+    $('#termPick').addEventListener('change', function (e) { setTerm(e.target.value); });
+    pickEl.addEventListener('change', buyLabel);
+    window.__dfBuyLabel = buyLabel; window.__dfPlan = chosenPlan;
     var want = new URLSearchParams(location.search).get('plan');
     pickEl.innerHTML = d.plans.map(function (p, i) {
       var on = want ? want === p.id : !!p.featured || (i === 0 && !d.plans.some(function (x) { return x.featured; }));
       return '<label><input type="radio" name="plan" value="' + p.id + '"' + (on ? ' checked' : '') + '><span>' + esc(p.name) + '<small>₹' + p.price.toLocaleString('en-IN') + ' / month or ₹' + p.yearly.toLocaleString('en-IN') + ' / year</small></span></label>';
     }).join('');
-    paint();
+    window.__dfBuyLabel(); paint();
     if (d.whatsapp) { $('#waLink').href = 'https://wa.me/' + d.whatsapp; $('#waLine').hidden = false; }
     plansEl.addEventListener('click', function (e) {
       var a = e.target.closest('[data-pick]'); if (!a) return;
-      var r = pickEl.querySelector('input[value="' + a.dataset.pick + '"]'); if (r) r.checked = true;
+      var r = pickEl.querySelector('input[value="' + a.dataset.pick + '"]'); if (r) { r.checked = true; window.__dfBuyLabel(); }
     });
   }).catch(function () { plansEl.innerHTML = '<div class="plan"><p class="bl">Plans could not load. Please refresh, or send the form below and we will share the prices.</p></div>'; });
 
@@ -57,10 +70,60 @@
     fetch('/api/software/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (x) {
-        if (!x.ok) { msg.textContent = x.j.error || 'Something went wrong. Please try again.'; btn.disabled = false; btn.textContent = 'Request free trial'; return; }
+        if (!x.ok) { msg.textContent = x.j.error || 'Something went wrong. Please try again.'; btn.disabled = false; btn.textContent = 'Or request a free trial (we call you)'; return; }
         form.hidden = true; $('#doneNum').textContent = body.phone; $('#doneBox').hidden = false; paint($('#doneBox'));
       })
-      .catch(function () { msg.textContent = 'No connection. Please check your internet and try again.'; btn.disabled = false; btn.textContent = 'Request free trial'; });
+      .catch(function () { msg.textContent = 'No connection. Please check your internet and try again.'; btn.disabled = false; btn.textContent = 'Or request a free trial (we call you)'; });
+  });
+
+  /* ---------- buy a plan (Razorpay) ---------- */
+  var buyBtn = $('#buyBtn');
+  buyBtn.addEventListener('click', function () {
+    msg.textContent = '';
+    var f = new FormData(form), body = {};
+    f.forEach(function (v, k) { body[k] = v; });
+    body.term = window.__dfTerm ? window.__dfTerm() : 'monthly';
+    var label = buyBtn.textContent; buyBtn.disabled = true; buyBtn.textContent = 'Starting payment…';
+    function reset() { buyBtn.disabled = false; buyBtn.textContent = label; }
+    fetch('/api/software/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        if (!x.ok) { msg.textContent = x.j.error || 'Could not start the payment.'; reset(); return; }
+        if (!window.Razorpay) { msg.textContent = 'The payment window could not load. Check your internet and try again.'; reset(); return; }
+        var o = x.j;
+        new window.Razorpay({
+          key: o.razorpayKeyId, amount: o.amount, currency: 'INR', name: 'DocuFast India', description: o.description, order_id: o.razorpayOrderId, prefill: o.prefill,
+          theme: { color: '#0B2160' },
+          modal: { ondismiss: reset },
+          handler: function (resp) {
+            buyBtn.textContent = 'Setting up your shop…';
+            fetch('/api/software/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resp) })
+              .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+              .then(function (c) {
+                form.hidden = true; $('#paidNum').textContent = body.phone;
+                if (!c.ok || !c.j.shopCode) {
+                  $('#paidBox').querySelector('h3').textContent = 'Payment received';
+                  $('#credList').innerHTML = '<p>' + esc(c.j.error || 'Your shop is being set up. We will call you shortly with your login details.') + '</p>';
+                  $('#paidBox').hidden = false; return;
+                }
+                var base = 'https://print.docufastindia.com', rows = [['Shop code', c.j.shopCode], ['Staff PIN', c.j.pin], ['Printer key (for the PC app)', c.j.agentKey]];
+                $('#credList').innerHTML = rows.map(function (r) { return '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b><button type="button" data-copy="' + esc(r[1]) + '">Copy</button></div>'; }).join('');
+                $('#adminLink').href = base + '/admin.html'; $('#posterLink').href = base + '/signage.html?shop=' + encodeURIComponent(c.j.shopCode);
+                $('#credSave').onclick = function () {
+                  var t = 'DocuFast India\nShop: ' + c.j.shopName + '\n' + rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n') + '\nDashboard: ' + base + '/admin.html\nCustomer link: ' + base + '/?shop=' + c.j.shopCode + '\n';
+                  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain' })); a.download = 'docufast-login.txt'; document.body.appendChild(a); a.click(); a.remove();
+                };
+                $('#paidBox').hidden = false; paint($('#paidBox'));
+              })
+              .catch(function () { form.hidden = true; $('#credList').innerHTML = '<p>Payment received, but we lost the connection. Please keep this page open and contact us on WhatsApp; your shop is created.</p>'; $('#paidBox').hidden = false; });
+          },
+        }).open();
+      })
+      .catch(function () { msg.textContent = 'No connection. Please check your internet and try again.'; reset(); });
+  });
+  $('#paidBox').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-copy]'); if (!b) return;
+    if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy).then(function () { b.textContent = 'Copied'; });
   });
 
   /* ---------- demo video ---------- */
