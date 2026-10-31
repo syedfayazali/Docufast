@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>DocuFast ad</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1280px;height:720px;overflow:hidden;background:#000;font-family:'Inter','Inter Display',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+:root{--navy:#0B2559;--deep:#0B1B3F;--ink:#070F26;--gold:#FFA800;--gold2:#FFC247;--ok:#19B35A;--red:#FF4D4D;--slate:#9FB0D6}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:var(--deep)}
+#cam{position:absolute;inset:0;transform-origin:50% 50%}
+.abs{position:absolute}.fill{left:0;top:0;width:1280px;height:720px}
+.sc{position:absolute;left:0;top:0;width:1280px;height:720px;display:none;overflow:hidden}
+.big{position:absolute;left:0;width:1280px;text-align:center;font-weight:900;letter-spacing:-.04em;line-height:.92;color:#fff;white-space:nowrap}
+.mid{position:absolute;font-weight:800;letter-spacing:-.03em;color:#fff;line-height:1}
+.g{color:var(--gold)}
+.card{position:absolute;background:#fff;border-radius:26px;box-shadow:0 30px 70px rgba(0,0,0,.35)}
+.ic{display:inline-block}
+/* overlays */
+#grain{position:absolute;inset:-40px;opacity:.09;mix-blend-mode:overlay;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%);pointer-events:none}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#wipeG,#wipeN{position:absolute;top:-40px;left:-300px;height:800px;width:1900px;pointer-events:none;transform:translateX(-2200px) skewX(-14deg);opacity:0}
+#wipeG{background:linear-gradient(90deg,#FFB21F,#FFA800)}#wipeN{background:#0B2559}
+/* person / usb / bubble */
+.per{position:absolute;width:64px;height:130px}
+.per i{position:absolute;left:14px;top:0;width:36px;height:36px;border-radius:50%;background:#8FA0C4}
+.per b{position:absolute;left:4px;top:42px;width:56px;height:88px;border-radius:26px 26px 10px 10px;background:#6F82AE}
+.usb{position:absolute;width:150px;height:56px;border-radius:12px;background:linear-gradient(180deg,#E6ECF8,#A9B6D2)}
+.usb::before{content:'';position:absolute;right:-44px;top:10px;width:48px;height:36px;border-radius:5px;background:linear-gradient(180deg,#FFD36B,#E39600)}
+.usb::after{content:'';position:absolute;left:14px;top:20px;width:16px;height:16px;border-radius:50%;background:#59678C}
+.bub{position:absolute;height:74px;padding:0 26px 0 22px;border-radius:22px;background:#1FAF5B;color:#fff;font-weight:700;font-size:26px;display:flex;align-items:center;gap:14px;box-shadow:0 14px 30px rgba(0,0,0,.35);white-space:nowrap}
+.bub em{font-style:normal;background:rgba(255,255,255,.22);border-radius:10px;padding:6px 12px;font-size:20px}
+/* phone */
+#phone{position:absolute;left:0;top:0;width:330px;height:650px;border-radius:50px;background:#0A1230;padding:12px;box-shadow:0 40px 90px rgba(0,0,0,.5),0 0 0 2px #2B3A70 inset}
+#screen{position:relative;width:100%;height:100%;border-radius:40px;background:#F6F7F9;overflow:hidden}
+.pan{position:absolute;inset:0}
+.chip{display:inline-flex;align-items:center;gap:8px;border-radius:100px;padding:8px 16px;font-weight:700;font-size:15px}
+.btn{display:flex;align-items:center;justify-content:center;border-radius:14px;font-weight:800;font-size:19px;height:56px}
+.ui-t{position:absolute;font-weight:800;color:#0B1B3F}
+.pill{position:absolute;border-radius:14px;border:2px solid #D5D9E4;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#0B1B3F}
+.board{background:#EEF0F5;border-radius:14px}
+.job{position:absolute;background:#fff;border:1px solid #E6E8EE;border-radius:12px}
+.job b{display:block;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:20px;color:#0B2559;letter-spacing:.05em}
+</style></head>
+<body>
+<div id="stage">
+ <div id="cam">
+  <!-- ============ S0 HOOK ============ -->
+  <div class="sc" id="s0">
+   <div class="abs fill" id="s0bg" style="background:radial-gradient(circle at 50% 40%,#2B0F18 0%,#0A0F1E 65%)"></div>
+   <div class="abs fill" id="s0calm" style="background:radial-gradient(circle at 50% 45%,#16357A 0%,#0B2559 45%,#0B1B3F 100%);clip-path:circle(0px at 640px 360px)"></div>
+   <div class="abs" id="s0q"></div><div class="abs" id="s0p"></div><div class="abs" id="s0w"></div>
+   <div class="big" id="s0t1" style="top:240px;font-size:210px">QUEUES.</div>
+   <div class="big" id="s0t2" style="top:230px;font-size:190px">PEN DRIVES.</div>
+   <div class="big" id="s0t3" style="top:196px;font-size:168px">FILES ON<br><span class="g">WHATSAPP.</span></div>
+   <div class="abs" id="s0badge" style="left:880px;top:96px;width:130px;height:130px;border-radius:50%;background:var(--red);color:#fff;font-weight:900;font-size:50px;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 40px rgba(255,77,77,.5)">99+</div>
+   <div class="big" id="s0b1" style="top:236px;font-size:104px;color:#fff">THERE’S A <span class="g">BETTER</span> WAY</div>
+   <div class="big" id="s0b2" style="top:392px;font-size:54px;font-weight:700;letter-spacing:-.02em;color:#C9D6F5">to run a print shop.</div>
+   <div class="abs" id="s0line" style="left:490px;top:372px;width:300px;height:8px;border-radius:4px;background:var(--gold)"></div>
+  </div>
+  <!-- ============ S1 LOGO ============ -->
+  <div class="sc" id="s1" style="background:radial-gradient(circle at 50% 50%,#16357A 0%,#0B2559 40%,#070F26 100%)">
+   <div class="abs" id="s1rays" style="left:-320px;top:-640px;width:1920px;height:1920px;background:repeating-conic-gradient(from 0deg,rgba(255,168,0,.20) 0deg 7deg,rgba(255,168,0,0) 7deg 22deg);-webkit-mask-image:radial-gradient(circle,#000 0%,transparent 62%);mask-image:radial-gradient(circle,#000 0%,transparent 62%)"></div>
+   <div class="abs" id="s1glow" style="left:240px;top:60px;width:800px;height:600px;background:radial-gradient(ellipse,rgba(255,168,0,.45),rgba(255,168,0,0) 65%)"></div>
+   <div class="abs" id="s1parts"></div>
+   <div class="card" id="s1card" style="left:290px;top:190px;width:700px;height:210px;border-radius:34px;overflow:hidden">
+     <img src="brand.png" style="position:absolute;left:30px;top:16px;width:640px;height:auto">
+     <div id="s1shine" style="position:absolute;top:-40px;left:-200px;width:120px;height:300px;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.85),rgba(255,255,255,0));transform:skewX(-20deg)"></div>
+   </div>
+   <div class="mid" id="s1tag" style="left:0;width:1280px;text-align:center;top:452px;font-size:44px;font-weight:700;letter-spacing:-.01em;color:#fff">Documents Made Easy, <span class="g">Delivered To You</span></div>
+   <div class="abs" id="s1line" style="left:380px;top:520px;width:520px;height:6px;border-radius:3px;background:var(--gold);transform-origin:0 50%"></div>
+  </div>
+  <!-- ============ S2 CUSTOMER ============ -->
+  <div class="sc" id="s2" style="background:linear-gradient(135deg,#0B2559 0%,#0B1B3F 60%,#070F26 100%)">
+   <div class="abs" id="s2st" style="left:-200px;top:0;width:1700px;height:720px;background:repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 90px,rgba(255,255,255,0) 90px 220px)"></div>
+   <div class="abs" id="s2glow" style="left:620px;top:30px;width:700px;height:700px;background:radial-gradient(circle,rgba(255,168,0,.32),rgba(255,168,0,0) 62%)"></div>
+   <div class="mid" id="s2n" style="left:90px;top:130px;font-size:30px;color:var(--gold);letter-spacing:.14em;font-weight:800"></div>
+   <div class="big" id="s2w0" style="left:70px;width:640px;text-align:left;top:190px;font-size:150px">SCAN</div>
+   <div class="big" id="s2w1" style="left:70px;width:640px;text-align:left;top:190px;font-size:140px">UPLOAD</div>
+   <div class="big" id="s2w2" style="left:70px;width:640px;text-align:left;top:170px;font-size:118px;line-height:.95">SEE THE<br><span class="g">PRICE</span></div>
+   <div class="big" id="s2w3" style="left:70px;width:640px;text-align:left;top:170px;font-size:122px;line-height:.95">PAY<br><span class="g">BY UPI</span></div>
+   <div class="abs" id="s2dots" style="left:76px;top:560px"></div>
+   <div id="phone">
+    <div id="screen">
+      <div class="pan" id="p0" style="background:#0E1424">
+        <div class="abs" style="left:55px;top:150px;width:190px;height:190px;border-radius:22px;background:#fff;padding:12px"><img id="p0qr" src="qr.svg" style="width:100%;height:100%"></div>
+        <div class="abs" id="p0frame" style="left:38px;top:132px;width:224px;height:224px;border:5px solid var(--ok);border-radius:30px"></div>
+        <div class="abs" id="p0scan" style="left:46px;top:140px;width:208px;height:5px;border-radius:3px;background:var(--gold);box-shadow:0 0 18px var(--gold)"></div>
+        <div class="abs" style="left:0;top:400px;width:100%;text-align:center;color:#C9D6F5;font-weight:600;font-size:17px;line-height:1.35">Point the camera at<br>the QR on the counter</div>
+        <div class="abs" id="p0ok" style="left:70px;top:455px;width:160px;height:46px;border-radius:23px;background:var(--ok);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center">✓ DocuFast shop</div>
+      </div>
+      <div class="pan" id="p1">
+        <div class="ui-t" style="left:24px;top:30px;font-size:22px">Upload your file</div>
+        <div class="abs" style="left:24px;top:84px;width:270px;height:170px;border:3px dashed #B9C2D8;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#7C86A0;font-weight:700;font-size:17px" id="p1drop">Tap to choose a file</div>
+        <div class="job" id="p1file" style="left:24px;top:282px;width:270px;height:96px;padding:16px 18px"><b style="font-family:Inter;font-size:19px;letter-spacing:0">notes.pdf</b><span style="color:#5E6678;font-size:15px;font-weight:600">18 pages detected</span><div style="position:absolute;left:18px;right:18px;bottom:14px;height:7px;border-radius:4px;background:#E6E8EE"><div id="p1bar" style="height:100%;width:0;border-radius:4px;background:var(--ok)"></div></div></div>
+        <div class="abs" id="p1c" style="left:24px;top:420px;width:270px;font-size:14px;font-weight:600;color:#5E6678;display:flex;gap:10px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;background:var(--navy);color:#fff;display:inline-flex;align-items:center;justify-content:center">✓</span>I agree to the privacy note</div>
+      </div>
+      <div class="pan" id="p2">
+        <div class="ui-t" style="left:24px;top:30px;font-size:22px">Choose options</div>
+        <div class="pill" id="o0" style="left:24px;top:84px;width:128px;height:56px">B &amp; W</div>
+        <div class="pill" id="o1" style="left:166px;top:84px;width:128px;height:56px">Colour</div>
+        <div class="pill" id="o2" style="left:24px;top:156px;width:270px;height:56px;justify-content:space-between;padding:0 20px"><span>Copies</span><span><span id="o2m" style="opacity:.5">−</span>&nbsp;&nbsp;<b id="o2n">1</b>&nbsp;&nbsp;<span style="color:var(--navy)">+</span></span></div>
+        <div class="pill" id="o3" style="left:24px;top:228px;width:270px;height:56px;justify-content:space-between;padding:0 20px"><span>Double-sided</span><span id="o3t" style="width:44px;height:26px;border-radius:13px;background:#D5D9E4;position:relative"><i id="o3k" style="position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff"></i></span></div>
+        <div class="abs" style="left:0;right:0;bottom:0;height:140px;background:#fff;border-top:1px solid #E6E8EE;padding:22px 24px">
+          <div style="font-size:14px;font-weight:700;color:#5E6678">Total</div>
+          <div id="tot" style="font-size:46px;font-weight:900;letter-spacing:-.03em;color:#0B1B3F;font-variant-numeric:tabular-nums">₹0.00</div>
+        </div>
+      </div>
+      <div class="pan" id="p3" style="background:#fff">
+        <div class="ui-t" style="left:24px;top:30px;font-size:22px">Pay with UPI</div>
+        <div class="abs" style="left:24px;top:84px;width:270px;font-size:15px;font-weight:600;color:#5E6678">Amount to pay</div>
+        <div class="abs" style="left:24px;top:108px;width:270px;font-size:54px;font-weight:900;letter-spacing:-.03em;color:#0B1B3F">₹36.00</div>
+        <div class="pill" style="left:24px;top:200px;width:270px;height:60px;justify-content:flex-start;padding:0 18px;gap:12px"><span style="width:34px;height:34px;border-radius:10px;background:#EEF2FA;display:inline-flex;align-items:center;justify-content:center">₹</span>UPI · pay in your app</div>
+        <div class="btn" id="payb" style="position:absolute;left:24px;top:300px;width:270px;background:var(--navy);color:#fff">Pay ₹36.00</div>
+        <div class="abs" id="okov" style="inset:0;background:#fff">
+          <div class="abs" id="okc" style="left:105px;top:190px;width:120px;height:120px;border-radius:50%;background:var(--ok);display:flex;align-items:center;justify-content:center;color:#fff;font-size:70px;font-weight:900">✓</div>
+          <div class="abs" id="okr" style="left:105px;top:190px;width:120px;height:120px;border-radius:50%;border:4px solid var(--ok)"></div>
+          <div class="abs" id="okt" style="left:0;top:340px;width:100%;text-align:center;font-weight:900;font-size:24px;color:#0B1B3F">Payment successful</div>
+          <div class="abs" id="okt2" style="left:0;top:378px;width:100%;text-align:center;font-weight:600;font-size:16px;color:#5E6678">Order code <b style="font-family:'JetBrains Mono',monospace;color:#0B2559">K4M92X</b></div>
+        </div>
+      </div>
+    </div>
+   </div>
+  </div>
+  <!-- ============ S3 SHOP ============ -->
+  <div class="sc" id="s3" style="background:linear-gradient(160deg,#0B1B3F 0%,#0B2559 55%,#12306F 100%)">
+   <div class="abs" id="s3glow" style="left:-100px;top:200px;width:900px;height:700px;background:radial-gradient(circle,rgba(255,168,0,.22),rgba(255,168,0,0) 62%)"></div>
+   <div class="card" id="s3board" style="left:70px;top:70px;width:560px;height:360px;border-radius:22px;padding:18px">
+     <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px;color:#0B1B3F"><span>Shop dashboard</span><span class="chip" style="background:#E8F5EC;color:#15803D;padding:5px 12px;font-size:13px">● Printer online</span></div>
+     <div class="board abs" style="left:18px;top:62px;width:250px;height:280px"><div style="padding:12px 14px;font-weight:700;font-size:14px;color:#5E6678">To print</div>
+       <div class="job" id="s3job" style="left:12px;top:44px;width:226px;height:86px;padding:12px 14px;border:2px solid var(--gold)"><b>K4M92X</b><span style="font-size:13px;font-weight:600;color:#5E6678">notes.pdf · 18 pg · B&amp;W</span><span id="s3paid" style="position:absolute;right:10px;top:10px;font-size:12px;font-weight:800;color:#15803D;background:#E8F5EC;border-radius:8px;padding:3px 8px">PAID ₹36</span></div></div>
+     <div class="board abs" style="left:286px;top:62px;width:256px;height:280px"><div style="padding:12px 14px;font-weight:700;font-size:14px;color:#5E6678">Printed</div>
+       <div class="job" id="s3done" style="left:12px;top:44px;width:232px;height:60px;padding:10px 14px"><b>H2N58B</b><span style="font-size:12px;font-weight:600;color:#5E6678">form.pdf · 4 pg</span></div></div>
+   </div>
+   <div class="abs" id="s3bell" style="left:576px;top:36px;width:76px;height:76px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:38px;box-shadow:0 12px 30px rgba(255,168,0,.55)">🔔</div>
+   <!-- printer -->
+   <div class="abs" id="s3pr" style="left:690px;top:120px;width:520px;height:340px">
+     <div class="abs" style="left:40px;top:120px;width:440px;height:170px;border-radius:26px;background:linear-gradient(180deg,#F2F5FC,#C5CFE6);box-shadow:0 30px 60px rgba(0,0,0,.45)"></div>
+     <div class="abs" style="left:70px;top:150px;width:380px;height:20px;border-radius:10px;background:#0B1B3F"></div>
+     <div class="abs" id="s3led" style="left:420px;top:230px;width:16px;height:16px;border-radius:50%;background:#7C86A0"></div>
+     <div class="abs" style="left:64px;top:230px;width:150px;height:14px;border-radius:7px;background:#9AA8CC"></div>
+     <div class="abs" id="s3tray" style="left:90px;top:262px;width:340px;height:24px;border-radius:0 0 14px 14px;background:#8493BB"></div>
+     <div class="abs" id="s3sheets"></div>
+     <div class="abs" id="s3pg" style="left:230px;top:300px;width:260px;text-align:right;font-weight:900;font-size:40px;color:#fff;font-variant-numeric:tabular-nums"></div>
+   </div>
+   <div class="big" id="s3n0" style="top:496px;font-size:98px;left:0">NO FORWARDING.</div>
+   <div class="big" id="s3n1" style="top:496px;font-size:98px;left:0">NO PEN DRIVES.</div>
+   <div class="big" id="s3n2" style="top:496px;font-size:98px;left:0">NO WAITING.</div>
+   <div class="abs" id="s3strike" style="left:300px;top:545px;width:680px;height:10px;border-radius:5px;background:var(--red);transform-origin:0 50%"></div>
+   <div class="big" id="s3ok" style="top:520px;font-size:70px;color:var(--ok)">✓ JUST PRINTED.</div>
+  </div>
+  <!-- ============ S4 VALUE ============ -->
+  <div class="sc" id="s4" style="background:linear-gradient(135deg,#0B2559 0%,#0B1B3F 100%)">
+   <div class="abs" id="s4glow" style="left:240px;top:-100px;width:800px;height:900px;background:radial-gradient(circle,rgba(255,168,0,.25),rgba(255,168,0,0) 62%)"></div>
+   <div class="card" id="s4a" style="left:60px;top:150px;width:360px;height:420px;padding:30px">
+     <div style="font-size:70px">🏷️</div>
+     <div class="mid" style="color:#0B1B3F;font-size:50px;margin-top:10px;line-height:1">YOUR<br>PRICES</div>
+     <div style="margin-top:24px;display:flex;gap:10px"><span class="chip" style="background:#EEF2FA;color:#0B2559">B&amp;W ₹2</span><span class="chip" style="background:#FFF6E0;color:#B45309">Colour ₹8</span></div>
+     <div style="margin-top:14px;color:#5E6678;font-weight:600;font-size:17px">Set rates per shop.</div>
+   </div>
+   <div class="card" id="s4b" style="left:460px;top:150px;width:360px;height:420px;padding:30px">
+     <div style="font-size:70px">📊</div>
+     <div class="mid" style="color:#0B1B3F;font-size:50px;margin-top:10px;line-height:1">YOUR<br>REPORTS</div>
+     <div class="abs" id="s4bars" style="left:30px;top:262px;width:300px;height:100px"></div>
+     <div id="s4rev" style="position:absolute;left:30px;top:370px;font-size:30px;font-weight:900;color:#15803D;font-variant-numeric:tabular-nums">₹0 today</div>
+   </div>
+   <div class="card" id="s4c" style="left:860px;top:150px;width:360px;height:420px;padding:30px">
+     <div style="font-size:70px">⚡</div>
+     <div class="mid" style="color:#0B1B3F;font-size:50px;margin-top:10px;line-height:1">YOUR SHOP,<br><span style="color:#E39600">SMOOTHER</span></div>
+     <div id="s4ticks" style="margin-top:22px;font-weight:700;font-size:19px;color:#0B1B3F;line-height:1.9"></div>
+   </div>
+  </div>
+  <!-- ============ S5 PRIVACY ============ -->
+  <div class="sc" id="s5" style="background:radial-gradient(circle at 50% 45%,#16357A 0%,#0B1B3F 70%)">
+   <div class="abs" id="s5ring" style="left:340px;top:90px;width:600px;height:600px;border-radius:50%;border:3px solid rgba(255,168,0,.35)"></div>
+   <div class="abs" id="s5doc" style="left:540px;top:160px;width:200px;height:260px;border-radius:18px;background:#fff;box-shadow:0 24px 60px rgba(0,0,0,.4);padding:24px">
+     <div style="height:14px;width:70%;background:#D5D9E4;border-radius:7px"></div>
+     <div style="height:12px;width:100%;background:#E6E8EE;border-radius:6px;margin-top:18px"></div><div style="height:12px;width:90%;background:#E6E8EE;border-radius:6px;margin-top:12px"></div><div style="height:12px;width:80%;background:#E6E8EE;border-radius:6px;margin-top:12px"></div>
+     <div style="height:60px;width:60px;background:#EEF2FA;border-radius:12px;margin-top:22px"></div>
+   </div>
+   <div class="abs" id="s5parts"></div>
+   <svg class="abs" id="s5shield" viewBox="0 0 200 240" style="left:530px;top:130px;width:220px;height:264px"><path d="M100 8 L186 40 V110 C186 170 150 214 100 232 C50 214 14 170 14 110 V40 Z" fill="#0B2559" stroke="#FFA800" stroke-width="10" stroke-linejoin="round"/><path id="s5chk" d="M60 120 L90 150 L142 88" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="140" stroke-dashoffset="140"/></svg>
+   <div class="big" id="s5t1" style="top:470px;font-size:84px">FILES <span class="g">DELETED</span></div>
+   <div class="big" id="s5t2" style="top:560px;font-size:84px">AFTER PRINTING.</div>
+  </div>
+  <!-- ============ S6 CTA ============ -->
+  <div class="sc" id="s6" style="background:radial-gradient(circle at 50% 40%,#16357A 0%,#0B2559 45%,#070F26 100%)">
+   <div class="abs" id="s6rays" style="left:-320px;top:-640px;width:1920px;height:1920px;background:repeating-conic-gradient(from 0deg,rgba(255,168,0,.16) 0deg 7deg,rgba(255,168,0,0) 7deg 22deg);-webkit-mask-image:radial-gradient(circle,#000 0%,transparent 62%);mask-image:radial-gradient(circle,#000 0%,transparent 62%)"></div>
+   <div class="card" id="s6logo" style="left:80px;top:96px;width:440px;height:112px;border-radius:26px;overflow:hidden"><img src="brand.png" style="position:absolute;left:14px;top:8px;width:412px"></div>
+   <div class="big" id="s6a" style="left:80px;width:760px;text-align:left;top:250px;font-size:104px">TRY IT <span class="g">FREE</span></div>
+   <div class="big" id="s6b" style="left:80px;width:760px;text-align:left;top:360px;font-size:104px">FOR <span id="s6n">14</span> DAYS.</div>
+   <div class="abs" id="s6btn" style="left:80px;top:512px;width:430px;height:84px;border-radius:42px;background:var(--gold);color:#0B1B3F;font-weight:900;font-size:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 40px rgba(255,168,0,.45)">Start free trial →</div>
+   <div class="mid" id="s6url" style="left:80px;top:624px;font-size:34px;font-weight:700;color:#C9D6F5;letter-spacing:-.01em">software.docufastindia.com</div>
+   <div class="card" id="s6qr" style="left:900px;top:190px;width:300px;height:340px;padding:22px;border-radius:30px;text-align:center"><img src="qr.svg" style="width:256px;height:256px"><div style="font-weight:800;font-size:20px;color:#0B1B3F;margin-top:8px">Scan to start</div></div>
+   <div class="abs" id="s6parts"></div>
+  </div>
+ </div>
+ <div id="grain"></div><div id="vig"></div>
+ <div id="wipeG"></div><div id="wipeN"></div>
+ <div id="flash"></div>
+</div>
+<script>
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)), lerp=(a,b,u)=>a+(b-a)*u;
+const E={lin:x=>x,o2:x=>1-(1-x)*(1-x),o3:x=>1-Math.pow(1-x,3),o5:x=>1-Math.pow(1-x,5),i3:x=>x*x*x,io:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,
+ back:x=>{const c=2.1;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)},el:x=>x<=0?0:x>=1?1:Math.pow(2,-9*x)*Math.sin((x*10-.75)*(2*Math.PI/3))+1};
+const P=(t,a,d,f=E.o3)=>f(C((t-a)/d));
+const $=id=>document.getElementById(id);
+const rnd=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+const TR=(el,x=0,y=0,s=1,r=0,sx=1)=>{el.style.transform=`translate(${x}px,${y}px) rotate(${r}deg) scale(${s*sx},${s})`};
+const OP=(el,o)=>{el.style.opacity=C(o)};
+const DUR=(window.SCENE_DUR||[8,4,8,8,6,4,6]);
+const BEAT=.5;
+const beat=t=>{const b=(t%BEAT);return Math.exp(-b*9)};            // punch right after each beat
+// ---- shared overlays ----
+(function(){const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),d=x.createImageData(160,160);for(let i=0;i<d.data.length;i+=4){const v=rnd(i)*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}x.putImageData(d,0,0);$('grain').style.background=`url(${c.toDataURL()})`})();
+function glitch(el,amt){ el.style.textShadow=amt>0.5?`${-amt}px 0 rgba(255,60,60,.85),${amt}px 0 rgba(60,200,255,.85)`:'none'}
+// ---- builders ----
+const persons=[],usbs=[],bubs=[],sparks=[];
+(function build(){
+ for(let i=0;i<16;i++){const p=document.createElement('div');p.className='per';p.innerHTML='<i></i><b></b>';$('s0q').appendChild(p);persons.push(p)}
+ for(let i=0;i<9;i++){const u=document.createElement('div');u.className='usb';$('s0p').appendChild(u);usbs.push(u)}
+ const names=['Aadhaar.pdf','notes final.pdf','photo (3).jpg','form new.pdf','resume v2.docx','IMG_2041.jpg','scan 4.pdf','marks.pdf'];
+ for(let i=0;i<8;i++){const b=document.createElement('div');b.className='bub';b.innerHTML=`<em>FILE</em>${names[i]}`;$('s0w').appendChild(b);bubs.push(b)}
+ const mkParts=(id,n,cls)=>{const arr=[];for(let i=0;i<n;i++){const d=document.createElement('div');d.className='abs';d.style.cssText='width:12px;height:12px;border-radius:50%;background:var(--gold);left:640px;top:300px';$(id).appendChild(d);arr.push(d)}return arr};
+ window.PARTS1=mkParts('s1parts',46);window.PARTS5=mkParts('s5parts',60);window.PARTS6=mkParts('s6parts',40);
+ // reports bars
+ for(let i=0;i<7;i++){const b=document.createElement('div');b.style.cssText=`position:absolute;bottom:0;left:${i*44}px;width:32px;border-radius:8px 8px 0 0;background:linear-gradient(#FFB21F,#E39600)`;$('s4bars').appendChild(b)}
+ $('s4ticks').innerHTML='<div>✓ Live order board</div><div>✓ Auto printing</div><div>✓ UPI payments</div>';
+ $('s2dots').innerHTML=[0,1,2,3].map(i=>`<span id="dot${i}" style="display:inline-block;width:54px;height:8px;border-radius:4px;background:rgba(255,255,255,.22);margin-right:10px"></span>`).join('');
+ for(let i=0;i<10;i++){const s=document.createElement('div');s.className='abs';s.style.cssText='left:260px;top:292px;width:340px;height:200px;background:#fff;border-radius:6px;box-shadow:0 6px 14px rgba(0,0,0,.25)';s.innerHTML='<div style="margin:18px;height:10px;background:#D5D9E4;border-radius:5px;width:60%"></div><div style="margin:0 18px 10px;height:8px;background:#E6E8EE;border-radius:4px"></div><div style="margin:0 18px 10px;height:8px;background:#E6E8EE;border-radius:4px;width:85%"></div>';$('s3sheets').appendChild(s)}
+})();
+function burst(arr,t,t0,cx,cy,spread,life,seed){const u=(t-t0)/life;arr.forEach((d,i)=>{if(u<0||u>1){d.style.opacity=0;return}const a=rnd(i+seed)*Math.PI*2,v=(.35+rnd(i+seed+99))*spread;const e=E.o3(u);const x=cx+Math.cos(a)*v*e,y=cy+Math.sin(a)*v*e+u*u*60;const s=(1-u)*(.6+rnd(i+seed+7)*1.1);d.style.opacity=1-u*u;d.style.transform=`translate(${x-640}px,${y-300}px) scale(${s})`;d.style.background=rnd(i)<.3?'#fff':'#FFA800'})}
+// ---- scene renderers (t = seconds from scene start) ----
+const SC=[];
+// S0 HOOK
+SC[0]=(t,D)=>{
+ const shake=(a,t0,len)=>{const u=(t-t0)/len;return u>=0&&u<1?a*(1-u)*(rnd(Math.floor(t*60))-.5)*2:0};
+ let sx=0,sy=0;
+ const w=[.45,1.2,1.95]; // slam times for the three words
+ const chaos=t<3.2;
+ $('s0bg').style.display=chaos?'block':'none';
+ // phase A: each word slams; previous word's visuals stay behind it
+ const show=(el,t0,tEnd,base)=>{const u=t-t0;if(u<0||t>tEnd){el.style.display='none';return false}el.style.display='block';const s=lerp(1.9,1,E.o5(C(u/.14)))+(1-P(t,t0,.5,E.o3))*0;TR(el,0,0,s);OP(el,C(u/.06));glitch(el,u<.25?(1-u/.25)*14:0);return true};
+ show($('s0t1'),w[0],w[1]-.02);show($('s0t2'),w[1],w[2]-.02);show($('s0t3'),w[2],3.18);
+ if(t>=w[0]&&t<3.2){sx+=shake(14,w[0],.3);sx+=shake(14,w[1],.3);sx+=shake(16,w[2],.35);sy+=shake(10,w[1],.3)}
+ // queue people (word 1)
+ persons.forEach((p,i)=>{const t0=w[0]+i*.035;const u=t-t0;if(t<w[0]||t>w[1]||u<0){p.style.display='none';return}p.style.display='block';p.style.left=(60+i*82)+'px';p.style.top=(520-i*5)+'px';const s=lerp(0,1,E.back(C(u/.18)));TR(p,0,0,s*(1-i*.022));p.style.opacity=1});
+ // usbs (word 2)
+ usbs.forEach((x,i)=>{const t0=w[1]+i*.05;const u=t-t0;if(t<w[1]||t>w[2]||u<0){x.style.display='none';return}x.style.display='block';const lx=100+(i%3)*380+rnd(i)*60,ly=410+Math.floor(i/3)*100;const fall=E.o3(C(u/.28));x.style.left=lx+'px';x.style.top=lerp(-120,ly,fall)+'px';TR(x,0,0,1,(rnd(i+3)-.5)*60*(1-fall*.5))});
+ // bubbles (word 3)
+ bubs.forEach((b,i)=>{const t0=w[2]+i*.075;const u=t-t0;if(t<w[2]||t>3.18||u<0){b.style.display='none';return}b.style.display='block';const col=i%2;b.style.left=(70+col*640+(i>5?30:0))+'px';b.style.top=(480-Math.floor(i/2)*96+(i%2)*28)+'px';const s=E.back(C(u/.2));TR(b,0,0,s)});
+ $('s0badge').style.display=(t>=w[2]+.25&&t<3.18)?'flex':'none';
+ if(t>=w[2]+.25)TR($('s0badge'),0,0,1+.12*Math.sin(t*40),0);
+ // phase B: calm
+ const ca=P(t,3.2,.55,E.io);
+ $('s0calm').style.clipPath=`circle(${ca*1100}px at 640px 360px)`;
+ const hold=t>=3.18&&t<3.4;
+ const b1=t>=3.44?1:0;
+ $('s0b1').style.display=b1?'block':'none';$('s0b2').style.display=t>=5.0?'block':'none';$('s0line').style.display=t>=5.0?'block':'none';
+ const push=1+.07*P(t,3.4,4.5,E.lin);
+ if(b1){const u=t-3.44;TR($('s0b1'),0,lerp(40,0,E.o5(C(u/.45))),push*lerp(.92,1,E.o5(C(u/.45))));OP($('s0b1'),C(u/.25))}
+ if(t>=5.0){const u=t-5.0;TR($('s0b2'),0,lerp(34,0,E.o5(C(u/.45))),push);OP($('s0b2'),C(u/.3));$('s0line').style.transform=`scaleX(${E.o5(C((t-5.45)/.6))})`;$('s0line').style.transformOrigin='0 50%'}
+ // ending: zoom punch into next
+ const out=P(t,D-.45,.45,E.i3);
+ if(out>0){TR($('s0b1'),0,0,push*(1+out*.5));OP($('s0b1'),1-out);OP($('s0b2'),1-out)}
+ return {sx,sy,zoom:1,flashIn:0,flashOut:P(t,D-.12,.12,E.lin)};
+};
+// S1 LOGO
+SC[1]=(t,D)=>{
+ const hit=0;
+ const u=t-.0;
+ const s=lerp(1.9,1,E.el(C(u/.8)))*(1+.02*beat(t));
+ TR($('s1card'),0,0,s);OP($('s1card'),C(u/.05));
+ $('s1rays').style.transform=`rotate(${t*9}deg)`;OP($('s1rays'),P(t,0,.4)*.9);
+ OP($('s1glow'),.6+.4*beat(t));
+ $('s1shine').style.left=lerp(-200,820,E.io(C((t-.7)/.7)))+'px';
+ const tg=P(t,1.0,.5,E.o5);TR($('s1tag'),0,lerp(40,0,tg));OP($('s1tag'),tg);
+ const ln=P(t,.55,.7,E.o5);$('s1line').style.transform=`scaleX(${ln})`;
+ burst(PARTS1,t,.02,640,300,520,1.1,5);
+ const out=P(t,D-.3,.3,E.i3);
+ return {sx:0,sy:0,zoom:1+.03*P(t,0,D,E.lin),flashIn:1-P(t,0,.22,E.o3),flashOut:0,wipeOut:P(t,D-.28,.28,E.io)};
+};
+// S2 CUSTOMER
+SC[2]=(t,D)=>{
+ const steps=[.45,1.95,3.4,4.75];                     // word times
+ const k=steps.map((a,i)=>t>=a&&(i==3||t<steps[i+1])).findIndex(Boolean);
+ const ph=P(t,0,.7,E.back);
+ const rise=P(t,.05,.7,E.o5);
+ TR($('phone'),lerp(1280,830,rise),lerp(60,36,rise)+Math.sin(t*1.4)*6,1.0,lerp(14,-3,rise)+Math.sin(t*1.1)*1.0);
+ $('s2st').style.transform=`translateX(${-t*40}px)`;
+ for(let i=0;i<4;i++){const el=$('s2w'+i);const t0=steps[i];const u=t-t0;const on=(i==k)&&u>=0;el.style.display=on?'block':'none';if(on){TR(el,lerp(-80,0,E.o5(C(u/.28))),0,1+.05*beat(u));OP(el,C(u/.08));glitch(el,u<.2?(1-u/.2)*10:0)}}
+ $('s2n').textContent=k>=0?`STEP ${k+1} OF 4`:'';OP($('s2n'),k>=0?1:0);
+ for(let i=0;i<4;i++)$('dot'+i).style.background=i<=k?'#FFA800':'rgba(255,255,255,.22)';
+ // phone panels
+ const pans=[$('p0'),$('p1'),$('p2'),$('p3')];
+ pans.forEach((p,i)=>{const t0=i==0?-1:steps[i]-.05;const u=t-t0;p.style.display=(i==0||k>=i)?'block':'none';p.style.zIndex=i;TR(p,i==0?0:lerp(330,0,E.o5(C(u/.3))),0)});
+ // p0 scan
+ $('p0scan').style.top=(150+((t*1.2)%1)*180)+'px';
+ $('p0frame').style.borderColor=t>1.1?'#19B35A':'#fff';
+ OP($('p0ok'),P(t,1.2,.25));
+ // p1 upload
+ const up=P(t,steps[1]+.3,.7,E.o3);OP($('p1file'),P(t,steps[1]+.2,.2));TR($('p1file'),0,lerp(40,0,P(t,steps[1]+.2,.35,E.o5)));$('p1bar').style.width=(up*100)+'%';OP($('p1c'),P(t,steps[1]+.9,.2));
+ // p2 options + price count
+ const toggle=t>steps[2]+1.1;
+ $('o1').style.background=toggle?'#0B2559':'#fff';$('o1').style.color=toggle?'#fff':'#0B1B3F';$('o1').style.borderColor=toggle?'#0B2559':'#D5D9E4';
+ $('o0').style.borderColor=toggle?'#D5D9E4':'#0B2559';$('o0').style.opacity=toggle?.55:1;
+ const cnt=t>steps[2]+.6?(t>steps[2]+1.5?2:1)+0:1;
+ $('o2n').textContent=t>steps[2]+.7?'2':'1';
+ const pv=P(t,steps[2]+.15,1.25,E.o3);const total=t>steps[2]+1.1?lerp(0,36,P(t,steps[2]+1.1,.5,E.o3))+0:lerp(0,36,pv)*.5;
+ $('tot').textContent='₹'+(P(t,steps[2]+.15,1.45,E.o3)*36).toFixed(2);
+ // p3 pay
+ const press=P(t,steps[3]+.5,.12,E.lin)-P(t,steps[3]+.62,.12,E.lin);
+ TR($('payb'),0,0,1-.05*press);
+ const okU=t-(steps[3]+.75);OP($('okov'),okU>=0?1:0);$('okov').style.display=okU>=0?'block':'none';
+ TR($('okc'),0,0,E.back(C(okU/.35)));TR($('okr'),0,0,1+C(okU/.9)*1.8);OP($('okr'),okU>=0?1-C(okU/.9):0);
+ OP($('okt'),P(t,steps[3]+1.05,.25));OP($('okt2'),P(t,steps[3]+1.2,.25));
+ // end: phone flies up
+ const out=P(t,D-.35,.35,E.i3);
+ if(out>0)TR($('phone'),830,36-out*800,1,-3);
+ return {sx:0,sy:0,zoom:1,flashIn:0,flashOut:0,wipeIn:1-P(t,0,.28,E.io),wipeOut:P(t,D-.28,.28,E.io),pulse:okU>=0&&okU<.5?1-okU*2:0};
+};
+// S3 SHOP
+SC[3]=(t,D)=>{
+ const bin=P(t,.0,.6,E.o5);TR($('s3board'),lerp(-700,0,bin),0,1);
+ const bellT=1.05;const ring=t>=bellT&&t<bellT+.9?Math.sin((t-bellT)*60)*(1-(t-bellT)/.9)*18:0;
+ TR($('s3bell'),0,0,t>=bellT?lerp(1.6,1,E.back(C((t-bellT)/.3))):0,ring);OP($('s3bell'),t>=bellT?1:0);
+ // job card slam
+ const jt=bellT-.05;const js=t>=jt?lerp(1.6,1,E.o5(C((t-jt)/.2))):0.001;TR($('s3job'),0,0,js);OP($('s3job'),t>=jt?1:0);
+ OP($('s3paid'),t>=jt+.1?1:0);
+ // move to printed + printer starts
+ const mv=P(t,2.0,.45,E.io);
+ $('s3job').style.left=lerp(12,298,mv)+'px';$('s3job').style.top=lerp(44,112,mv)+'px';
+ $('s3job').style.borderColor=mv>.95?'#19B35A':'#FFA800';
+ OP($('s3done'),1);
+ // printer
+ const pin=P(t,.35,.55,E.o5);TR($('s3pr'),lerp(700,0,pin),0,1);
+ const printing=t>=1.2&&t<4.3;
+ $('s3led').style.background=printing?'#19B35A':'#7C86A0';
+ const sheets=$('s3sheets').children;let pages=0;
+ for(let i=0;i<sheets.length;i++){const t0=1.3+i*.28;const u=(t-t0)/.55;const s=sheets[i];if(u<0){s.style.display='none';continue}s.style.display='block';const e=E.o3(C(u));const y=lerp(92,262,e);const x=lerp(0,0,e);s.style.top=(y+i*0)+'px';s.style.transform=`translate(${0}px,${C(u-1,0,2)*0}px) rotate(${(rnd(i)-.5)*5*e}deg)`;s.style.top=(y)+'px';s.style.height=(e*200+10)+'px';s.style.zIndex=i;if(u>=0.99)pages++}
+ $('s3pg').textContent=t>=1.3?`${Math.min(18,Math.floor((t-1.3)*6))} / 18 pages`:'';
+ // negations
+ const n=[2.95,3.85,4.75];
+ for(let i=0;i<3;i++){const el=$('s3n'+i);const u=t-n[i];const on=u>=0&&(i==2?t<5.9:t<n[i+1]);el.style.display=on?'block':'none';if(on){TR(el,0,0,lerp(1.5,1,E.o5(C(u/.14))));OP(el,C(u/.05));glitch(el,u<.18?(1-u/.18)*10:0)}}
+ const su=t-(n[0]);const slot=Math.floor(Math.max(0,(t-n[0])/.9));
+ // strike after each phrase lands
+ const stT=[n[0]+.35,n[1]+.35,n[2]+.35];
+ let stk=0;for(let i=0;i<3;i++){if(t>=stT[i]&&(i==2?t<5.9:t<n[i+1]))stk=P(t,stT[i],.25,E.o5)}
+ $('s3strike').style.transform=`scaleX(${stk})`;
+ const w=[640,640,640];
+ $('s3strike').style.left=(t<n[1]?250:t<n[2]?270:370)+'px';$('s3strike').style.width=(t<n[1]?780:t<n[2]?740:540)+'px';
+ const ok=t>=5.45;$('s3ok').style.display=ok?'block':'none';if(ok){const u=t-5.45;TR($('s3ok'),0,0,lerp(1.4,1,E.o5(C(u/.2))));OP($('s3ok'),C(u/.06))}
+ $('s3n2').style.display=(t>=n[2]&&t<5.45)?'block':'none';
+ const shakeT=[.0,bellT,n[0],n[1],n[2]];let sx=0;for(const s of shakeT){const u=(t-s)/.28;if(u>=0&&u<1)sx+=10*(1-u)*(rnd(Math.floor(t*60)+s*7)-.5)*2}
+ return {sx,sy:0,zoom:1,flashIn:0,flashOut:0,wipeIn:1-P(t,0,.28,E.io),wipeOut:P(t,D-.28,.28,E.io)};
+};
+// S4 VALUE
+SC[4]=(t,D)=>{
+ const cards=[['s4a',.5],['s4b',1.55],['s4c',2.65]];
+ cards.forEach(([id,t0],i)=>{const u=t-t0;const el=$(id);const s=u>=0?lerp(1.35,1,E.o5(C(u/.22))):0.001;const y=u>=0?lerp(-60,0,E.o5(C(u/.3))):-60;TR(el,0,y+Math.sin((t-i*.3)*1.6)*4*(u>0?1:0),s,(i-1)*-1.2*(1-C(u/.5)));OP(el,u>=0?C(u/.06):0)});
+ const bs=$('s4bars').children;const hs=[.35,.5,.42,.7,.62,.85,1];for(let i=0;i<7;i++){bs[i].style.height=(hs[i]*100*P(t,1.7+i*.07,.5,E.o5))+'px'}
+ $('s4rev').textContent='₹'+Math.round(980*P(t,1.9,1.0,E.o3)).toLocaleString('en-IN')+' today';
+ const tk=$('s4ticks').children;for(let i=0;i<3;i++){const u=t-(2.9+i*.25);tk[i].style.opacity=C(u/.1);tk[i].style.transform=`translateX(${lerp(-20,0,E.o5(C(u/.25)))}px)`}
+ OP($('s4glow'),.5+.5*beat(t));
+ const out=P(t,D-.4,.4,E.i3);
+ const sx=0;
+ let sh=0;[.5,1.55,2.65].forEach(s=>{const u=(t-s)/.25;if(u>=0&&u<1)sh+=9*(1-u)*(rnd(Math.floor(t*60)+s*5)-.5)*2});
+ return {sx:sh,sy:0,zoom:1+.06*out,flashIn:0,flashOut:0,wipeIn:1-P(t,0,.28,E.io),wipeOut:P(t,D-.28,.28,E.io)};
+};
+// S5 PRIVACY
+SC[5]=(t,D)=>{
+ const doc=$('s5doc'),sh=$('s5shield');
+ const din=P(t,.0,.45,E.o5);
+ const dis=P(t,1.2,.55,E.i3);          // document dissolves at "deleted"
+ TR(doc,lerp(-700,0,din),0,1-dis*.2);OP(doc,1-dis);
+ burst(PARTS5,t,1.2,640,290,420,1.0,21);
+ const shu=P(t,1.45,.45,E.back);TR(sh,0,0,shu);OP(sh,t>=1.45?1:0);
+ $('s5chk').style.strokeDashoffset=140*(1-P(t,1.8,.4,E.o3));
+ $('s5ring').style.transform=`scale(${.7+P(t,1.45,1.2,E.o3)*.5})`;OP($('s5ring'),t>=1.45?(1-P(t,1.45,1.4,E.lin)):0);
+ const t1=P(t,1.2,.2,E.o5);TR($('s5t1'),0,lerp(30,0,t1),lerp(1.3,1,t1));OP($('s5t1'),t>=1.2?1:0);
+ const t2=P(t,1.75,.2,E.o5);TR($('s5t2'),0,lerp(30,0,t2),lerp(1.3,1,t2));OP($('s5t2'),t>=1.75?1:0);
+ let sx=0;[1.2,1.45].forEach(s=>{const u=(t-s)/.25;if(u>=0&&u<1)sx+=9*(1-u)*(rnd(Math.floor(t*60)+s*3)-.5)*2});
+ return {sx,sy:0,zoom:1,flashIn:0,flashOut:0,wipeIn:1-P(t,0,.28,E.io),wipeOut:P(t,D-.28,.28,E.io)};
+};
+// S6 CTA
+SC[6]=(t,D)=>{
+ $('s6rays').style.transform=`rotate(${t*8}deg)`;
+ const l=P(t,.0,.55,E.o5);TR($('s6logo'),lerp(-60,0,l),0,lerp(.85,1,l));OP($('s6logo'),l);
+ const a=P(t,.45,.22,E.o5);TR($('s6a'),0,lerp(40,0,a),lerp(1.25,1,a));OP($('s6a'),a);
+ const b=P(t,1.2,.22,E.o5);TR($('s6b'),0,lerp(40,0,b),lerp(1.25,1,b));OP($('s6b'),b);
+ const bt=P(t,2.0,.35,E.back);TR($('s6btn'),0,0,bt*(1+.025*beat(t)));OP($('s6btn'),t>=2.0?1:0);
+ const u=P(t,2.35,.3,E.o5);TR($('s6url'),0,lerp(24,0,u));OP($('s6url'),u);
+ const q=P(t,2.0,.5,E.back);TR($('s6qr'),0,Math.sin(t*1.5)*4,q,lerp(8,0,q));OP($('s6qr'),t>=2.0?1:0);
+ burst(PARTS6,t,3.3,640,330,640,1.2,40);
+ let sx=0;[.0,3.3].forEach(s=>{const x=(t-s)/.3;if(x>=0&&x<1)sx+=8*(1-x)*(rnd(Math.floor(t*60)+s)-.5)*2});
+ const fade=P(t,D-.6,.6,E.lin);
+ return {sx,sy:0,zoom:1+.02*P(t,0,D,E.lin),flashIn:0,flashOut:0,wipeIn:1-P(t,0,.28,E.io),fadeOut:fade,flash:(t>3.3&&t<3.45)?(1-(t-3.3)/.15)*.35:0};
+};
+// ---- driver ----
+window.render=function(i,t){
+ for(let k=0;k<SC.length;k++)$('s'+k).style.display=(k===i)?'block':'none';
+ const D=DUR[i];const r=SC[i](t,D)||{};
+ const f=Math.floor(t*30);
+ $('grain').style.transform=`translate(${(rnd(f)*40)|0}px,${(rnd(f+7)*40)|0}px)`;
+ const cam=$('cam');
+ const pulse=1+(r.pulse||0)*.02;
+ cam.style.transform=`translate(${r.sx||0}px,${r.sy||0}px) scale(${(r.zoom||1)*pulse})`;
+ let fl=Math.max(r.flashIn||0,r.flashOut||0,r.flash||0);$('flash').style.opacity=fl;
+ // wipes: navy leads, gold trails when covering; gold leads, navy trails when revealing
+ const wc=r.wipeOut||0,wr=r.wipeIn||0;
+ let xg=-2200,xn=-2200,on=0;
+ if(wc>0){on=1;xn=lerp(-1750,0,E.io(C(wc)));xg=lerp(-1750,0,E.io(C((wc-.18)/.82)))}
+ else if(wr>0){on=1;const q=1-wr;xg=lerp(0,1750,E.io(C(q)));xn=lerp(0,1750,E.io(C((q-.18)/.82)))}
+ $('wipeN').style.transform=`translateX(${xn}px) skewX(-14deg)`;$('wipeG').style.transform=`translateX(${xg}px) skewX(-14deg)`;
+ $('wipeN').style.opacity=on;$('wipeG').style.opacity=on;
+ if(r.fadeOut){$('flash').style.background='#070F26';$('flash').style.opacity=r.fadeOut}else $('flash').style.background='#fff';
+};
+</script></body></html>
