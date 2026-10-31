@@ -261,3 +261,9 @@ html{scroll-behavior:smooth;scroll-padding-top:76px;}
   .bm-cols{gap:6px;padding:12px 10px 8px;} .bm-kpis{padding:12px 10px 0;gap:6px;}
   .hero .cta .btn{width:100%;}
 }
+
+.termtog{display:inline-flex;gap:4px;margin-top:22px;padding:4px;background:#fff;border:1px solid var(--rule,#E2E6EE);border-radius:999px;}
+.termtog button{border:0;background:transparent;border-radius:999px;padding:9px 18px;font:600 14px/1 inherit;color:var(--slate);cursor:pointer;}
+.termtog button.on{background:var(--navy,#0B2160);color:#fff;}
+.termtog button i{font-style:normal;font-size:11px;font-weight:700;background:var(--gold,#FFB30F);color:var(--navy-deep,#0B1B3F);border-radius:99px;padding:2px 7px;margin-left:6px;}
+.termtog+.plans{margin-top:18px;}

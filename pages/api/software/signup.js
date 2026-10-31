@@ -10,7 +10,8 @@ export default async function handler(req, res) {
   const b = req.body || {};
   if (b.website) return res.status(200).json({ ok: true });   // honeypot: real people leave this blank
 
-  const shopName = clean(b.shopName, 80), ownerName = clean(b.ownerName, 80), city = clean(b.city, 60), note = clean(b.note, 400);
+  const yearly = b.term === 'yearly';
+  const shopName = clean(b.shopName, 80), ownerName = clean(b.ownerName, 80), city = clean(b.city, 60), note = (yearly ? 'Wants YEARLY billing. ' : '') + clean(b.note, 380);
   const phone = clean(b.phone, 20).replace(/[\s-]/g, '').replace(/^(\+91|91|0)(?=\d{10}$)/, '');
   const email = clean(b.email, 120);
   const printers = Math.round(Number(b.printers) || 1);

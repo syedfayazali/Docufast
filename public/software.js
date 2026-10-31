@@ -13,14 +13,28 @@
   var CHECK = '<i class="ic" data-ic="check"></i>';
   fetch('/api/software/plans').then(function (r) { return r.json(); }).then(function (d) {
     $$('[data-trial]').forEach(function (e) { e.textContent = d.trialDays; });
-    plansEl.innerHTML = d.plans.map(function (p) {
-      return '<div class="plan' + (p.featured ? ' featured' : '') + '">' + (p.featured ? '<span class="tag">Most popular</span>' : '') +
-        '<h3>' + esc(p.name) + '</h3><p class="bl">' + esc(p.blurb) + '</p>' +
-        '<div class="price">₹' + p.price.toLocaleString('en-IN') + ' <small>/ month</small></div>' +
-        '<p class="bl" style="margin:-4px 0 12px;"><b>or ₹' + p.yearly.toLocaleString('en-IN') + ' / year</b> — 2 months free</p><ul>' +
-        p.features.map(function (f) { return '<li>' + CHECK + '<span>' + esc(f) + '</span></li>'; }).join('') +
-        '</ul><a class="btn ' + (p.featured ? 'btn-navy' : 'btn-ghost') + '" href="#trial" data-pick="' + p.id + '">Start free trial</a></div>';
-    }).join('');
+    var term = 'monthly';
+    function renderPlans() {
+      var yearly = term === 'yearly';
+      plansEl.innerHTML = d.plans.map(function (p) {
+        var price = yearly ? p.yearly : p.price;
+        return '<div class="plan' + (p.featured ? ' featured' : '') + '">' + (p.featured ? '<span class="tag">Most popular</span>' : '') +
+          '<h3>' + esc(p.name) + '</h3><p class="bl">' + esc(p.blurb) + '</p>' +
+          '<div class="price">₹' + price.toLocaleString('en-IN') + ' <small>/ ' + (yearly ? 'year' : 'month') + '</small></div>' +
+          '<p class="bl" style="margin:-4px 0 12px;">' + (yearly ? '<b>2 months free</b> — just ₹' + Math.round(p.yearly / 12).toLocaleString('en-IN') + ' a month' : 'or <b>₹' + p.yearly.toLocaleString('en-IN') + ' / year</b> — 2 months free') + '</p><ul>' +
+          p.features.map(function (f) { return '<li>' + CHECK + '<span>' + esc(f) + '</span></li>'; }).join('') +
+          '</ul><a class="btn ' + (p.featured ? 'btn-navy' : 'btn-ghost') + '" href="#trial" data-pick="' + p.id + '">Start free trial</a></div>';
+      }).join('');
+      paint(plansEl);
+    }
+    renderPlans();
+    $('#termTog').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-term]'); if (!b) return;
+      term = b.dataset.term;
+      $$('#termTog button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      renderPlans();
+    });
+    window.__dfTerm = function () { return term; };
     var want = new URLSearchParams(location.search).get('plan');
     pickEl.innerHTML = d.plans.map(function (p, i) {
       var on = want ? want === p.id : !!p.featured || (i === 0 && !d.plans.some(function (x) { return x.featured; }));
@@ -38,6 +52,7 @@
     e.preventDefault(); msg.textContent = '';
     var f = new FormData(form), body = {};
     f.forEach(function (v, k) { body[k] = v; });
+    if (window.__dfTerm) body.term = window.__dfTerm();
     btn.disabled = true; btn.textContent = 'Sending…';
     fetch('/api/software/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
