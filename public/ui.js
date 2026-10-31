@@ -18,6 +18,8 @@
     store: '<path d="M4 9.5 5.5 4h13L20 9.5"/><path d="M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0"/><path d="M5.5 12v8h13v-8"/>',
     shield: '<path d="M12 3.5 5 6v5.5c0 4.2 2.9 7.2 7 9 4.1-1.8 7-4.8 7-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
     trash: '<path d="M5 7h14M10 7V4.5h4V7M7 7l.8 12.5h8.4L17 7"/>',
+    arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    play: '<path d="M8.5 5.5v13l10.5-6.5z" fill="currentColor"/>',
     arrowLeft: '<path d="M19 12H5M10.5 6.5 5 12l5.5 5.5"/>',
     copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5A2 2 0 0 0 13.5 4.5h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
     download: '<path d="M12 4.5V16M7.5 11.5 12 16l4.5-4.5"/><path d="M5 17v1.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V17"/>',

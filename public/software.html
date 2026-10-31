@@ -4,18 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DocuFast for print shops — customers upload, pay and print automatically</title>
-<meta name="description" content="Give your print shop a QR code. Customers upload from their phone, pay by UPI, and the file prints on your printer. Free trial for shop owners in India.">
+<meta name="description" content="Give your print shop a QR code. Customers upload from their phone, pay by UPI, and the file prints on your printer. Watch the 70-second demo and start a free trial.">
+<meta property="og:title" content="DocuFast for print shops">
+<meta property="og:description" content="Customers scan, upload, pay by UPI, and it prints on your printer. Free trial for shop owners in India.">
+<meta property="og:image" content="/media/docufast-demo-poster.jpg">
 <link rel="icon" type="image/png" href="/brand-icon.png">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/software.css">
+<script>document.documentElement.className += ' js';</script>
 </head>
 <body class="sw">
 
 <header class="brand-band">
   <div class="inner">
-    <a href="/software" aria-label="DocuFast India"><img class="logo" src="/brand.png" alt="DocuFast India"></a>
+    <a href="#top" aria-label="DocuFast India"><img class="logo" src="/brand.png" alt="DocuFast India"></a>
     <nav class="top-nav" aria-label="Page sections">
       <a class="plain" href="#how">How it works</a>
+      <a class="plain" href="#counter">At your counter</a>
       <a class="plain" href="#pricing">Pricing</a>
       <a class="plain" href="#faq">FAQ</a>
       <a class="btn btn-gold" style="min-height:40px;padding:0 16px;font-size:14px;" href="#trial">Start free trial</a>
@@ -23,8 +28,11 @@
   </div>
 </header>
 
-<main>
-<section class="hero" style="padding-bottom:48px;">
+<main id="top">
+
+<!-- HERO + VIDEO -->
+<section class="hero">
+  <div class="blob b1" aria-hidden="true"></div><div class="blob b2" aria-hidden="true"></div>
   <div class="sw-wrap hero-grid">
     <div>
       <span class="eyebrow"><i class="ic" data-ic="printer"></i> For print and photocopy shops</span>
@@ -32,60 +40,193 @@
       <p class="sub">Put a QR code on your counter. Customers scan it, upload their file, pay by UPI, and it prints on your printer. No WhatsApp forwarding, no pen drives, no standing in a queue.</p>
       <div class="cta">
         <a class="btn btn-gold" href="#trial"><span>Start <span data-trial>14</span>-day free trial</span></a>
-        <a class="btn btn-ghost" href="#how">See how it works</a>
+        <button class="btn btn-ghost" type="button" id="watchBtn"><i class="ic" data-ic="play"></i><span>Watch the 70-second demo</span></button>
       </div>
       <p class="fine">No card needed to start. We help you set up on a call.</p>
       <div class="trust">
         <span><i class="ic" data-ic="lock"></i> Payments through Razorpay</span>
-        <span><i class="ic" data-ic="shield"></i> Customer files deleted after printing</span>
+        <span><i class="ic" data-ic="shield"></i> Files deleted after printing</span>
         <span><i class="ic" data-ic="zap"></i> English, Telugu and Hindi for customers</span>
       </div>
     </div>
-    <div class="mock" aria-hidden="true">
-      <span class="cap">SAMPLE · your live order board</span>
-      <div class="bar"><span>Your shop</span><span class="pill">Printer online</span></div>
-      <div class="cols">
-        <div class="c"><h6><span>To print</span><span>2</span></h6><div class="j new"><b>K4M92X</b><span>aadhaar-copy.pdf · 2 pg</span></div><div class="j"><b>R7T13Q</b><span>notes.pdf · 18 pg</span></div></div>
-        <div class="c"><h6><span>Needs attention</span><span>0</span></h6></div>
-        <div class="c"><h6><span>Printed</span><span>2</span></h6><div class="j"><b>H2N58B</b><span>form.pdf · 4 pg</span></div><div class="j"><b>W9C40D</b><span>photo.jpg · 1 pg</span></div></div>
+    <div class="vid" id="demo">
+      <div class="vid-frame">
+        <video id="demoVideo" preload="none" playsinline poster="/media/docufast-demo-poster.jpg" controlslist="nodownload">
+          <source src="/media/docufast-demo.mp4" type="video/mp4">
+          <track kind="captions" src="/media/docufast-demo.vtt" srclang="en" label="English" default>
+        </video>
+        <button class="vid-play" id="vidPlay" type="button" aria-label="Play the demo video"><span><i class="ic" data-ic="play"></i></span><small>Watch demo · 1:11 · with voiceover</small></button>
+      </div>
+      <p class="vid-note">Illustrative screens. Turn the sound on for the voiceover; captions are included.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE / AFTER -->
+<section id="problem">
+  <div class="sw-wrap">
+    <span class="eyebrow rv">The problem</span>
+    <h2 class="rv">Every print job today starts with you stopping what you are doing</h2>
+    <div class="ba">
+      <div class="ba-col before rv">
+        <h3>A normal day at the counter</h3>
+        <ol>
+          <li>Customer sends the file on WhatsApp, Bluetooth or a pen drive</li>
+          <li>You find it, download it and open it</li>
+          <li>You fix the page size and settings</li>
+          <li>You print, then work out the price</li>
+          <li>You collect cash and look for change</li>
+        </ol>
+      </div>
+      <div class="ba-arrow" aria-hidden="true"><i class="ic" data-ic="arrowRight"></i></div>
+      <div class="ba-col after rv">
+        <h3>With DocuFast</h3>
+        <ol>
+          <li>Customer scans your QR code</li>
+          <li>They upload, choose options and see the exact price</li>
+          <li>They pay by UPI</li>
+          <li>It prints on your printer by itself</li>
+          <li>You hand over the pages and the order code</li>
+        </ol>
       </div>
     </div>
   </div>
 </section>
 
-<section id="how">
+<!-- INTERACTIVE PHONE -->
+<section class="alt" id="how">
   <div class="sw-wrap">
-    <span class="eyebrow">How it works</span>
-    <h2>From the customer's phone to your printer in four steps</h2>
-    <ol class="steps4">
-      <li><h3>Customer scans your QR</h3><p>Your shop has its own link and QR code, so every order lands in your queue.</p></li>
-      <li><h3>Uploads and pays</h3><p>They choose copies, colour and sides, see the price, and pay by UPI.</p></li>
-      <li><h3>It prints by itself</h3><p>A small app on your shop PC picks up the paid job and sends it to your printer.</p></li>
-      <li><h3>You hand it over</h3><p>The order appears on your live board with a short code the customer shows you.</p></li>
-    </ol>
+    <span class="eyebrow rv">How it works</span>
+    <h2 class="rv">See it from your customer's phone</h2>
+    <p class="lead rv">Tap a step, or let it play. Try the options and the price changes, just like it does for a real customer.</p>
+    <div class="demo-grid">
+      <div class="pm rv" aria-label="Customer phone demo">
+        <div class="pm-screen" id="pmScreen" data-step="0">
+          <div class="pm-s s0">
+            <div class="cam"><div class="qrbox" id="camQr"></div><div class="frame"></div><div class="scanline"></div></div>
+            <p>Point the camera at the QR code on your counter</p>
+          </div>
+          <div class="pm-s s1">
+            <div class="pm-top"><img src="/brand.png" alt=""></div>
+            <div class="chips3"><b class="on">1 Upload</b><b>2 Options</b><b>3 Pay</b></div>
+            <div class="drop"><strong>Tap to choose a file</strong><small>PDF, Word or photo</small></div>
+            <div class="filechip"><span>PDF</span><div><b>notes.pdf</b><small>18 pages</small></div></div>
+          </div>
+          <div class="pm-s s2">
+            <div class="pm-top"><img src="/brand.png" alt=""></div>
+            <div class="chips3"><b class="done">Upload</b><b class="on">2 Options</b><b>3 Pay</b></div>
+            <label class="pm-l">Colour</label>
+            <div class="pm-opts" data-group="color"><button type="button" class="on" data-v="bw">Black &amp; white</button><button type="button" data-v="color">Colour</button></div>
+            <label class="pm-l">Copies</label>
+            <div class="pm-step"><button type="button" id="cMinus" aria-label="Fewer copies">−</button><b id="cNum">1</b><button type="button" id="cPlus" aria-label="More copies">+</button></div>
+            <label class="pm-l">Sides</label>
+            <div class="pm-opts" data-group="sides"><button type="button" class="on" data-v="one">One side</button><button type="button" data-v="two">Both sides</button></div>
+            <div class="pm-total"><span>Total</span><b id="pmTotal">₹36.00</b></div>
+          </div>
+          <div class="pm-s s3">
+            <div class="pm-top"><b>Pay by UPI</b></div>
+            <div class="amt"><small>Amount to pay</small><b id="payAmt">₹36.00</b></div>
+            <div class="upi on"><i style="background:#4285F4"></i><b>Google Pay</b></div>
+            <div class="upi"><i style="background:#5F259F"></i><b>PhonePe</b></div>
+            <div class="upi"><i style="background:#00B9F1"></i><b>Paytm</b></div>
+            <div class="upi"><i style="background:#F58220"></i><b>BHIM</b></div>
+            <button class="pm-pay" type="button" id="pmPay">Pay <span id="payBtnAmt">₹36.00</span></button>
+            <div class="pm-ok" id="pmOk"><span><i class="ic" data-ic="check"></i></span><b>Payment successful</b><small>Order code <code>K4M92X</code></small></div>
+          </div>
+        </div>
+        <div class="pm-note">Sample rates: ₹2 per black &amp; white page, ₹8 per colour page. Your shop sets its own.</div>
+      </div>
+      <ol class="dsteps" id="dSteps">
+        <li><button type="button" data-s="0"><i>1</i><span><b>Scan your shop's QR</b><small>Every shop has its own code, so orders land only in your queue.</small></span></button></li>
+        <li><button type="button" data-s="1"><i>2</i><span><b>Upload a file</b><small>PDF, Word or a phone photo. The customer agrees to the privacy note first.</small></span></button></li>
+        <li><button type="button" data-s="2"><i>3</i><span><b>Choose options</b><small>Colour or black and white, copies, sides. The price updates as they choose.</small></span></button></li>
+        <li><button type="button" data-s="3"><i>4</i><span><b>Pay by UPI</b><small>No cash or change. The moment payment is confirmed, it goes to your printer.</small></span></button></li>
+      </ol>
+    </div>
   </div>
 </section>
 
+<!-- COUNTER BOARD -->
+<section id="counter">
+  <div class="sw-wrap counter-grid">
+    <div>
+      <span class="eyebrow rv">At your counter</span>
+      <h2 class="rv">A live board that tells you what to hand over</h2>
+      <p class="lead rv">Paid orders arrive on your screen with a sound. A small app on your shop PC prints each one on your own printer, and the board moves it to Printed.</p>
+      <ul class="tick rv">
+        <li><i class="ic" data-ic="check"></i><span><b>Retry in one tap</b> if a print fails, for example when the printer is out of paper.</span></li>
+        <li><i class="ic" data-ic="check"></i><span><b>Reprint</b> for a short time after, without the customer uploading again.</span></li>
+        <li><i class="ic" data-ic="check"></i><span><b>Refund</b> from the dashboard when you need to.</span></li>
+        <li><i class="ic" data-ic="check"></i><span><b>Today's totals</b> for orders, pages and money collected.</span></li>
+      </ul>
+    </div>
+    <div class="board-mock rv" id="boardMock" aria-label="Sample live order board">
+      <div class="bm-bar"><span><i></i><i></i><i></i></span><b>Shop dashboard</b><em class="pill">Printer online</em></div>
+      <div class="bm-kpis"><div><b id="bmOrders">8</b><small>Orders today</small></div><div><b id="bmPages">142</b><small>Pages printed</small></div><div><b id="bmMoney">₹980</b><small>Collected</small></div></div>
+      <div class="bm-cols">
+        <div class="c"><h6>To print <b id="bmQ">0</b></h6><div id="colQ"></div></div>
+        <div class="c"><h6>Needs attention <b id="bmF">0</b></h6><div id="colF"></div></div>
+        <div class="c"><h6>Printed <b id="bmP">2</b></h6><div id="colP"></div></div>
+      </div>
+      <p class="bm-cap">Sample data, playing in a loop</p>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
 <section class="alt">
   <div class="sw-wrap">
-    <span class="eyebrow">What you get</span>
-    <h2>Everything a busy counter needs</h2>
+    <span class="eyebrow rv">What you need</span>
+    <h2 class="rv">Three parts, and you only set up one</h2>
+    <div class="parts">
+      <div class="part rv"><span class="n">1</span><h3>Your customer's phone</h3><p>They use a normal web page. Nothing to download. It works in English, Telugu and Hindi.</p><em>Nothing for you to do</em></div>
+      <div class="part-arrow" aria-hidden="true"><i class="ic" data-ic="arrowRight"></i></div>
+      <div class="part rv"><span class="n">2</span><h3>The DocuFast cloud</h3><p>Takes the UPI payment, keeps the file private, and tells your shop PC the moment an order is paid.</p><em>We run this for you</em></div>
+      <div class="part-arrow" aria-hidden="true"><i class="ic" data-ic="arrowRight"></i></div>
+      <div class="part rv"><span class="n">3</span><h3>Your shop PC and printer</h3><p>A small Windows app prints each paid order on the printer you already have, and shows the live board.</p><em>We install it with you on a call</em></div>
+    </div>
+    <div class="need rv"><b>To start you need:</b> a Windows PC connected to your printer, an internet connection, and one call with us.</div>
+  </div>
+</section>
+
+<!-- WHAT YOU GET -->
+<section>
+  <div class="sw-wrap">
+    <span class="eyebrow rv">What you get</span>
+    <h2 class="rv">Built for how Indian print shops work</h2>
     <div class="feat">
-      <div><i class="ic" data-ic="list"></i><h3>Live order board</h3><p>To print, needs attention, printed. New paid orders show up the moment they arrive, with a sound.</p></div>
-      <div><i class="ic" data-ic="tag"></i><h3>Your own prices</h3><p>Set black-and-white, colour and double-sided rates for your shop.</p></div>
-      <div><i class="ic" data-ic="chart"></i><h3>Reports</h3><p>See today's orders, pages and money collected, and export orders to Excel.</p></div>
-      <div><i class="ic" data-ic="refresh"></i><h3>Retry, reprint, refund</h3><p>Fix a failed print with one tap, reprint for a short time after, and refund when needed.</p></div>
-      <div><i class="ic" data-ic="idcard"></i><h3>ID and passport copy sheets</h3><p>Print ID card and passport photo copies at their exact size.</p></div>
-      <div><i class="ic" data-ic="shield"></i><h3>Customer files kept private</h3><p>Files are stored privately, shown only with the customer's consent, and deleted after printing.</p></div>
+      <div class="rv"><i class="ic" data-ic="qr"></i><h3>Your own QR code and link</h3><p>Print the poster for your counter. Every scan is tagged to your shop.</p></div>
+      <div class="rv"><i class="ic" data-ic="tag"></i><h3>Your own prices</h3><p>Set black-and-white, colour and double-sided rates for your shop.</p></div>
+      <div class="rv"><i class="ic" data-ic="idcard"></i><h3>ID and passport copy sheets</h3><p>Print ID card and passport photo copies at their exact size.</p></div>
+      <div class="rv"><i class="ic" data-ic="chart"></i><h3>Reports</h3><p>Orders, pages and money collected, with an Excel export of your orders.</p></div>
+      <div class="rv"><i class="ic" data-ic="receipt"></i><h3>Coupons and business accounts</h3><p>Run offers and referral codes, and bill regular customers monthly (Pro plan).</p></div>
+      <div class="rv"><i class="ic" data-ic="refresh"></i><h3>Updates in real time</h3><p>New orders appear as they are paid. No refreshing the page.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY -->
+<section class="privacy">
+  <div class="sw-wrap priv-grid">
+    <div class="shield rv" aria-hidden="true"><svg viewBox="0 0 24 28" fill="none" stroke="#FFA800" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.5 3 5v7.5c0 6 4 10.5 9 13 5-2.5 9-7 9-13V5z" fill="rgba(255,168,0,.10)"/><path d="M7.5 13.5l3.2 3.2 6-6.4" stroke="#fff" stroke-width="1.5"/></svg></div>
+    <div>
+      <span class="eyebrow rv" style="color:var(--gold)">Privacy</span>
+      <h2 class="rv">Customers hand you their Aadhaar and PAN. We treat that carefully.</h2>
+      <ul class="tick light rv">
+        <li><i class="ic" data-ic="check"></i><span><b>Consent first.</b> Customers agree to the privacy note before any file is uploaded.</span></li>
+        <li><i class="ic" data-ic="check"></i><span><b>Stored privately.</b> Files are opened only to print, never left on a public link.</span></li>
+        <li><i class="ic" data-ic="check"></i><span><b>Deleted after printing.</b> A short reprint window, which you can set per shop, then the file is removed.</span></li>
+        <li><i class="ic" data-ic="check"></i><span><b>Aadhaar numbers in file names are masked</b> so only the last 4 digits are kept.</span></li>
+      </ul>
     </div>
   </div>
 </section>
 
 <section id="pricing">
   <div class="sw-wrap">
-    <span class="eyebrow">Pricing</span>
-    <h2>Simple monthly plans</h2>
-    <p class="lead">Try it free for <span data-trial>14</span> days. No long-term contract.</p>
+    <span class="eyebrow rv">Pricing</span>
+    <h2 class="rv">Simple monthly plans</h2>
+    <p class="lead rv">Try it free for <span data-trial>14</span> days. No long-term contract.</p>
     <div class="plans" id="plans" aria-live="polite"><div class="plan"><p class="bl">Loading plans…</p></div></div>
     <p class="note">Prices are per shop, per month. Not sure which plan fits? Pick one now and we will advise you on the call.</p>
   </div>
@@ -100,6 +241,7 @@
       <details><summary>Which printers work?</summary><p>The app prints through Windows, so printers that print normally from your PC are supported. We check your printer with you during setup.</p></details>
       <details><summary>What happens to my customers' documents?</summary><p>Customers give consent before uploading. Files are stored privately, opened only for printing, and deleted after printing, with a short reprint window you can set per shop.</p></details>
       <details><summary>Do customers need to install anything?</summary><p>No. They scan your QR code and use their phone's browser. The page works in English, Telugu and Hindi.</p></details>
+      <details><summary>What if my internet drops?</summary><p>Customers cannot place new orders while the internet is down, because payment needs it. Orders already paid wait in the queue and print when your PC is back online.</p></details>
       <details><summary>Is there a contract?</summary><p>No long-term contract. Start with the free trial and continue only if it works for your shop.</p></details>
       <details><summary>Who helps me set up?</summary><p>We do. After you send the form we call you, create your shop, and walk you through installing the app and printing a test order.</p></details>
     </div>
@@ -158,53 +300,9 @@
   </div>
 </footer>
 
+<a class="sticky-cta" id="stickyCta" href="#trial">Start free trial</a>
+
 <script src="/ui.js"></script>
-<script>
-(function () {
-  var plansEl = document.getElementById('plans'), pickEl = document.getElementById('planPick');
-  var form = document.getElementById('trialForm'), msg = document.getElementById('formMsg'), btn = document.getElementById('submitBtn');
-  var CHECK = '<i class="ic" data-ic="check"></i>';
-  function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-
-  fetch('/api/software/plans').then(function (r) { return r.json(); }).then(function (d) {
-    document.querySelectorAll('[data-trial]').forEach(function (e) { e.textContent = d.trialDays; });
-    plansEl.innerHTML = d.plans.map(function (p) {
-      return '<div class="plan' + (p.featured ? ' featured' : '') + '">' + (p.featured ? '<span class="tag">Most popular</span>' : '') +
-        '<h3>' + esc(p.name) + '</h3><p class="bl">' + esc(p.blurb) + '</p>' +
-        '<div class="price">₹' + p.price.toLocaleString('en-IN') + ' <small>/ month</small></div><ul>' +
-        p.features.map(function (f) { return '<li>' + CHECK + '<span>' + esc(f) + '</span></li>'; }).join('') +
-        '</ul><a class="btn ' + (p.featured ? 'btn-navy' : 'btn-ghost') + '" href="#trial" data-pick="' + p.id + '">Start free trial</a></div>';
-    }).join('');
-    var want = new URLSearchParams(location.search).get('plan');
-    pickEl.innerHTML = d.plans.map(function (p, i) {
-      var on = want ? want === p.id : !!p.featured || (i === 0 && !d.plans.some(function (x) { return x.featured; }));
-      return '<label><input type="radio" name="plan" value="' + p.id + '"' + (on ? ' checked' : '') + '><span>' + esc(p.name) + '<small>₹' + p.price.toLocaleString('en-IN') + ' / month</small></span></label>';
-    }).join('');
-    if (window.dfIcons) window.dfIcons(document.body);
-    if (d.whatsapp) { var a = document.getElementById('waLink'); a.href = 'https://wa.me/' + d.whatsapp; document.getElementById('waLine').hidden = false; }
-    plansEl.addEventListener('click', function (e) {
-      var a = e.target.closest('[data-pick]'); if (!a) return;
-      var r = pickEl.querySelector('input[value="' + a.dataset.pick + '"]'); if (r) r.checked = true;
-    });
-  }).catch(function () { plansEl.innerHTML = '<div class="plan"><p class="bl">Plans could not load. Please refresh, or send the form below and we will share the prices.</p></div>'; });
-
-  form.addEventListener('submit', function (e) {
-    e.preventDefault(); msg.textContent = '';
-    var f = new FormData(form), body = {};
-    f.forEach(function (v, k) { body[k] = v; });
-    btn.disabled = true; btn.textContent = 'Sending…';
-    fetch('/api/software/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-      .then(function (x) {
-        if (!x.ok) { msg.textContent = x.j.error || 'Something went wrong. Please try again.'; btn.disabled = false; btn.textContent = 'Request free trial'; return; }
-        form.hidden = true; document.getElementById('doneNum').textContent = body.phone;
-        document.getElementById('doneBox').hidden = false;
-        if (window.dfIcons) window.dfIcons(document.getElementById('doneBox'));
-      })
-      .catch(function () { msg.textContent = 'No connection. Please check your internet and try again.'; btn.disabled = false; btn.textContent = 'Request free trial'; });
-  });
-  if (window.dfIcons) window.dfIcons(document.body);
-})();
-</script>
+<script src="/software.js"></script>
 </body>
 </html>
