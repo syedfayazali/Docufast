@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DocuFast — Subscribe</title>
+<style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#0A2E6E;color:#fff;font:15px 'Segoe UI',system-ui,sans-serif;text-align:center}
+b{color:#F4B000}.b{font-size:22px;font-weight:700;margin-bottom:10px}p{opacity:.85;max-width:340px}button{margin-top:14px;padding:12px 22px;border:0;border-radius:10px;background:#F4B000;font-weight:700;color:#071F4D;cursor:pointer}</style></head>
+<body><div><div class="b">Docu<b>Fast</b> India</div><p id="m">Opening secure payment…</p><button id="retry" hidden>Open payment again</button></div>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var q = new URLSearchParams(location.search), m = document.getElementById('m'), retry = document.getElementById('retry');
+function open() {
+  retry.hidden = true; m.textContent = 'Opening secure payment…';
+  if (!window.Razorpay) { m.textContent = 'The payment window could not load. Check your internet.'; retry.hidden = false; return; }
+  new Razorpay({
+    key: q.get('key'), subscription_id: q.get('sub'), name: 'DocuFast India', description: q.get('desc') || '',
+    prefill: { name: q.get('name') || '', email: q.get('email') || '', contact: q.get('phone') || '' }, theme: { color: '#0B2160' },
+    modal: { ondismiss: function () { m.textContent = 'Payment was not completed.'; retry.hidden = false; } },
+    handler: function (resp) {
+      m.textContent = 'Setting up your shop…';
+      fetch('/api/app/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resp) })
+        .finally(function () { document.title = 'DF_PAID'; m.textContent = 'Done! Returning to the app…'; });
+    },
+  }).open();
+}
+retry.onclick = open; open();
+</script></body></html>

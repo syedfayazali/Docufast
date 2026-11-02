@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   if (shopName.length < 2) return res.status(400).json({ error: 'Enter your shop name.' });
   if (ownerName.length < 2) return res.status(400).json({ error: 'Enter your name.' });
   if (!/^[6-9]\d{9}$/.test(phone)) return res.status(400).json({ error: 'Enter a valid 10-digit mobile number.' });
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'That email address does not look right.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'That email address does not look right.' });
 
   const trial = !!b.trial;
   if (trial && (await hasUsedTrial(phone))) return res.status(409).json({ error: 'This mobile number has already used its free trial. Please subscribe to continue.' });

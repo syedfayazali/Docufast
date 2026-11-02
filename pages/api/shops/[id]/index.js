@@ -1,12 +1,19 @@
 import { isOwner, pinProblem } from '@/lib/auth';
-import { toggleShop, resetShopMachine, rotateShopKey, setStaffPin, setShopPrices, setShopRetention } from '@/lib/db';
+import { toggleShop, resetShopMachine, rotateShopKey, setStaffPin, setShopPrices, setShopRetention, linkEmailToShop, normEmail } from '@/lib/db';
 import { validatePrices } from '@/lib/pricing';
 
 export default async function handler(req, res) {
   if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' });
   if (!isOwner(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { id } = req.query;
-  const { active, resetMachine, rotateKey, newStaffPin, staffPin, prices, retentionMinutes } = req.body || {};
+  const { ownerEmail, active, resetMachine, rotateKey, newStaffPin, staffPin, prices, retentionMinutes } = req.body || {};
+
+  if (ownerEmail) {
+    const e = normEmail(ownerEmail);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return res.status(400).json({ error: 'That email does not look right' });
+    await linkEmailToShop(e, id);
+    return res.status(200).json({ ok: true, ownerEmail: e });
+  }
 
   if (retentionMinutes !== undefined) {
     const m = retentionMinutes === null ? null : Number(retentionMinutes);

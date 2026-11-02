@@ -40,7 +40,7 @@
       <h1>Customers upload from their phone. <em>Your printer does the rest.</em></h1>
       <p class="sub">Put a QR code on your counter. Customers scan it, upload their file, pay by UPI, and it prints on your printer. No WhatsApp forwarding, no pen drives, no standing in a queue.</p>
       <div class="cta">
-        <a class="btn btn-gold" href="#trial"><span>Start <span data-trial>7</span>-day free trial</span></a>
+        <a class="btn btn-gold" id="dlHero" href="https://github.com/syedfayazali/Docufast-Desktop/releases/latest/download/DocuFast-Setup.exe"><span>Download for Windows &middot; <span data-trial>7</span>-day free trial</span></a>
         <button class="btn btn-ghost" type="button" id="watchBtn"><i class="ic" data-ic="play"></i><span>Watch the 48-second ad</span></button>
       </div>
       <p class="fine">Free for 7 days. Only a refundable ₹5 AutoPay check today.</p>
@@ -255,7 +255,9 @@
     <div>
       <span class="eyebrow" style="color:var(--gold);">Free trial</span>
       <h2>Start your <span data-trial>7</span>-day free trial</h2>
-      <p class="lead">Tell us about your shop. We will call you to set it up.</p>
+      <p class="lead">Download the DocuFast app, sign in with your email and start. No keys, no PINs.</p>
+      <p><a class="btn btn-gold" id="dlApp" href="https://github.com/syedfayazali/Docufast-Desktop/releases/latest/download/DocuFast-Setup.exe">Download DocuFast for Windows</a></p>
+      <p class="hint" style="margin-top:8px;">Windows 10 or 11. Free for <span data-trial>7</span> days, then your plan starts. Prefer to sign up here? Use the form.</p>
       <ul>
         <li><i class="ic" data-ic="check"></i> Setup help on a call</li>
         <li><i class="ic" data-ic="check"></i> Your own QR code and shop link</li>
@@ -277,7 +279,7 @@
         </div>
         <div class="frow">
           <div class="fld"><label for="printers">Printers in the shop</label><input id="printers" name="printers" type="number" min="1" max="50" value="1" inputmode="numeric"></div>
-          <div class="fld"><label for="email">Email <i>(optional)</i></label><input id="email" name="email" type="email" maxlength="120" autocomplete="email"></div>
+          <div class="fld"><label for="email">Email</label><input id="email" name="email" type="email" required maxlength="120" autocomplete="email"></div>
         </div>
         <div class="fld"><label>Plan</label><div class="planpick" id="planPick"></div></div>
         <div class="fld"><label>Billing</label><div class="planpick" id="termPick"><label><input type="radio" name="termRadio" value="monthly" checked><span>Monthly<small>pay each month</small></span></label><label><input type="radio" name="termRadio" value="yearly"><span>Yearly<small>2 months free</small></span></label></div></div>
@@ -295,7 +297,7 @@
         <p class="hint">Save these now. The PIN and key are shown only once.</p>
         <div class="cred" id="credList"></div>
         <ol class="cred-steps">
-          <li>Install the DocuFast Agent on your shop PC: <a id="agentLink" href="https://github.com/syedfayazali/Docufast-Desktop/releases/latest" target="_blank" rel="noopener">download here</a>, then paste the printer key.</li>
+          <li>Install the DocuFast app on your shop PC: <a id="agentLink" href="https://github.com/syedfayazali/Docufast-Desktop/releases/latest/download/DocuFast-Setup.exe">download here</a>, then sign in with the email you used here. Your shop opens automatically.</li>
           <li>Open your <a id="adminLink" href="https://print.docufastindia.com/admin.html" target="_blank" rel="noopener">shop dashboard</a> and sign in with your shop code and PIN.</li>
           <li>Print your counter poster: <a id="posterLink" href="#" target="_blank" rel="noopener">open poster</a>.</li>
         </ol>

@@ -10,14 +10,24 @@ let liveConn = null, lastPush = null;
 let refreshTimer = null;
 
 // Staff sign in with shop code + PIN (the PIN is kept for this tab only, never the agent key).
+// Inside the DocuFast desktop app the window is already signed in (the app adds its own session
+// headers to our requests), so there is no shop code / PIN screen.
+const IN_APP = new URLSearchParams(location.search).get('app') === '1';
+if (IN_APP) {
+  document.documentElement.classList.add('in-app');
+  const st = document.createElement('style');
+  st.textContent = '.in-app header, .in-app .key-bar{display:none!important}';
+  document.head.appendChild(st);
+}
 function authHeaders() {
+  if (IN_APP) return {};
   return { 'x-staff-slug': codeInput.value.trim().toLowerCase(), 'x-staff-pin': pinInput.value.trim() };
 }
 
 async function loadDashboard() {
   const slug = codeInput.value.trim();
-  if (!slug || !pinInput.value.trim()) { showError('Enter your shop code and PIN.'); return; }
-  try { localStorage.setItem('df_shop_code', slug); } catch {}
+  if (!IN_APP && (!slug || !pinInput.value.trim())) { showError('Enter your shop code and PIN.'); return; }
+  if (!IN_APP) { try { localStorage.setItem('df_shop_code', slug); } catch {} }
   clearError();
 
   document.getElementById('loader').style.display = 'block';
@@ -390,3 +400,5 @@ document.getElementById('viewTabs').addEventListener('click', e => {
   document.getElementById('viewOrders').style.display = settings ? 'none' : 'flex';
   document.getElementById('viewSettings').style.display = settings ? 'block' : 'none';
 });
+
+if (IN_APP) loadDashboard();
