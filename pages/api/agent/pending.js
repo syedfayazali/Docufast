@@ -4,6 +4,7 @@ import {
   claimUnassignedJobs, listRecentUnpaidRazorpayJobs, markPaid,
   findExpiredPrintedBlobs, clearJobBlob,
 } from '@/lib/db';
+import { getPlan } from '@/lib/plans';
 import { findCapturedPayment, isConfigured } from '@/lib/razorpay';
 import { deleteFile } from '@/lib/blob';
 import { privateEnabled, signFileLink } from '@/lib/privateBlob';
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
     shopId = shop.id;
 
     // One-shop-key-one-computer enforcement (same as heartbeat.js).
-    const bind = await checkAndBindMachine(shopId, machineId, null);
+    const bind = await checkAndBindMachine(shopId, machineId, null, getPlan(shop.plan) ? getPlan(shop.plan).maxPrinters : 1);
     if (!bind.ok) {
       return res.status(409).json({
         error: 'duplicate_key',

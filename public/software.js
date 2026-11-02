@@ -77,12 +77,13 @@
   });
 
   /* ---------- buy a plan (Razorpay) ---------- */
-  var buyBtn = $('#buyBtn');
-  buyBtn.addEventListener('click', function () {
+  var buyBtn = $('#buyBtn'), trialBtn = $('#trialBtn');
+  function startBuy(ev) {
+    var clicked = ev.currentTarget, buyBtn = clicked, isTrial = clicked.id === 'trialBtn';
     msg.textContent = '';
     var f = new FormData(form), body = {};
     f.forEach(function (v, k) { body[k] = v; });
-    body.term = window.__dfTerm ? window.__dfTerm() : 'monthly';
+    body.term = window.__dfTerm ? window.__dfTerm() : 'monthly'; if (isTrial) body.trial = true;
     var label = buyBtn.textContent; buyBtn.disabled = true; buyBtn.textContent = 'Starting payment…';
     function reset() { buyBtn.disabled = false; buyBtn.textContent = label; }
     fetch('/api/software/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -103,7 +104,7 @@
               .then(function (c) {
                 form.hidden = true; $('#paidNum').textContent = body.phone;
                 if (!c.ok || !c.j.shopCode) {
-                  $('#paidBox').querySelector('h3').textContent = 'Payment received';
+                  $('#paidBox').querySelector('h3').textContent = body.trial ? 'Trial started' : 'Payment received';
                   $('#credList').innerHTML = '<p>' + esc(c.j.error || 'Your shop is being set up. We will call you shortly with your login details.') + '</p>';
                   $('#paidBox').hidden = false; return;
                 }
@@ -121,7 +122,8 @@
         }).open();
       })
       .catch(function () { msg.textContent = 'No connection. Please check your internet and try again.'; reset(); });
-  });
+  }
+  buyBtn.addEventListener('click', startBuy); trialBtn.addEventListener('click', startBuy);
   $('#paidBox').addEventListener('click', function (e) {
     var b = e.target.closest('[data-copy]'); if (!b) return;
     if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy).then(function () { b.textContent = 'Copied'; });

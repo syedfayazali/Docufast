@@ -40,10 +40,10 @@
       <h1>Customers upload from their phone. <em>Your printer does the rest.</em></h1>
       <p class="sub">Put a QR code on your counter. Customers scan it, upload their file, pay by UPI, and it prints on your printer. No WhatsApp forwarding, no pen drives, no standing in a queue.</p>
       <div class="cta">
-        <a class="btn btn-gold" href="#trial"><span>Start <span data-trial>14</span>-day free trial</span></a>
+        <a class="btn btn-gold" href="#trial"><span>Start <span data-trial>7</span>-day free trial</span></a>
         <button class="btn btn-ghost" type="button" id="watchBtn"><i class="ic" data-ic="play"></i><span>Watch the 48-second ad</span></button>
       </div>
-      <p class="fine">No card needed to start. We help you set up on a call.</p>
+      <p class="fine">₹0 today. Approve UPI AutoPay; cancel within 7 days and pay nothing.</p>
       <div class="trust">
         <span><i class="ic" data-ic="lock"></i> Payments through Razorpay</span>
         <span><i class="ic" data-ic="shield"></i> Files deleted after printing</span>
@@ -227,7 +227,7 @@
   <div class="sw-wrap">
     <span class="eyebrow rv">Pricing</span>
     <h2 class="rv">Simple plans, monthly or yearly</h2>
-    <p class="lead rv">Try it free for <span data-trial>14</span> days. No long-term contract.</p>
+    <p class="lead rv">Try it free for <span data-trial>7</span> days. No long-term contract.</p>
     <div class="termtog rv" id="termTog" role="tablist" aria-label="Billing period"><button type="button" class="on" data-term="monthly">Monthly</button><button type="button" data-term="yearly">Yearly <i>2 months free</i></button></div>
     <div class="plans" id="plans" aria-live="polite"><div class="plan"><p class="bl">Loading plans…</p></div></div>
     <p class="note">Prices are per shop. Yearly means you pay for 10 months and get 12. Not sure which plan fits? Pick one now and we will advise you on the call.</p>
@@ -254,7 +254,7 @@
   <div class="sw-wrap signup-grid">
     <div>
       <span class="eyebrow" style="color:var(--gold);">Free trial</span>
-      <h2>Start your <span data-trial>14</span>-day free trial</h2>
+      <h2>Start your <span data-trial>7</span>-day free trial</h2>
       <p class="lead">Tell us about your shop. We will call you to set it up.</p>
       <ul>
         <li><i class="ic" data-ic="check"></i> Setup help on a call</li>
@@ -265,7 +265,7 @@
     <div class="formcard">
       <form id="trialForm" novalidate>
         <h3>Get your shop on DocuFast</h3>
-        <p class="hint">Subscribe with UPI AutoPay or card and your shop is ready in a minute. Or ask for a free trial and we will call you.</p>
+        <p class="hint">Start the free trial with UPI AutoPay or card and your shop is ready in a minute. Each shop key works only on that shop's own computer.</p>
         <div class="hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
         <div class="frow">
           <div class="fld"><label for="shopName">Shop name</label><input id="shopName" name="shopName" required maxlength="80" autocomplete="organization"></div>
@@ -283,8 +283,10 @@
         <div class="fld"><label>Billing</label><div class="planpick" id="termPick"><label><input type="radio" name="termRadio" value="monthly" checked><span>Monthly<small>pay each month</small></span></label><label><input type="radio" name="termRadio" value="yearly"><span>Yearly<small>2 months free</small></span></label></div></div>
         <div class="fld"><label for="note">Anything we should know? <i>(optional)</i></label><textarea id="note" name="note" maxlength="400"></textarea></div>
         <p class="msg err" id="formMsg" role="alert"></p>
-        <button class="btn btn-gold" id="buyBtn" type="button" style="width:100%;">Subscribe with AutoPay</button>
-        <button class="btn btn-ghost" id="submitBtn" type="submit" style="width:100%;margin-top:10px;">Or request a free trial (we call you)</button>
+        <button class="btn btn-gold" id="trialBtn" type="button" style="width:100%;">Start 7-day free trial</button>
+        <p class="hint" id="trialNote" style="margin:6px 0 10px;text-align:center;">Approve UPI AutoPay / card now. <b>₹0 today</b>; the first charge happens after 7 days. Cancel any time before then from your dashboard and pay nothing.</p>
+        <button class="btn btn-ghost" id="buyBtn" type="button" style="width:100%;">Subscribe with AutoPay</button>
+        <button class="btn btn-ghost" id="submitBtn" type="submit" style="width:100%;margin-top:10px;">Or ask us to call you</button>
         <p class="hint" style="margin-top:10px;">Secure payment by Razorpay. Your plan renews automatically each month or year, and you can stop it any time from your shop dashboard. Your shop code, PIN and printer key are shown right after payment.</p>
       </form>
       <div class="done" id="paidBox" hidden>

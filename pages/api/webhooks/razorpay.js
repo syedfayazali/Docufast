@@ -62,6 +62,12 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ ok: true });
   }
+  // Free trial: the buyer approved AutoPay but nothing is charged yet. This is the moment to open the shop.
+  if (event.event === 'subscription.authenticated') {
+    const subId = event.payload?.subscription?.entity?.id;
+    if (subId) await completeSignup(subId, event.payload?.payment?.entity?.id || null, { onlyTrial: true });
+    return res.status(200).json({ ok: true });
+  }
   const SUB_STATUS = { 'subscription.halted': 'halted', 'subscription.cancelled': 'cancelled', 'subscription.completed': 'completed', 'subscription.paused': 'paused', 'subscription.resumed': 'active' };
   if (SUB_STATUS[event.event]) {
     const subId = event.payload?.subscription?.entity?.id;

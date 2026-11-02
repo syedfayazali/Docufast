@@ -1,5 +1,6 @@
+import { getPlan } from '@/lib/plans';
 import { isOwner, isLegacyAgentKey } from '@/lib/auth';
-import { getShopByApiKey, getJob, markPrinted, markPrintFailed } from '@/lib/db';
+import { getShopByApiKey, checkAndBindMachine, getJob, markPrinted, markPrintFailed } from '@/lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -10,6 +11,11 @@ export default async function handler(req, res) {
   if (!isLegacy) {
     shop = await getShopByApiKey(agentKey);
     if (!shop) return res.status(401).json({ error: 'Invalid agent key' });
+    // The key only works on the computer(s) it is bound to.
+    const mid = req.headers['x-machine-id'];
+    const p = getPlan(shop.plan);
+    const bind = await checkAndBindMachine(shop.id, mid ? String(mid).slice(0, 100) : null, null, p ? p.maxPrinters : 1);
+    if (!bind.ok) return res.status(409).json({ error: 'duplicate_key', message: 'This shop key is active on another computer.' });
   }
 
   const { code } = req.query;

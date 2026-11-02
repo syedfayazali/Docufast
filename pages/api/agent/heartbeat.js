@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     shopId = shop.id;
     shopPlan = getPlan(shop.plan);
 
-    const bind = await checkAndBindMachine(shopId, machineId, machineName);
+    const bind = await checkAndBindMachine(shopId, machineId, machineName, shopPlan ? shopPlan.maxPrinters : 1);
     if (!bind.ok) {
       return res.status(409).json({
         error: 'duplicate_key',

@@ -1,7 +1,7 @@
-import { createPlanSignup, rateLimit, clientIp } from '@/lib/db';
+import { createPlanSignup, hasUsedTrial, rateLimit, clientIp } from '@/lib/db';
 import { createOrder, isConfigured } from '@/lib/razorpay';
 import { newSubscription } from '@/lib/billing';
-import { getPlan, planAmount, termMonths } from '@/lib/plans';
+import { getPlan, planAmount, termMonths, TRIAL_DAYS } from '@/lib/plans';
 
 const clean = (v, max) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
 
@@ -23,6 +23,8 @@ export default async function handler(req, res) {
   if (!/^[6-9]\d{9}$/.test(phone)) return res.status(400).json({ error: 'Enter a valid 10-digit mobile number.' });
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'That email address does not look right.' });
 
+  const trial = !!b.trial;
+  if (trial && (await hasUsedTrial(phone))) return res.status(409).json({ error: 'This mobile number has already used its free trial. Please subscribe to continue.' });
   const amountPaise = planAmount(plan, term) * 100;
   const desc = `${plan.name} plan — ${term === 'yearly' ? 'every year' : 'every month'}`;
   const prefill = { name: ownerName, contact: phone, email };
@@ -30,11 +32,13 @@ export default async function handler(req, res) {
     // Preferred: a real recurring subscription (UPI AutoPay / card mandate). The first
     // charge happens now and the plan renews itself each period until cancelled.
     let subId = null;
-    try { subId = await newSubscription(plan, term, { shop: shopName, phone }); }
+    const startAt = trial ? Math.floor(Date.now() / 1000) + TRIAL_DAYS * 86400 + 3600 : null;   // +1h so the trial is a full 7 days
+    try { subId = await newSubscription(plan, term, { shop: shopName, phone }, startAt); }
     catch (e) { console.error('subscription create failed, falling back to one-time payment:', e?.error?.description || e.message); }
+    if (!subId && trial) return res.status(502).json({ error: 'Could not set up the free trial right now. Please try again, or request a callback.' });   // a trial is only ever given with AutoPay
     if (subId) {
-      await createPlanSignup({ orderId: subId, shopName, ownerName, phone, email, city, plan: plan.id, months: termMonths(term), amountPaise });
-      return res.status(201).json({ autopay: true, razorpayKeyId: process.env.RAZORPAY_KEY_ID, razorpaySubscriptionId: subId, amount: amountPaise, description: desc, prefill });
+      await createPlanSignup({ orderId: subId, shopName, ownerName, phone, email, city, plan: plan.id, months: termMonths(term), amountPaise, trial });
+      return res.status(201).json({ autopay: true, trial, trialDays: TRIAL_DAYS, razorpayKeyId: process.env.RAZORPAY_KEY_ID, razorpaySubscriptionId: subId, amount: amountPaise, description: trial ? `${TRIAL_DAYS}-day free trial, then ${desc}` : desc, prefill });
     }
     const { orderId } = await createOrder({ amountPaise, receipt: 'buy-' + Date.now().toString(36) });
     await createPlanSignup({ orderId, shopName, ownerName, phone, email, city, plan: plan.id, months: termMonths(term), amountPaise });
