@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   let shopSlug = null;
   let shopApiKey = null;
 
-  const hasStaffCreds = (req.headers['x-staff-slug'] && req.headers['x-staff-pin']) || shopKey;
+  const hasStaffCreds = (req.headers['x-staff-slug'] && req.headers['x-staff-pin']) || shopKey || /^Bearer /.test(req.headers.authorization || '');   // PIN, shop key, or the desktop app's signed-in session
   if (hasStaffCreds) {
     // Shop-scoped view — only show this shop's jobs
     const auth = await authStaff(req);
