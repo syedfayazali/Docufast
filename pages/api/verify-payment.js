@@ -2,7 +2,7 @@
 // a successful payment; we verify their HMAC signature before marking anything
 // as paid. A frontend-only "payment succeeded" message is never trusted here.
 import { verifySignature } from '@/lib/razorpay';
-import { getJobByRazorpayOrder, markPaid, publicView } from '@/lib/db';
+import { listJobsByRazorpayOrder, markPaid, getJob, publicView } from '@/lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -19,12 +19,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Payment signature verification failed' });
   }
 
-  const job = await getJobByRazorpayOrder(razorpay_order_id);
-  if (!job) return res.status(404).json({ error: 'Job not found for this order' });
+  // One payment can cover several files (a multi-file order): mark every one of them paid.
+  const found = await listJobsByRazorpayOrder(razorpay_order_id);
+  if (!found.length) return res.status(404).json({ error: 'Job not found for this order' });
 
-  await markPaid(job.code, razorpay_payment_id);
+  for (const j of found) await markPaid(j.code, razorpay_payment_id);
 
-  // Return the job so the frontend can show the ticket immediately.
-  const updated = await (await import('@/lib/db')).getJob(job.code);
-  return res.status(200).json({ ok: true, job: publicView(updated) });
+  // Return the jobs so the frontend can show the ticket immediately.
+  const updated = [];
+  for (const j of found) updated.push(await getJob(j.code));
+  return res.status(200).json({ ok: true, job: publicView(updated[0]), jobs: updated.map(publicView) });
 }

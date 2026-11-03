@@ -22,7 +22,7 @@
 export const config = { api: { bodyParser: false } };
 
 import { verifyWebhookSignature } from '@/lib/razorpay';
-import { getJobByRazorpayOrder, markPaid, finalizePlanOrder, completeSignup, applySubscriptionCharge, setSubscriptionStatus } from '@/lib/db';
+import { listJobsByRazorpayOrder, markPaid, finalizePlanOrder, completeSignup, applySubscriptionCharge, setSubscriptionStatus } from '@/lib/db';
 
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -84,15 +84,15 @@ export default async function handler(req, res) {
     const paymentId = payment?.id;
 
     if (orderId && paymentId) {
-      const job = await getJobByRazorpayOrder(orderId);
-      if (job) {
+      const orderJobs = await listJobsByRazorpayOrder(orderId);
+      if (orderJobs.length) {
         // markPaid's SQL only updates rows still in 'pending_payment', so
         // this is safe to call even if /api/verify-payment already marked
         // it paid moments earlier — whichever gets there first wins, and
         // the other becomes a harmless no-op. Razorpay also retries
         // webhook deliveries on non-2xx responses, so this must stay
         // idempotent regardless.
-        await markPaid(job.code, paymentId);
+        for (const j of orderJobs) await markPaid(j.code, paymentId);
       } else if ((await finalizePlanOrder(orderId, paymentId)).found) {
         // A shop's plan payment: the shop's end date has been moved forward.
       } else if ((await completeSignup(orderId, paymentId)).found) {

@@ -59,10 +59,14 @@
       <div id="panelFile">
         <div class="dropzone" id="dropzone">
           <div class="icon"><i class="ic" data-ic="upload"></i></div>
-          <div>Drop a file here, or tap to choose</div>
-          <div style="font-size:12px;color:var(--slate);margin-top:4px;">PDF, JPG, PNG, DOCX — up to 25MB</div>
+          <div>Drop files here, or tap to choose</div>
+          <div style="font-size:12px;color:var(--slate);margin-top:4px;">PDF, JPG, PNG, DOCX — up to 25MB each. Pick several at once (up to 10) and pay once.</div>
           <div class="filename" id="filenameLabel"></div>
-          <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.docx">
+          <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple>
+        </div>
+        <div id="batchPanel" style="display:none;">
+          <div id="batchList"></div>
+          <button class="ghost" id="batchAdd" type="button"><i class="ic" data-ic="plus"></i> Add more files</button>
         </div>
         <button class="ghost cam-btn" id="camBtn" type="button"><i class="ic" data-ic="camera"></i> Take a photo of a document</button>
         <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
@@ -125,6 +129,7 @@
     <!-- STEP 2 — options -->
     <section class="step" id="step2" style="display:none;">
       <div class="file-chip" id="fileChip"></div>
+      <div id="batchOpts" style="display:none;"></div>
 
       <div class="group-label">Colour</div>
       <div class="cards" data-group="color">
@@ -185,6 +190,7 @@
       </div>
       <div class="code" id="ticketCode"></div>
     </div>
+    <div id="batchTickets" style="display:none;"></div>
     <div class="note" id="ticketNote">Printing now — collect it from the tray.</div>
     <a class="ghost" id="trackLink" href="#" style="display:block;text-align:center;text-decoration:none;">Track this order (save this link)</a>
     <button class="ghost" onclick="location.reload()"><i class="ic" data-ic="upload"></i> Upload another file</button>

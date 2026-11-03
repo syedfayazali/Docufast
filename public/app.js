@@ -5,6 +5,7 @@
 //   POST /api/jobs (gets razorpayOrderId) → open Razorpay modal →
 //   on success, POST /api/verify-payment → show ticket + poll until printed.
 import { initTools } from '/tools.js';
+import { initBatch } from '/batch.js';
 
 // New uploads go to the PRIVATE store once the server says it is enabled
 // (/api/config -> privateUploads); until then the original public store is
@@ -115,7 +116,7 @@ function goStep(n) {
   updatePrice();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-next1.addEventListener('click', () => { if (state.blobUrl) goStep(2); });
+next1.addEventListener('click', () => { if (batch.active) { batch.enterOptions(); goStep(2); } else if (state.blobUrl) goStep(2); });
 document.getElementById('next2').addEventListener('click', () => goStep(3));
 document.getElementById('back2').addEventListener('click', () => goStep(1));
 document.getElementById('back3').addEventListener('click', () => goStep(2));
@@ -160,12 +161,13 @@ document.addEventListener('click', e => {
 document.getElementById('camBtn').addEventListener('click', () => { if (!needConsent()) camInput.click(); });
 ['dragover', 'dragenter'].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.add('drag'); }));
 ['dragleave', 'drop'].forEach(e => dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.remove('drag'); }));
-dropzone.addEventListener('drop', e => { state.exact = false; if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
-fileInput.addEventListener('change', e => { state.exact = false; if (e.target.files[0]) handleFile(e.target.files[0]); });
-camInput.addEventListener('change', e => { state.exact = false; if (e.target.files[0]) handleFile(e.target.files[0]); });
+dropzone.addEventListener('drop', e => { pickFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => { pickFiles(e.target.files); e.target.value = ''; });
+camInput.addEventListener('change', e => { state.exact = false; if (e.target.files[0]) { batch.reset(); handleFile(e.target.files[0]); } });
 
 async function handleFile(file, { skipCompress = false } = {}) {
   if (needConsent()) return;
+  batch.reset();
   next1.disabled = true;
   state.blobUrl = null;
   if (!skipCompress && COMPRESSIBLE_TYPES.includes(file.type)) {
@@ -267,6 +269,7 @@ document.getElementById('copiesMinus').addEventListener('click', () => setCopies
 document.getElementById('copiesPlus').addEventListener('click', () => setCopies(state.copies + 1));
 
 function updatePrice() {
+  if (batch && batch.active) { batch.paintPrice(); return; }
   const per = perPage(state.colorMode, state.duplex === 'double');
   const fee = state.service ? state.service.fee : 0;
   const discount = state.coupon ? state.coupon.discount : 0;
@@ -297,6 +300,7 @@ function updatePrice() {
 
 // --- Pay button ---
 payBtn.addEventListener('click', async () => {
+  if (batch.active) return batch.pay();
   if (!state.blobUrl) return;
   payBtn.disabled = true;
   payBtn.textContent = 'Creating order…';
@@ -462,6 +466,20 @@ function pollUntilPrinted(code) {
 }
 
 
+// --- Several files in one order (see batch.js) ---
+const batch = initBatch({
+  state, shopSlug, consentChk, needConsent, setStatus, updatePrice, rs, perPage, payLabel,
+  compress: compressImageIfNeeded, compressible: COMPRESSIBLE_TYPES, maxBytes: MAX_UPLOAD_BYTES,
+  privateUploads: privateUploadsEnabled, rememberDeleteToken, rememberOrder,
+});
+function pickFiles(files) {
+  files = Array.from(files || []);
+  if (!files.length) return;
+  state.exact = false;
+  if (files.length > 1 || batch.active) { state.blobUrl = null; state.service = null; batch.start(files); }
+  else handleFile(files[0]);
+}
+
 // --- Document tools (photos -> PDF, passport sheet, service checklists) ---
 function setColourMode(mode) {
   state.colorMode = mode;
@@ -497,7 +515,7 @@ async function applyCoupon() {
   try {
     const res = await fetch('/api/coupons/check', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, shopSlug, serviceId: state.service ? state.service.id : undefined,
+      body: JSON.stringify({ code, shopSlug, items: batch.active ? batch.payload() : undefined, serviceId: state.service ? state.service.id : undefined,
         colorMode: state.colorMode, duplex: state.duplex === 'double', pages: state.pages, copies: state.copies }),
     });
     const d = await res.json();
