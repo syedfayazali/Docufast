@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     if (row) {
       const p = getPlan(pr.plan);
       shop = { id: row.id, name: row.name, slug: row.slug, city: row.city, active: row.active, agentKey: row.api_key,
-        billing: billingState(pr), maxPrinters: p ? p.maxPrinters : 1, planName: p ? p.name : null };
+        acctType: row.acct_type || null, billing: billingState(pr), maxPrinters: p ? p.maxPrinters : 1, planName: p ? p.name : null };
     }
   }
   return res.status(200).json({ user: { email: s.email, name: s.name }, shop, trialDays: TRIAL_DAYS });

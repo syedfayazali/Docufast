@@ -87,6 +87,12 @@
     </div>
     <div id="accList" class="pilot-grid"></div>
 
+    <div class="section-title" style="margin-top:24px;">Owner &amp; test accounts &mdash; no subscription needed
+      <button class="link-btn" onclick="newFreeAccount('owner')">+ Owner account</button>
+      <button class="link-btn" onclick="newFreeAccount('test')">+ Test account</button>
+    </div>
+    <div id="freeList" class="pilot-grid"></div>
+
     <div class="section-title" style="margin-top:24px;">Shop subscriptions &mdash; plans your shops pay you</div>
     <div id="subList" class="pilot-grid"></div>
 
@@ -396,7 +402,7 @@ async function loadDashboard(opts) {
     const changed = sig !== dashSig;
     if (silent && dashLoaded && !changed) return;   // nothing new: leave the screen alone
     dashSig = sig;
-    if (!silent || !dashLoaded) { loadServices(); loadCoupons(); loadAccounts(); loadPartners(); loadSubs(); }
+    if (!silent || !dashLoaded) { loadServices(); loadCoupons(); loadAccounts(); loadPartners(); loadSubs(); loadFree(); }
     loadLeads();
     loadReport();
     renderKPIs(stats);
@@ -674,6 +680,33 @@ async function loadAccounts() {
       card.append(h, info, row); grid.appendChild(card);
     });
   } catch { /* optional section */ }
+}
+function newFreeAccount(type) {
+  const owner = type === 'owner';
+  askForm(owner ? 'New owner account' : 'New test account', [
+    { key: 'email', label: 'Email that will sign in to the DocuFast app' },
+    { key: 'shopName', label: 'Shop name', value: owner ? 'DocuFast Owner' : 'DocuFast Test' },
+    ...(owner ? [] : [{ key: 'days', label: 'Test days', value: '30', inputmode: 'numeric' }]),
+  ], 'Create', async v => {
+    const r = await jsonPost('/api/owner/free-accounts', 'POST', { ...v, type });
+    if (!r.ok) return r.data.error || 'Could not create.';
+    loadFree(); loadSubs(); return null;
+  }, owner ? 'Pro features, never expires, no payment. Sign in to the app with this email.' : 'Pro features for the days you choose. Sign in to the app with this email.');
+}
+async function loadFree() {
+  try {
+    const res = await fetch('/api/owner/free-accounts', { credentials: 'same-origin' }); if (!res.ok) return;
+    const d = await res.json(); const grid = document.getElementById('freeList'); grid.innerHTML = '';
+    if (!d.accounts.length) { grid.innerHTML = '<div style="color:#5B6478;font-size:13px;">None yet. Add an owner account for yourself and a test account for demos.</div>'; return; }
+    d.accounts.forEach(a => {
+      const card = document.createElement('div'); card.className = 'pilot';
+      const h = document.createElement('h5'); const nm = document.createElement('span'); nm.textContent = a.name;
+      const b = document.createElement('span'); b.className = 'go'; b.textContent = a.acct_type === 'owner' ? 'Owner · no subscription' : 'Test'; h.append(nm, b);
+      const info = document.createElement('div'); info.style.cssText = 'font-size:13px;color:#5B6478;line-height:1.6;';
+      info.textContent = (a.email || 'no email') + ' · shop code ' + a.slug + (a.acct_type === 'test' ? ' · until ' + new Date(a.plan_until).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+      card.append(h, info); grid.appendChild(card);
+    });
+  } catch { /* optional */ }
 }
 async function loadSubs() {
   try {
