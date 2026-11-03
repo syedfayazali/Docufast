@@ -7,7 +7,7 @@ import { normalizePrices } from '@/lib/pricing';
 export default async function handler(req, res) {
   const proto = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const out = { baseUrl: process.env.BASE_URL || `${proto}://${host}`, privateUploads: privateEnabled() };
+  const out = { baseUrl: process.env.BASE_URL || (/vercel\.app$/.test(host || '') ? 'https://print.docufastindia.com' : `${proto}://${host}`), privateUploads: privateEnabled() };
   try {
     const shop = await resolveShop(typeof req.query.shop === 'string' ? req.query.shop : null);
     out.prices = normalizePrices(shop?.prices);

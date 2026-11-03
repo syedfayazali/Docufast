@@ -1,11 +1,21 @@
 import { isOwner, pinProblem } from '@/lib/auth';
-import { toggleShop, resetShopMachine, rotateShopKey, setStaffPin, setShopPrices, setShopRetention, linkEmailToShop, normEmail } from '@/lib/db';
+import { toggleShop, resetShopMachine, rotateShopKey, setStaffPin, setShopPrices, setShopRetention, linkEmailToShop, normEmail, getShopById, deleteShop } from '@/lib/db';
 import { validatePrices } from '@/lib/pricing';
 
 export default async function handler(req, res) {
-  if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'PATCH' && req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' });
   if (!isOwner(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { id } = req.query;
+
+  if (req.method === 'DELETE') {
+    // Permanent. The owner must type the shop's name to confirm.
+    const shop = await getShopById(id);
+    if (!shop) return res.status(404).json({ error: 'Shop not found' });
+    const typed = String((req.body && req.body.confirm) || '').trim().toLowerCase();
+    if (typed !== String(shop.name).trim().toLowerCase()) return res.status(400).json({ error: 'Type the shop name exactly to confirm.' });
+    try { await deleteShop(id); } catch (e) { console.error('delete shop failed:', e.message); return res.status(500).json({ error: 'Could not delete the shop.' }); }
+    return res.status(200).json({ ok: true, deleted: shop.name });
+  }
   const { ownerEmail, active, resetMachine, rotateKey, newStaffPin, staffPin, prices, retentionMinutes } = req.body || {};
 
   if (ownerEmail) {

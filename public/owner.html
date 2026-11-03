@@ -632,6 +632,8 @@ function askForm(title, fields, okLabel, submit, note) {
     if (err) msg.textContent = err; else bg.classList.remove('open');
   };
 }
+// Customers always get the real address, even when this page is opened from the vercel.app one.
+const publicOrigin = () => /vercel\.app$/.test(location.hostname) ? 'https://print.docufastindia.com' : location.origin;
 const escHtml = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const rs = p => '₹' + (p / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 async function jsonPost(url, method, body) {
@@ -815,6 +817,7 @@ function renderShops(shops, printers) {
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Set staff PIN</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();openPrices('${s.id}')">Prices</button>
+        <button class="link-btn" style="margin-left:8px;color:#B3261E;" onclick="event.stopPropagation();deleteShopUi('${s.id}','${escHtml(String(s.name).replace(/\\/g, '\\\\').replace(/'/g, "\\'"))}')">Delete</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();setRetention('${s.id}',${s.retention_minutes == null ? 'null' : s.retention_minutes})">Keep files: ${s.retention_minutes == null ? '30m' : s.retention_minutes + 'm'}</button></td>`;
     tr.dataset.shopName = s.name;
     body.appendChild(tr);
@@ -885,6 +888,14 @@ async function newStaffPin(id) {
   document.getElementById('modalBg').classList.add('open');
 }
 
+function deleteShopUi(id, name) {
+  askForm('Delete ' + name + '?', [{ key: 'confirm', label: 'Type the shop name (' + name + ') to confirm' }], 'Delete forever', async v => {
+    const r = await jsonPost('/api/shops/' + encodeURIComponent(id), 'DELETE', { confirm: v.confirm });
+    if (!r.ok) return r.data.error || 'Could not delete.';
+    if (typeof loadDashboard === 'function') loadDashboard(); else location.reload();
+    return null;
+  }, 'This permanently removes the shop, its orders, printers, payments and app sign-ins. It cannot be undone. To just stop a shop, use Pause instead.');
+}
 async function rotateKey(id) {
   const name = (shopNames[id]) || 'this shop';
   if (!confirm('Issue a NEW key for ' + name + '?\n\nThe old key stops working immediately and the shop\'s print agent will go offline until you enter the new key in it.')) return;
@@ -904,7 +915,7 @@ async function rotateKey(id) {
 }
 
 function showQrPopover(evt, slug) {
-  const link = `${window.location.origin}/?shop=${encodeURIComponent(slug)}`;
+  const link = `${publicOrigin()}/?shop=${encodeURIComponent(slug)}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(link)}`;
   document.getElementById('qrPopoverImg').src = qrUrl;
   document.getElementById('qrPopoverLink').value = link;

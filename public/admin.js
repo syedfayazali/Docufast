@@ -196,7 +196,7 @@ async function refresh() {
 
     // Shop link + QR (only shown for shop-scoped views, not the owner-key view)
     if (data.shopSlug) {
-      const link = `${window.location.origin}/?shop=${encodeURIComponent(data.shopSlug)}`;
+      const link = `${/vercel\.app$/.test(location.hostname) ? 'https://print.docufastindia.com' : location.origin}/?shop=${encodeURIComponent(data.shopSlug)}`;
       document.getElementById('shopLinkInput').value = link;
 
       // Shop-specific QR — encodes this shop's own link, so scans route
