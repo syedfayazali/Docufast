@@ -1,4 +1,5 @@
 import { readBytes } from '@/lib/privateBlob';
+import { rateLimit, clientIp } from '@/lib/db';
 // Detects page count server-side before payment so the customer sees
 // the correct price. Takes the uploaded file's Blob URL and returns the
 // page count. The result is shown to the customer and confirmed before
@@ -41,6 +42,7 @@ async function bufferFromRequest(req) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  if (!(await rateLimit('det:' + clientIp(req), 60, 600))) return res.status(429).json({ error: 'Too many requests. Please wait a few minutes.' });
   try {
     const { filename } = req.body || {};
     const buffer = await bufferFromRequest(req);

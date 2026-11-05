@@ -10,6 +10,7 @@
 //   - otherwise: refused. There is no public store any more.
 import { handleUpload as handleUploadPrivate } from 'blob2/client';
 import { privateEnabled, privateToken } from '@/lib/privateBlob';
+import { rateLimit, clientIp } from '@/lib/db';
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB — generous for any real print job
 
@@ -25,6 +26,11 @@ export default async function handler(req, res) {
     // Once the private store is connected, every upload goes there; a client
     // cannot opt out by leaving off ?private=1.
     if (!privateEnabled()) return res.status(503).json({ error: 'Secure storage is not configured' });
+    // Only the request that asks for permission to upload counts (Vercel's own completion callback does not).
+    // 40 files per 10 minutes per connection covers several full 10-file orders.
+    if (req.body && req.body.type === 'blob.generate-client-token' && !(await rateLimit('upl:' + clientIp(req), 40, 600))) {
+      return res.status(429).json({ error: 'Too many uploads from this connection. Please wait a few minutes.' });
+    }
     const common = {
       body: req.body,
       request: req,

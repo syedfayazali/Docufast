@@ -15,7 +15,8 @@
 // Runs on Vercel Cron (see vercel.json) — set CRON_SECRET in your env vars
 // and Vercel automatically sends it as a Bearer token on every cron
 // invocation, which is what the check below verifies.
-import { findAbandonedJobs, findStaleFailedJobs, markJobExpired, clearJobBlob, findExpiredPrintedBlobs, listUnpaidRazorpayJobsAll, markPaid } from '@/lib/db';
+import { findAbandonedJobs, findStaleFailedJobs, markJobExpired, clearJobBlob, findExpiredPrintedBlobs, listUnpaidRazorpayJobsAll, markPaid, referencedBlobUrls } from '@/lib/db';
+import { listOldPrivateBlobs, deletePrivate } from '@/lib/privateBlob';
 import { deleteFile } from '@/lib/blob';
 import { findCapturedPayment, isConfigured } from '@/lib/razorpay';
 
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const results = { reconciled: 0, abandoned: 0, staleFailed: 0, printedPurged: 0, errors: [] };
+  const results = { reconciled: 0, abandoned: 0, staleFailed: 0, printedPurged: 0, orphans: 0, errors: [] };
 
   try {
     // 0. Payment reconcile (moved here from the agent poll): rescue orders
@@ -72,6 +73,17 @@ export default async function handler(req, res) {
       } catch (err) {
         results.errors.push(`${job.code}: ${err.message}`);
       }
+    }
+    // Files uploaded but never attached to any order (closed tab, abuse): older than 3 hours, safe to remove.
+    try {
+      const old = await listOldPrivateBlobs(3, 1000);
+      const used = await referencedBlobUrls(old);
+      for (const url of old) {
+        if (used.has(url)) continue;
+        if (await deletePrivate(url)) results.orphans++;
+      }
+    } catch (err) {
+      results.errors.push(`orphans: ${err.message}`);
     }
   } catch (err) {
     console.error('Cleanup cron error:', err.message);
