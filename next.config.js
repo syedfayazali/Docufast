@@ -21,6 +21,7 @@ module.exports = {
       { source: '/', destination: '/index.html' },
       { source: '/admin', destination: '/admin.html' },
       { source: '/signage', destination: '/signage.html' },
+      { source: '/counter', destination: '/counter.html' },
       { source: '/owner', destination: '/owner.html' },
       { source: '/software', destination: '/software.html' },
       ],
