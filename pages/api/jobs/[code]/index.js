@@ -1,13 +1,16 @@
 import { browserPush, jobChannel } from '@/lib/wake';
-import { getJob, publicView, getJobStatusExtras, getJobHistory } from '@/lib/db';
+import { getJob, publicView, getJobStatusExtras, getJobHistory, rateLimit, rateLimitBlocked, clientIp } from '@/lib/db';
 
 // Customer-facing status. `stage` is the one word the UI keys off:
 //   unpaid | waiting (paid, shop's computer offline) | queued | printed | problem | expired
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   const code = String(req.query.code || '').trim().toUpperCase();
+  // Guessing order codes is limited: only WRONG codes count, so real customers are never affected.
+  const guessKey = 'guess:' + clientIp(req);
+  if (await rateLimitBlocked(guessKey, 30)) return res.status(429).json({ error: 'Too many wrong codes. Please wait a few minutes.' });
   const job = await getJob(code);
-  if (!job) return res.status(404).json({ error: 'No job found' });
+  if (!job) { await rateLimit(guessKey, 30, 600); return res.status(404).json({ error: 'No job found' }); }
   const view = publicView(job);
   let extras = {};
   try { extras = await getJobStatusExtras(job); } catch { /* status still works without the extras */ }

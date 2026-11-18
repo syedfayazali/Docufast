@@ -1,12 +1,15 @@
-import { getJob, getJobStatusExtras } from '@/lib/db';
+import { getJob, getJobStatusExtras, rateLimit, rateLimitBlocked, clientIp } from '@/lib/db';
 
 // Customer receipt data. Only for orders that were actually paid. This is a
 // payment receipt, NOT a tax invoice (the business has no GSTIN), and the page
 // says so. The payment id is shortened to its last 4 characters.
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const guessKey = 'guess:' + clientIp(req);
+  if (await rateLimitBlocked(guessKey, 30)) return res.status(429).json({ error: 'Too many wrong codes. Please wait a few minutes.' });
   const job = await getJob(String(req.query.code || '').trim().toUpperCase());
   if (!job || !['paid', 'printed', 'refunded'].includes(job.status)) {
+    await rateLimit(guessKey, 30, 600);
     return res.status(404).json({ error: 'No paid order found with that code' });
   }
   let extras = {};

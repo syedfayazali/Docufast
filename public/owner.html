@@ -807,13 +807,13 @@ function renderShops(shops, printers) {
       ? `<span class="pill offline" style="margin-left:6px;" title="Paid but unprinted for 15+ minutes — the shop's agent is likely offline">${s.stuckJobs} stuck</span>`
       : '';
     tr.innerHTML = `
-      <td><div class="shop-name">${s.name}${stuckBadge}</div><div class="shop-city">${s.city || s.slug}</div></td>
+      <td><div class="shop-name">${escHtml(s.name)}${stuckBadge}</div><div class="shop-city">${escHtml(s.city || s.slug)}</div></td>
       <td>${fmt(parseInt(s.today_revenue) || 0)}</td>
       <td>${fmt(parseInt(s.month_revenue) || 0)}</td>
       <td>${s.today_jobs || 0}</td>
       <td>${printerPill}</td>
       <td><span class="pill ${s.active ? 'active' : 'offline'}">${s.active ? 'Active' : 'Paused'}</span></td>
-      <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${s.slug}')">Link / QR</button>
+      <td><button class="link-btn" onclick="event.stopPropagation();showQrPopover(event,'${escHtml(s.slug)}')">Link / QR</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();rotateKey('${s.id}')">New key</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();newStaffPin('${s.id}')">Set staff PIN</button>
         <button class="link-btn" style="margin-left:8px;" onclick="event.stopPropagation();openPrices('${s.id}')">Prices</button>
@@ -956,8 +956,8 @@ function renderPrinters(printers) {
       : minsAgo !== null ? `Offline ${minsAgo} min` : 'Never connected';
     const div = document.createElement('div');
     div.className = 'printer-card';
-    div.innerHTML = `<div class="printer-shop-lbl">${p.shop_name || ''}</div>
-      <div class="printer-name">${p.name}</div>
+    div.innerHTML = `<div class="printer-shop-lbl">${escHtml(p.shop_name || '')}</div>
+      <div class="printer-name">${escHtml(p.name)}</div>
       <div class="printer-status ${statusClass}">${statusText}</div>
       <div style="font-size:11px;color:#5B6478;margin-top:4px;">${p.push_state === 'connected' ? 'Live push: connected' : p.push_state ? 'Live push: ' + p.push_state + ' (polling)' : 'Live push: not reported'}${p.push_state === 'down' && p.push_reason ? ' — ' + escHtml(p.push_reason) : ''}${p.agent_version ? ' · v' + p.agent_version : ''}</div>`;
     grid.appendChild(div);
@@ -974,9 +974,9 @@ function renderJobs(jobs, shops) {
     const div = document.createElement('div');
     div.className = 'job-row';
     div.innerHTML = `
-      <span class="job-code">${j.code}</span>
-      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${j.filename}</span>
-      <span style="color:#5B6478;">${j.shopId ? (shopMap[j.shopId] || j.shopId) : '—'}</span>
+      <span class="job-code">${escHtml(j.code)}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(j.filename)}</span>
+      <span style="color:#5B6478;">${j.shopId ? escHtml(shopMap[j.shopId] || j.shopId) : '—'}</span>
       <span>₹${((j.amount || 0) / 100).toFixed(2)}</span>
       <span>${j.colorMode === 'color' ? 'Colour' : 'B&W'} ${j.duplex ? '·D' : ''}</span>
       <span style="color:${statusColor};font-weight:600;">${j.printError ? 'Failed' : j.status}
