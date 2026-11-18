@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^0.27.0",
     "blob2": "npm:@vercel/blob@^2.8.2",
-    "next": "^16.4.3",
+    "next": "^16.4.6",
     "pdf-parse": "^1.1.1",
     "pg": "^8.13.1",
     "razorpay": "^2.9.5",
